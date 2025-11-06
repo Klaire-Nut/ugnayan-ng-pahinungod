@@ -1,50 +1,90 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import Button from "../components/Button";
-import heroImage from "../assets/UNP Logo.png"; 
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Grid,
+  CardMedia,
+  Card
+} from "@mui/material";
+import DefaultPage from "../layout/default_page.jsx";
+import heroLogo from "../assets/UNP Logo.png";
+import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
+import "../styles/Home.css";
+
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-[#f4dcdc] to-[#7B1113]">
-      {/* Header */}
-      <Header variant="default" />
+    <DefaultPage>
+      {/* ---------- HERO SECTION ---------- */}
+      <Box
+        className="hero-section"
+        sx={{
+          backgroundImage: `url(${heroBackground})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          position: "relative",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Optional Overlay */}
+        <Box className="overlay" />
+        <Box className="glass-box">
+          <img src={heroLogo} alt="Ugnayan ng Pahinungod Logo" className="hero-logo" />
+          <Box className="hero-text-container">
+            <Typography variant="h4" className="hero-title">
+              UGNAYAN NG PAHINUNGOD
+            </Typography>
+            <Typography variant="body2" className="hero-subtext">
+              Chancellor Lyre Anni E. Murao said the flag at the campus will be flown at half-mast starting August 1 for 10 days.
+            </Typography>
+            <Button variant="contained" className="hero-button">
+              KNOW MORE
+            </Button>
+          </Box>
+        </Box>
+      </Box>
 
-      {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center py-16 bg-[#7B1113] text-white px-4">
-        <div className="max-w-3xl">
-          <img
-            src={heroImage}
-            alt="Ugnayan ng Pahinungod Logo"
-            className="mx-auto w-32 mb-6"
-          />
-          <h1 className="text-3xl md:text-5xl font-bold mb-6">
-            UGNAYAN NG PAHINUNGOD
-          </h1>
-          <Button label="Know More" className="px-6 py-3 rounded-full border-2 border-white hover:bg-white hover:text-[#7B1113]" />
-        </div>
-      </section>
+      {/* ---------- VOLUNTEER SECTION ---------- */}
+      <Box className="volunteer-section">
+        <Container maxWidth="lg">
+          <Grid
+            container
+            spacing={4}
+            alignItems="center"
+            justifyContent="space-between"
+            columns={12}
+          >
+            {/* Text + Button */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Typography
+                variant="h4"
+                fontWeight="600"
+                className="volunteer-heading"
+              >
+                Help shape tomorrow — <br /> volunteer today.
+              </Typography>
+              <Button variant="contained" className="volunteer-button">
+                Volunteer
+              </Button>
+            </Grid>
 
-      {/* Volunteer Section */}
-      <section className="flex flex-col md:flex-row justify-between items-center py-20 px-8 bg-[#f9e8e8] text-[#7B1113]">
-        <div className="max-w-md mb-8 md:mb-0">
-          <h2 className="text-3xl font-semibold mb-4">
-            Help shape tomorrow — <br /> volunteer today.
-          </h2>
-          <Button label="Volunteer" className="bg-[#7B1113] text-white hover:bg-[#5a0d0e]" />
-        </div>
-        <div className="rounded-2xl overflow-hidden shadow-lg">
-          <img
-            src={volunteerImage}
-            alt="Volunteer"
-            className="w-[400px] h-[260px] object-cover"
-          />
-        </div>
-      </section>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+            {/* Volunteer Image */}
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Box className="volunteer-glass">
+                <CardMedia
+                  component="img"
+                  image={volunteerImage}
+                  alt="Volunteer"
+                  className="volunteer-img"
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </DefaultPage>
   );
 }
