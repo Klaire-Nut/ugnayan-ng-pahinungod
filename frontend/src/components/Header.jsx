@@ -1,9 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import Button from "./Button";
-import logo from "../assets/UNP Logo.png"; // adjust path if needed
+import logo from "../assets/UNP Logo.png";
 import { User } from "lucide-react";
+import { Menu, MenuItem, Box } from "@mui/material";
+import LoginPopup from "./LoginPopup";
 
 function Header({ variant = "default" }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popupRole, setPopupRole] = useState(null); // ✅ state for popup role
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
+  // ✅ show popup when Admin/Volunteer clicked
+  const handleOpenPopup = (role) => {
+    setPopupRole(role);
+    handleClose();
+  };
+
+  // ✅ close popup
+  const handleClosePopup = () => setPopupRole(null);
+
   const styles = {
     container: {
       width: "100%",
@@ -31,11 +49,11 @@ function Header({ variant = "default" }) {
     },
     subtitle: {
       fontSize: "0.85rem",
-      fontWeight: "400", // not bold
+      fontWeight: "400",
     },
     mainTitle: {
       fontSize: "1.2rem",
-      fontWeight: "400", // not bold
+      fontWeight: "400",
       letterSpacing: "0.5px",
     },
     rightSection: {
@@ -60,12 +78,83 @@ function Header({ variant = "default" }) {
           <>
             <Button text="Events" variant="text" />
             <Button text="Register" variant="text" />
-            <Button text="Login" variant="outlined" />
+
+            {/* LOGIN DROPDOWN */}
+            <Box>
+              <Button text="Login" variant="outlined" onClick={handleClick} />
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                disableScrollLock={true}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "center",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "center",
+                }}
+                PaperProps={{
+                  sx: {
+                    mt: 0.3,
+                    bgcolor: "rgba(255, 255, 255, 0.9)",
+                    borderRadius: "12px",
+                    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+                    backdropFilter: "blur(10px)",
+                    overflow: "hidden",
+                    width: 135,
+                    textAlign: "center",
+                    p: 0.9,
+                    minHeight: "auto",
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handleOpenPopup("Admin")}
+                  sx={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#7B1113",
+                    fontWeight: 500,
+                    borderRadius: "8px",
+                    p: 0.5,
+                    "&:hover": { bgcolor: "#007BFF", color: "white" },
+                    fontWeight: 600,
+                  }}
+                >
+                  Admin
+                </MenuItem>
+
+                <MenuItem
+                  onClick={() => handleOpenPopup("Volunteer")}
+                  sx={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#7B1113",
+                    fontWeight: 500,
+                    borderRadius: "8px",
+                    p: 0.5,
+                    "&:hover": { bgcolor: "#007BFF", color: "white" },
+                    fontWeight: 600,
+                  }}
+                >
+                  Volunteer
+                </MenuItem>
+              </Menu>
+            </Box>
           </>
         ) : (
           <Button type="icon" variant="secondary" icon={User} />
         )}
       </div>
+
+      {/* ✅ POPUP (for Admin/Volunteer login) */}
+      <LoginPopup
+        open={Boolean(popupRole)}
+        onClose={handleClosePopup}
+        role={popupRole}
+      />
     </header>
   );
 }
