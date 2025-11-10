@@ -1,0 +1,245 @@
+/* =====================================================
+   GLOBAL PAGE BACKGROUND
+   - Applies to entire page
+   - Gradient from dark red to white for warmth & depth
+===================================================== */
+body, .default-page {
+  min-height: 150vh;
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(to bottom, #7B1113, #FFFFFF);
+  color: #333;
+}
+
+/* =====================================================
+   MAIN CONTAINER for About Us page
+   - Adds soft gradient background behind all sections
+   - Padding provides breathing room
+===================================================== */
+.aboutus-page {
+  background: linear-gradient(to bottom, #7B1113, #FFFFFF);
+  min-height: 100vh;
+  padding: 80px 0;
+}
+
+/* =====================================================
+   ABOUT SECTION
+   - Text on left, logo on right
+   - Upgraded to “glassy” effect using stronger blur,
+     brightness, and border glow
+===================================================== */
+.about-section {
+  display: flex; /* positions text + image side by side */
+  justify-content: space-between;
+  align-items: center;
+  gap: 80px;
+  max-width: 1200px;
+  margin: 0 auto 100px;
+  padding: 60px;
+
+  /* 💡 Glassmorphism core: semi-transparent + blur + border */
+  background: rgba(255, 255, 255, 0.771);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 30px;
+  border: 1px solid rgb(255, 255, 255);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Left-side text content */
+.about-content {
+  flex: 1;
+  text-align: left;
+}
+
+.about-content h1 {
+  font-size: 54px;
+  color: #0c2d57;
+  margin-bottom: 20px;
+
+  /* small highlight for depth */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.about-content p {
+  font-size: 18px;
+  line-height: 1.8;
+  color: #333;
+}
+
+/* Right-side logo image (inside glass container) */
+.about-image {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.about-image img {
+  width: 340px;
+  height: 340px;
+  object-fit: contain;
+  border-radius: 25px;
+
+
+}
+
+/* =====================================================
+   VISION & MISSION SECTION
+   - Image stays on left, text on right
+   - Uses matching glass style
+===================================================== */
+.vision-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 80px;
+  max-width: 1200px;
+  margin: 0 auto 100px;
+}
+
+/* Left side: photo placement control */
+.vision-image {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start; /* keeps image near left edge */
+}
+
+.vision-image img {
+  width: 420px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 25px;
+  margin-left: 0; /* 💡 adjust this to move closer/farther from edge */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  transition: transform 1s ease;
+}
+
+.vision-image img:hover {
+  transform: scale(1.03);
+}
+
+/* =====================================================
+   VISION & MISSION CONTENT HORIZONTAL LAYOUT
+===================================================== */
+.vision-content {
+  display: flex;               /* side-by-side layout */
+  flex-wrap: wrap;             /* wraps on smaller screens */
+  justify-content: space-between;
+  gap: 40px;                   /* space between vision & mission blocks */
+}
+
+/* Each block (Vision / Mission) */
+.vision-content .vision-block {
+  flex: 1 1 45%;               /* take roughly half the width, shrink if needed */
+  display: flex;
+  flex-direction: column;      /* keep h2 and p stacked vertically */
+}
+
+/* Optional: adjust heading and paragraph inside each block */
+.vision-content .vision-block h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.vision-content .vision-block p {
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 900px) {
+  .vision-content {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .vision-content .vision-block {
+    flex: 1 1 100%;
+  }
+}
+
+/* =====================================================
+   CONTACT SECTION
+   - Centered glass box for contact details
+   - Uses heavier blur and brighter contrast
+===================================================== */
+.contact-section {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 60px;
+  text-align: center;
+
+  /* 💎 Deep blur + light border = premium glass feel */
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 45px rgba(0, 0, 0, 0.15);
+}
+
+.contact-section h2 {
+  font-size: 38px;
+  color: #0c2d57;
+  margin-bottom: 25px;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.7);
+}
+
+.contact-section p {
+  font-size: 19px;
+  color: #333;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+/* =====================================================
+   ANIMATIONS (fade + slide effects)
+   - Add these classes to elements in React JSX:
+     fade-in, slide-left, slide-right
+===================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* These classes can be applied to trigger animations */
+.fade-in {
+  animation: fadeIn 1.2s ease both;
+}
+
+.slide-right {
+  animation: slideInRight 1.4s ease both;
+}
+
+.slide-left {
+  animation: slideInLeft 1.4s ease both;
+}
