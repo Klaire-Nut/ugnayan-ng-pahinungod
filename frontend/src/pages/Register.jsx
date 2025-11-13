@@ -4,6 +4,42 @@ import DefaultPage from "../layout/default_page.jsx";
 import "../styles/Register.css";
 
 export default function Register() {
+  // -------------------------------
+  // Added handleSubmit function
+  // This sends form data to the backend using fetch
+  // -------------------------------
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // prevent default form submission
+
+    // Gather form data by name attributes
+    const data = {
+      first_name: e.target.firstName.value,
+      last_name: e.target.lastName.value,
+      email: e.target.email.value,
+      mobile_number: e.target.phone.value,
+      hobbies_interests: e.target.reason.value,
+    };
+
+    try {
+      // Send POST request to Django backend API endpoint
+      const response = await fetch("http://localhost:8000/api/register/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        alert("Registration successful!");
+        e.target.reset(); // reset form after successful submission
+      } else {
+        alert("Error registering volunteer.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Network error.");
+    }
+  };
+
   return (
     <DefaultPage>
       <Box className="register-section">
@@ -29,19 +65,22 @@ export default function Register() {
               Fill out the form below to become a volunteer with Ugnayan ng Pahinungod.
             </Typography>
 
-            <form>
+            {/* -------------------------------
+                Added onSubmit handler
+                ------------------------------- */}
+            <form onSubmit={handleSubmit}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="First Name" variant="outlined" required />
+                  <TextField fullWidth label="First Name" name="firstName" variant="outlined" required />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField fullWidth label="Last Name" variant="outlined" required />
+                  <TextField fullWidth label="Last Name" name="lastName" variant="outlined" required />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField fullWidth label="Email Address" type="email" variant="outlined" required />
+                  <TextField fullWidth label="Email Address" type="email" name="email" variant="outlined" required />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField fullWidth label="Phone Number" type="tel" variant="outlined" />
+                  <TextField fullWidth label="Phone Number" type="tel" name="phone" variant="outlined" />
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
@@ -49,6 +88,7 @@ export default function Register() {
                     label="Why do you want to volunteer?"
                     multiline
                     rows={4}
+                    name="reason"
                     variant="outlined"
                   />
                 </Grid>
