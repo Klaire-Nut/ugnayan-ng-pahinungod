@@ -4,11 +4,14 @@ import logo from "../assets/UNP Logo.png";
 import { User } from "lucide-react";
 import { Menu, MenuItem, Box } from "@mui/material";
 import LoginPopup from "./LoginPopup";
+import { useNavigate } from "react-router-dom";
+
 
 function Header({ variant = "default" }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popupRole, setPopupRole] = useState(null); // ✅ state for popup role
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -76,8 +79,10 @@ function Header({ variant = "default" }) {
       <div style={styles.rightSection}>
         {variant === "default" ? (
           <>
-            <Button text="Events" variant="text" />
-            <Button text="Register" variant="text" />
+            <Button text="Home" variant="text" onClick={() => navigate("/")} />
+            <Button text="About Us" variant="text" onClick={() => navigate("/about")} />
+            <Button text="Events" variant="text" onClick={() => navigate("/events")} />
+            <Button text="Register" variant="text" onClick={() => navigate("/register")} />
 
             {/* LOGIN DROPDOWN */}
             <Box>
