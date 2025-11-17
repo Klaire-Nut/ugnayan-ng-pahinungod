@@ -1,10 +1,14 @@
 /* ---------- GLOBAL PAGE BACKGROUND ---------- */
-body, .default-page {
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    font-family: "Helvetica", sans-serif;
-    background: linear-gradient(to bottom, #7B1113, #FFFFFF);
+html, body, .default-page {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: "Helvetica", sans-serif;
+  background-color: #ffffff; /* keep your intended white background */
+  color: #333;
+  width: 100%;
+  overflow-x: hidden;         /* ✅ prevent horizontal scroll */
+  overscroll-behavior: none;  /* ✅ stop trackpad "white bounce" */
 }
 
 
@@ -142,29 +146,12 @@ body, .default-page {
     background-color: #5a0d0e !important;
 }
 
-/* Glass background effect behind volunteer image */
-.volunteer-glass {
-    position: relative;
-    z-index: 1;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border-radius: 25px;
-    padding: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 520px;  /* bigger width */
-    margin: 0 auto;
-    animation: fadeIn 1.2s ease forwards;
-}
 
 /* The actual volunteer image */
 .volunteer-img {
     width: 100%;
     height: 480px;
     object-fit: cover;
-    border-radius: 15px;
     display: block;
 }
 

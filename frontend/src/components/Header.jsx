@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
 import logo from "../assets/UNP Logo.png";
 import { User } from "lucide-react";
+import { Menu, MenuItem, Box } from "@mui/material";
+import LoginPopup from "./LoginPopup";
 
 function Header({ variant = "default" }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popupRole, setPopupRole] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+  const handleOpenPopup = (role) => {
+    setPopupRole(role);
+    handleClose();
+  };
+  const handleClosePopup = () => setPopupRole(null);
+
   const styles = {
     container: {
       width: "100%",
@@ -51,7 +65,7 @@ function Header({ variant = "default" }) {
 
   return (
     <header style={styles.container}>
-      {/* Left: Logo + Title */}
+      {/* Left Section */}
       <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
         <div style={styles.leftSection}>
           <img src={logo} alt="UNP Logo" style={styles.logo} />
@@ -64,11 +78,10 @@ function Header({ variant = "default" }) {
         </div>
       </Link>
 
-      {/* Right: Navigation */}
+      {/* Right Section */}
       <div style={styles.rightSection}>
         {variant === "default" ? (
           <>
-            {/* ✅ Fixed routes to match App.jsx */}
             <Link to="/" style={{ textDecoration: "none" }}>
               <Button text="Home" variant="text" />
             </Link>
@@ -85,9 +98,67 @@ function Header({ variant = "default" }) {
               <Button text="Register" variant="text" />
             </Link>
 
-            <Link to="/login" style={{ textDecoration: "none" }}>
-              <Button text="Login" variant="outlined" />
-            </Link>
+            {/* LOGIN DROPDOWN */}
+            <Box>
+              <Button text="Login" variant="outlined" onClick={handleClick} />
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                disableScrollLock={true}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "center",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "center",
+                }}
+                PaperProps={{
+                  sx: {
+                    mt: 0.3,
+                    bgcolor: "rgba(255, 255, 255, 0.9)",
+                    borderRadius: "12px",
+                    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+                    backdropFilter: "blur(10px)",
+                    overflow: "hidden",
+                    width: 135,
+                    textAlign: "center",
+                    p: 0.9,
+                    minHeight: "auto",
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handleOpenPopup("Admin")}
+                  sx={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#7B1113",
+                    fontWeight: 600,
+                    borderRadius: "8px",
+                    p: 0.5,
+                    "&:hover": { bgcolor: "#007BFF", color: "white" },
+                  }}
+                >
+                  Admin
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handleOpenPopup("Volunteer")}
+                  sx={{
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#7B1113",
+                    fontWeight: 600,
+                    borderRadius: "8px",
+                    p: 0.5,
+                    "&:hover": { bgcolor: "#007BFF", color: "white" },
+                  }}
+                >
+                  Volunteer
+                </MenuItem>
+              </Menu>
+            </Box>
           </>
         ) : (
           <Link to="/profile" style={{ textDecoration: "none" }}>
@@ -95,6 +166,13 @@ function Header({ variant = "default" }) {
           </Link>
         )}
       </div>
+
+      {/* LOGIN POPUP */}
+      <LoginPopup
+        open={Boolean(popupRole)}
+        onClose={handleClosePopup}
+        role={popupRole}
+      />
     </header>
   );
 }

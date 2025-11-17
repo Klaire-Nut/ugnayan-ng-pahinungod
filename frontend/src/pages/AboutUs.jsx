@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/AboutUs.css";
 
 // Assets
@@ -14,12 +14,27 @@ const AboutUs = () => {
   // ✅ Array of images for carousel
   const visionImages = [about1, about2, about3];
 
-  // ✅ Handlers for next/previous
+  // ✅ Automatically change image every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) =>
+        prev === visionImages.length - 1 ? 0 : prev + 1
+      );
+    }, 3000); // ⏱ change image every 3 seconds
+
+    return () => clearInterval(interval); // cleanup on unmount
+  }, [visionImages.length]);
+
+  // ✅ Manual navigation (optional)
   const prevImage = () => {
-    setCurrentImage((prev) => (prev === 0 ? visionImages.length - 1 : prev - 1));
+    setCurrentImage((prev) =>
+      prev === 0 ? visionImages.length - 1 : prev - 1
+    );
   };
   const nextImage = () => {
-    setCurrentImage((prev) => (prev === visionImages.length - 1 ? 0 : prev + 1));
+    setCurrentImage((prev) =>
+      prev === visionImages.length - 1 ? 0 : prev + 1
+    );
   };
 
   return (
@@ -45,14 +60,18 @@ const AboutUs = () => {
       <section className="vision-section fade-in">
         <div className="vision-image slide-left">
           {/* ✅ Carousel Image */}
-          <img src={visionImages[currentImage]} alt="Volunteers at work" />
+          <img
+            src={visionImages[currentImage]}
+            alt="Volunteers at work"
+            className="carousel-image"
+          />
 
           {/* ✅ Carousel Arrows */}
           <button className="carousel-arrow left" onClick={prevImage}>
-            &#10094; {/* ← */}
+            &#10094;
           </button>
           <button className="carousel-arrow right" onClick={nextImage}>
-            &#10095; {/* → */}
+            &#10095;
           </button>
         </div>
 
@@ -70,14 +89,6 @@ const AboutUs = () => {
             outreach and education programs.
           </p>
         </div>
-      </section>
-
-      {/* ---------- CONTACT SECTION ---------- */}
-      <section className="contact-section glass-box fade-in">
-        <h2>Contact Us</h2>
-        <p>Email: pahinungod.upmindanao@up.edu.ph</p>
-        <p>Phone: (082) 293-0201</p>
-        <p>Address: UP Mindanao Campus, Mintal, Davao City</p>
       </section>
     </div>
   );

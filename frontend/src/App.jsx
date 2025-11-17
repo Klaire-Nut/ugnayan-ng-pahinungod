@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import DefaultPage from "./layout/default_page"; // ✅ layout folder
 import Home from "./pages/Home";
-import AboutUs from "./pages/AboutUs";
+import AboutUs from "./pages/AboutUs"; // ✅ correct
 import Events from "./pages/Events";
 import Register from "./pages/Register";
 import Login from "./pages/Login";

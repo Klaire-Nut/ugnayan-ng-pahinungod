@@ -1,76 +1,58 @@
-/* =====================================================
-   GLOBAL PAGE BACKGROUND
-   - Applies to entire page
-   - Gradient from dark red to white for warmth & depth
-===================================================== */
-body, .default-page {
-  min-height: 150vh;
+/* ---------- GLOBAL PAGE BACKGROUND ---------- */
+html, body, .default-page {
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  font-family: "Poppins", sans-serif;
-  background: linear-gradient(to bottom, #7B1113, #FFFFFF);
+  font-family: "Helvetica", sans-serif;
+  background-color: #ffffff; /* keep your intended white background */
   color: #333;
+  width: 100%;
+  overflow-x: hidden;         /* ✅ prevent horizontal scroll */
+  overscroll-behavior: none;  /* ✅ stop trackpad "white bounce" */
 }
 
 /* =====================================================
    MAIN CONTAINER for About Us page
-   - Adds soft gradient background behind all sections
-   - Padding provides breathing room
 ===================================================== */
 .aboutus-page {
-  background: linear-gradient(to bottom, #7B1113, #FFFFFF);
   min-height: 100vh;
   padding: 80px 0;
 }
 
 /* =====================================================
    ABOUT SECTION
-   - Text on left, logo on right
-   - Upgraded to “glassy” effect using stronger blur,
-     brightness, and border glow
 ===================================================== */
 .about-section {
-  display: flex; /* positions text + image side by side */
+  display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 80px;
   max-width: 1200px;
   margin: 0 auto 100px;
   padding: 60px;
-
-  /* 💡 Glassmorphism core: semi-transparent + blur + border */
-  background: rgba(255, 255, 255, 0.771);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border-radius: 30px;
-  border: 1px solid rgb(255, 255, 255);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* Left-side text content */
 .about-content {
   flex: 1;
   text-align: left;
 }
 
 .about-content h1 {
-  font-size: 54px;
-  color: #0c2d57;
-  margin-bottom: 20px;
-
-  /* small highlight for depth */
+  margin-top: -5px;
+  font-size: 65px;
+  color: #7b1113;
+  margin-bottom: 15px;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
 }
 
 .about-content p {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.8;
   color: #333;
 }
 
-/* Right-side logo image (inside glass container) */
 .about-image {
-  flex: 1;
+  flex: 0;
   display: flex;
   justify-content: center;
 }
@@ -80,123 +62,105 @@ body, .default-page {
   height: 340px;
   object-fit: contain;
   border-radius: 25px;
-
-
 }
 
 /* =====================================================
    VISION & MISSION SECTION
-   - Image stays on left, text on right
-   - Uses matching glass style
 ===================================================== */
 .vision-section {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end; /* Aligns content to the right */
   align-items: center;
   gap: 80px;
-  max-width: 1200px;
-  margin: 0 auto 100px;
+  width: 100%;
+  margin: 100px 0;
+  padding-right: 80px;
+  position: relative;
 }
 
-/* Left side: photo placement control */
+/* ========================
+   LEFT: Carousel Image
+======================== */
 .vision-image {
   flex: 1;
   display: flex;
-  justify-content: flex-start; /* keeps image near left edge */
+  justify-content: center; /* ✅ Centers image horizontally */
+  align-items: center;
+  position: relative;
+  padding-left: 60px; /* ✅ Adds spacing from left edge */
 }
 
 .vision-image img {
-  width: 420px;
+  width: 610px;
   height: auto;
   object-fit: cover;
-  border-radius: 25px;
-  margin-left: 0; /* 💡 adjust this to move closer/farther from edge */
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-  transition: transform 1s ease;
+  transition: opacity 3s ease-in-out, transform 3s ease;
+  opacity: 1;
 }
 
-.vision-image img:hover {
-  transform: scale(1.03);
+/* ========================
+   Carousel Arrows
+======================== */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  color: #7b1113;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 40%;
+  transition: background 0.10s ease;
+  z-index: 2;
+}
+
+.carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ✅ Adjusted arrow placement to avoid overlapping the image */
+.carousel-arrow.left {
+  left: 80px;
+}
+
+.carousel-arrow.right {
+  right: 20px;
 }
 
 /* =====================================================
-   VISION & MISSION CONTENT HORIZONTAL LAYOUT
+   RIGHT: Vision & Mission Content
 ===================================================== */
 .vision-content {
-  display: flex;               /* side-by-side layout */
-  flex-wrap: wrap;             /* wraps on smaller screens */
-  justify-content: space-between;
-  gap: 40px;                   /* space between vision & mission blocks */
-}
-
-/* Each block (Vision / Mission) */
-.vision-content .vision-block {
-  flex: 1 1 45%;               /* take roughly half the width, shrink if needed */
+  flex: 1;
   display: flex;
-  flex-direction: column;      /* keep h2 and p stacked vertically */
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+  background: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
-/* Optional: adjust heading and paragraph inside each block */
-.vision-content .vision-block h2 {
-  font-size: 32px;
+.vision-content h2 {
+  font-size: 60px;
+  color: #7b1113;
   margin-bottom: 10px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
-.vision-content .vision-block p {
-  font-size: 18px;
+.vision-content p {
+  font-size: 20px;
   line-height: 1.7;
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 900px) {
-  .vision-content {
-    flex-direction: column;
-    gap: 30px;
-  }
-
-  .vision-content .vision-block {
-    flex: 1 1 100%;
-  }
-}
-
-/* =====================================================
-   CONTACT SECTION
-   - Centered glass box for contact details
-   - Uses heavier blur and brighter contrast
-===================================================== */
-.contact-section {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 60px;
-  text-align: center;
-
-  /* 💎 Deep blur + light border = premium glass feel */
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border-radius: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 10px 45px rgba(0, 0, 0, 0.15);
-}
-
-.contact-section h2 {
-  font-size: 38px;
-  color: #0c2d57;
-  margin-bottom: 25px;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.7);
-}
-
-.contact-section p {
-  font-size: 19px;
   color: #333;
-  line-height: 1.7;
-  margin-bottom: 8px;
 }
 
 /* =====================================================
-   ANIMATIONS (fade + slide effects)
-   - Add these classes to elements in React JSX:
-     fade-in, slide-left, slide-right
+   ANIMATIONS (fade + slide)
 ===================================================== */
 @keyframes fadeIn {
   from {
@@ -231,7 +195,6 @@ body, .default-page {
   }
 }
 
-/* These classes can be applied to trigger animations */
 .fade-in {
   animation: fadeIn 1.2s ease both;
 }
@@ -242,4 +205,38 @@ body, .default-page {
 
 .slide-left {
   animation: slideInLeft 1.4s ease both;
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+===================================================== */
+@media (max-width: 900px) {
+  .about-section,
+  .vision-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .vision-image {
+    padding-left: 0; /* ✅ removes side spacing on small screens */
+  }
+
+  .vision-image img {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .carousel-arrow.left {
+    left: 10px;
+  }
+
+  .carousel-arrow.right {
+    right: 10px;
+  }
+
+  .carousel-arrow {
+    font-size: 26px;
+  }
 }
