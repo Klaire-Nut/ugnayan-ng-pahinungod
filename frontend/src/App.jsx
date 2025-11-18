@@ -3,7 +3,10 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import AboutUs from "./pages/AboutUs.jsx";
 import Events from "./pages/Events.jsx";
-import Register from "./pages/Register.jsx";
+// Correct Register path (based on your teammate's change)
+import Register from "./pages/Register/Register.jsx";
+
+// Keep AuthTest (from your version)
 import AuthTest from "./components/AuthTest";
 
 export default function App() {
