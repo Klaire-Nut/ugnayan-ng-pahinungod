@@ -1,3 +1,13 @@
+# Volunteer and auth APIs
+
+from django.contrib import admin  
+from django.urls import path, include 
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/volunteers/', include('volunteers.urls', namespace='volunteers')),
+]
+
 from django.contrib import admin
 from django.urls import path, include
 

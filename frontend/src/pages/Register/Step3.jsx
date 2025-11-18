@@ -1,4 +1,4 @@
-// src/pages/Register/Step3.jsx
+// src/pages/Register/Step3.jsx - Backend OTP Version
 import React, { useState, memo, useCallback } from "react";
 import {
   Box,
@@ -17,18 +17,10 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Alert,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-
-/**
- * Step3 - Programs & Submission
- *
- * Props:
- *  - formData: object
- *  - setFormData: function
- *  - onBack: function
- *  - onSubmit: function (handles the actual submission with OTP)
- */
+import { sendOTP } from "../../services/volunteerApi";
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error, required = false }) => (
@@ -73,6 +65,8 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
   const [successDialog, setSuccessDialog] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [generatedOTP, setGeneratedOTP] = useState(""); // For dev mode display
 
   // Ensure all fields have default values
   const safeFormData = {
@@ -146,21 +140,32 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
     setConfirmDialog(false);
     setLoading(true);
 
-    // Simulate sending OTP to email
     try {
-      // Call API to send OTP (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Send OTP via API
+      const response = await sendOTP(formData.email || safeFormData.email);
+      
+      // In development mode, the API returns the OTP
+      if (response.otp) {
+        setGeneratedOTP(response.otp);
+        console.log("=".repeat(50));
+        console.log("🔐 VERIFICATION CODE (OTP):", response.otp);
+        console.log("Email:", response.email);
+        console.log("=".repeat(50));
+      }
+      
       setLoading(false);
       setOtpDialog(true);
+      setOtp("");
+      setOtpError("");
     } catch (error) {
       setLoading(false);
-      alert("Failed to send OTP. Please try again.");
+      alert(error.error || "Failed to send OTP. Please try again.");
     }
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp || otp.length < 4) {
-      alert("Please enter a valid OTP");
+    if (!otp || otp.length !== 6) {
+      setOtpError("Please enter a valid 6-digit OTP");
       return;
     }
 
@@ -173,13 +178,34 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
       setSuccessDialog(true);
     } catch (error) {
       setLoading(false);
-      alert("OTP verification failed. Please try again.");
+      setOtpError(error.error || "OTP verification failed. Please try again.");
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const response = await sendOTP(formData.email || safeFormData.email);
+      
+      if (response.otp) {
+        setGeneratedOTP(response.otp);
+        console.log("=".repeat(50));
+        console.log("🔐 NEW VERIFICATION CODE (OTP):", response.otp);
+        console.log("Email:", response.email);
+        console.log("=".repeat(50));
+      }
+      
+      setLoading(false);
+      setOtpError("");
+      setOtp("");
+    } catch (error) {
+      setLoading(false);
+      alert(error.error || "Failed to resend OTP");
     }
   };
 
   const handleSuccessClose = () => {
     setSuccessDialog(false);
-    // Optionally redirect or reset form
     window.location.href = "/";
   };
 
@@ -359,7 +385,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to register as a volunteer? An OTP will be sent to your email for verification.
+            Are you sure you want to register as a volunteer? A verification code will be sent to your email.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -371,20 +397,37 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
       </Dialog>
 
       {/* OTP Dialog */}
-      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)}>
-        <DialogTitle>Enter OTP</DialogTitle>
+      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Verification Code</DialogTitle>
         <DialogContent>
+          {generatedOTP && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Development Mode: Your OTP is <strong>{generatedOTP}</strong>
+              <br />
+              (Also check browser console)
+            </Alert>
+          )}
           <Typography sx={{ mb: 2 }}>
-            We've sent a verification code to your email. Please enter it below:
+            Please enter the 6-digit verification code:
           </Typography>
           <TextField
             fullWidth
-            label="OTP Code"
+            label="Verification Code"
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={(e) => {
+              setOtp(e.target.value.replace(/\D/g, ''));
+              setOtpError("");
+            }}
             placeholder="Enter 6-digit code"
             inputProps={{ maxLength: 6 }}
+            error={!!otpError}
+            helperText={otpError}
           />
+          <Box sx={{ mt: 2, textAlign: "center" }}>
+            <Button onClick={handleResendOTP} size="small" disabled={loading}>
+              {loading ? "Sending..." : "Resend Code"}
+            </Button>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOtpDialog(false)}>Cancel</Button>

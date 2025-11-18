@@ -1,22 +1,18 @@
-// ============================================================================
-// MAIN REGISTER COMPONENT - src/pages/Register/Register.jsx
-// ============================================================================
+// src/pages/Register/Register.jsx
 import React, { useState } from "react";
-import { Container, Box, Paper, Typography, LinearProgress } from "@mui/material";
+import { Box, Paper, Typography, LinearProgress } from "@mui/material";
 import Step1 from "./Step1";
 import Step2 from "./Step2";
 import Step3 from "./Step3";
 import DefaultPage from "../../layout/default_page.jsx";
+import { registerVolunteer } from "../../services/volunteerApi.js"; // only this now
 import "../../styles/Register.css";
 
 export default function Register() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    // Email & Consent
     email: "",
     dataConsent: false,
-
-    // Step 1 - Basic Information
     lastName: "",
     firstName: "",
     middleName: "",
@@ -29,24 +25,16 @@ export default function Register() {
     facebookLink: "",
     hobbies: "",
     organizations: "",
-    
-    // Permanent Address
     streetBarangay: "",
     cityMunicipality: "",
     province: "",
     region: "",
-    
-    // UP Address
     sameAsPermanent: false,
     upStreetBarangay: "",
     upCityMunicipality: "",
     upProvince: "",
     upRegion: "",
-
-    // Step 2 - Affiliation
     affiliation: "",
-    
-    // Student fields
     degreeProgram: "",
     yearLevel: "",
     college: "",
@@ -55,33 +43,21 @@ export default function Register() {
     firstCollege: "",
     firstGrad: "",
     firstUP: "",
-    
-    // Emergency Contact
     emerName: "",
     emerRelation: "",
     emerContact: "",
     emerAddress: "",
-    
-    // Faculty fields
     facultyDept: "",
-    
-    // Alumni fields
     constituentUnit: "",
     alumniDegree: "",
     yearGrad: "",
     firstGradCollege: "",
     firstGradUP: "",
     occupation: "",
-    
-    // Retiree fields
     retireDesignation: "",
     retireOffice: "",
-    
-    // Staff fields
     staffOffice: "",
     staffPosition: "",
-
-    // Step 3 - Programs
     volunteerPrograms: [],
     affirmativeActionSubjects: [],
     volunteerStatus: "",
@@ -91,15 +67,30 @@ export default function Register() {
     howDidYouHear: "",
   });
 
-  const handleSubmit = async (data, otp) => {
-    // TODO: Replace with actual API call
-    console.log("Submitting:", data, otp);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // If successful, the Step3 component will show success dialog
-    return true;
+  const handleSubmit = async (data) => {
+    try {
+      console.log("Submitting registration...");
+      const response = await registerVolunteer(data);
+      console.log("Registration successful:", response);
+      alert("Registration successful!");
+      setStep(1); // reset form or navigate elsewhere
+      setFormData((prev) => ({ ...prev })); // optionally reset data
+    } catch (error) {
+      console.error("Registration failed:", error);
+      if (error.error) {
+        alert(error.error);
+      } else if (typeof error === "object") {
+        const errorMessages = Object.entries(error)
+          .map(
+            ([field, messages]) =>
+              `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
+          )
+          .join("\n");
+        alert(`Registration failed:\n${errorMessages}`);
+      } else {
+        alert("Registration failed. Please try again.");
+      }
+    }
   };
 
   const progress = (step / 3) * 100;
@@ -107,7 +98,6 @@ export default function Register() {
   return (
     <DefaultPage>
       <div className="register-page">
-
         <Box sx={{ width: "700px", maxWidth: "100%", py: 4 }} className="register-container">
           <Paper elevation={3} sx={{ p: 4, borderRadius: 0 }}>
             {/* Header */}
@@ -121,9 +111,6 @@ export default function Register() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 (New registration and updating of information)
               </Typography>
-              <Typography variant="body2" sx={{ textAlign: "justify", mb: 3 }}>
-                As the volunteering arm of the University of the Philippines, Ugnayan ng Pahinungód provides an avenue for students, teachers, staff, alumni, and retirees to render services to partner communities and individuals as our share in the welfare and development of the country.
-              </Typography>
             </Box>
 
             {/* Progress Bar */}
@@ -135,35 +122,12 @@ export default function Register() {
             </Box>
 
             {/* Steps */}
-            {step === 1 && (
-              <Step1
-                formData={formData}
-                setFormData={setFormData}
-                onNext={() => setStep(2)}
-              />
-            )}
-
-            {step === 2 && (
-              <Step2
-                formData={formData}
-                setFormData={setFormData}
-                onNext={() => setStep(3)}
-                onBack={() => setStep(1)}
-              />
-            )}
-
-            {step === 3 && (
-              <Step3
-                formData={formData}
-                setFormData={setFormData}
-                onBack={() => setStep(2)}
-                onSubmit={handleSubmit}
-              />
-            )}
+            {step === 1 && <Step1 formData={formData} setFormData={setFormData} onNext={() => setStep(2)} />}
+            {step === 2 && <Step2 formData={formData} setFormData={setFormData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+            {step === 3 && <Step3 formData={formData} setFormData={setFormData} onBack={() => setStep(2)} onSubmit={handleSubmit} />}
           </Paper>
         </Box>
-
       </div>
-    </DefaultPage> 
+    </DefaultPage>
   );
 }
