@@ -1,0 +1,17 @@
+/* Page background */
+.register-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: flex-end;  /* pushes content to the right */
+  align-items: flex-start;
+  padding: 0;
+}
+
+/* Form container alignment */
+.register-container {
+  margin-right: 40px; 
+  margin-left: auto !important;
+  width: 700px;
+  max-width: 100%;
+}

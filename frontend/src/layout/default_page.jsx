@@ -2,9 +2,8 @@ import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Box } from "@mui/material";
-import { Outlet } from "react-router-dom"; // ✅ important
 
-export default function DefaultPage() {
+export default function DefaultPage({ children }) {
   return (
     <Box
       sx={{
@@ -15,7 +14,7 @@ export default function DefaultPage() {
     >
       <Header />
       <Box component="main" sx={{ flexGrow: 1 }}>
-        <Outlet /> {/* ✅ render nested routes */}
+        {children}
       </Box>
       <Footer />
     </Box>

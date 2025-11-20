@@ -1,14 +1,18 @@
 import React from "react";
-import DefaultPage from "../layout/default_page.jsx"; // ✅ Your layout wrapper (includes sidebar)
-import Sidebar from "../components/Sidebar.jsx";
+import DefaultPage from "../layout/default_page.jsx";
+import { Typography, Box } from "@mui/material";
 
-const Events = () => {
+export default function Events() {
   return (
-      <main style={{ padding: "2rem" }}>
-        <h1>Events</h1>
-        <p>Upcoming and past events will be listed here.</p>
-      </main>
+    <DefaultPage>
+      <Box sx={{ p: 4 }}>
+        <Typography variant="h4" fontWeight="600">
+          Events Page
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          This is where event details or upcoming activities will appear.
+        </Typography>
+      </Box>
+    </DefaultPage>
   );
-};
-
-export default Events;
+}

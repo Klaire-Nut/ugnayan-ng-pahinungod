@@ -1,22 +1,28 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import Button from "./Button";
 import logo from "../assets/UNP Logo.png";
 import { User } from "lucide-react";
 import { Menu, MenuItem, Box } from "@mui/material";
 import LoginPopup from "./LoginPopup";
+import { useNavigate } from "react-router-dom";
+
 
 function Header({ variant = "default" }) {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [popupRole, setPopupRole] = useState(null);
+  const [popupRole, setPopupRole] = useState(null); // ✅ state for popup role
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
+  // ✅ show popup when Admin/Volunteer clicked
   const handleOpenPopup = (role) => {
     setPopupRole(role);
     handleClose();
   };
+
+  // ✅ close popup
   const handleClosePopup = () => setPopupRole(null);
 
   const styles = {
@@ -29,9 +35,6 @@ function Header({ variant = "default" }) {
       justifyContent: "space-between",
       padding: "0.5rem 2rem",
       boxSizing: "border-box",
-      position: "sticky",
-      top: 0,
-      zIndex: 50,
     },
     leftSection: {
       display: "flex",
@@ -59,44 +62,27 @@ function Header({ variant = "default" }) {
     rightSection: {
       display: "flex",
       alignItems: "center",
-      gap: "1.25rem",
+      gap: "1rem",
     },
   };
 
   return (
     <header style={styles.container}>
-      {/* Left Section */}
-      <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-        <div style={styles.leftSection}>
-          <img src={logo} alt="UNP Logo" style={styles.logo} />
-          <div style={styles.title}>
-            <div style={styles.subtitle}>
-              University of the Philippines - Mindanao
-            </div>
-            <div style={styles.mainTitle}>UGNAYAN NG PAHINUNGOD</div>
-          </div>
+      <div style={styles.leftSection}>
+        <img src={logo} alt="UNP Logo" style={styles.logo} />
+        <div style={styles.title}>
+          <div style={styles.subtitle}>University of the Philippines - Mindanao</div>
+          <div style={styles.mainTitle}>UGNAYAN NG PAHINUNGOD</div>
         </div>
-      </Link>
+      </div>
 
-      {/* Right Section */}
       <div style={styles.rightSection}>
         {variant === "default" ? (
           <>
-            <Link to="/" style={{ textDecoration: "none" }}>
-              <Button text="Home" variant="text" />
-            </Link>
-
-            <Link to="/about" style={{ textDecoration: "none" }}>
-              <Button text="About Us" variant="text" />
-            </Link>
-
-            <Link to="/events" style={{ textDecoration: "none" }}>
-              <Button text="Events" variant="text" />
-            </Link>
-
-            <Link to="/register" style={{ textDecoration: "none" }}>
-              <Button text="Register" variant="text" />
-            </Link>
+            <Button text="Home" variant="text" onClick={() => navigate("/")} />
+            <Button text="About Us" variant="text" onClick={() => navigate("/about")} />
+            <Button text="Events" variant="text" onClick={() => navigate("/events")} />
+            <Button text="Register" variant="text" onClick={() => navigate("/register")} />
 
             {/* LOGIN DROPDOWN */}
             <Box>
@@ -135,24 +121,27 @@ function Header({ variant = "default" }) {
                     justifyContent: "center",
                     textAlign: "center",
                     color: "#7B1113",
-                    fontWeight: 600,
+                    fontWeight: 500,
                     borderRadius: "8px",
                     p: 0.5,
                     "&:hover": { bgcolor: "#007BFF", color: "white" },
+                    fontWeight: 600,
                   }}
                 >
                   Admin
                 </MenuItem>
+
                 <MenuItem
                   onClick={() => handleOpenPopup("Volunteer")}
                   sx={{
                     justifyContent: "center",
                     textAlign: "center",
                     color: "#7B1113",
-                    fontWeight: 600,
+                    fontWeight: 500,
                     borderRadius: "8px",
                     p: 0.5,
                     "&:hover": { bgcolor: "#007BFF", color: "white" },
+                    fontWeight: 600,
                   }}
                 >
                   Volunteer
@@ -161,13 +150,11 @@ function Header({ variant = "default" }) {
             </Box>
           </>
         ) : (
-          <Link to="/profile" style={{ textDecoration: "none" }}>
-            <Button type="icon" variant="secondary" icon={User} />
-          </Link>
+          <Button type="icon" variant="secondary" icon={User} />
         )}
       </div>
 
-      {/* LOGIN POPUP */}
+      {/* ✅ POPUP (for Admin/Volunteer login) */}
       <LoginPopup
         open={Boolean(popupRole)}
         onClose={handleClosePopup}
