@@ -29,7 +29,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,7 +39,8 @@ INSTALLED_APPS = [
     'core',
     'corsheaders',
     "rest_framework",
-    "accounts", 
+    "accounts",
+    'volunteers', 
 ]
 
 
@@ -84,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ugnayan_db',
         'USER': 'ugnayanuser',
-        'PASSWORD': 'strongpassword',
+        'PASSWORD': 'ugnayanuser',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -138,3 +138,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# OTP Sending
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "armasong@up.edu.ph"     # your Gmail
+EMAIL_HOST_PASSWORD = "ucxcqzycshmgaxqo"    # App Password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

@@ -5,6 +5,8 @@ import AboutUs from "./pages/AboutUs.jsx";
 import Events from "./pages/Events.jsx";
 import Register from "./pages/Register/Register.jsx";
 
+import AuthTest from "./components/AuthTest";
+
 
 export default function App() {
   return (

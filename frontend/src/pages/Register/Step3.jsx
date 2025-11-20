@@ -1,4 +1,4 @@
-// src/pages/Register/Step3.jsx - Backend OTP Version
+// src/pages/Register/Step3.jsx
 import React, { useState, memo, useCallback } from "react";
 import {
   Box,
@@ -17,13 +17,14 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-  Alert,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { sendOTP } from "../../services/volunteerApi";
+import { sendOTP, verifyOTP, registerVolunteerWithOTP } 
+from "../../services/volunteerApi.js";
+
 
 // ----------------- Reusable Components -----------------
-const FormSelect = memo(({ label, value, onChange, options = [], error, required = false }) => (
+const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
   <FormControl fullWidth sx={{ mb: 2 }} error={!!error}>
     <InputLabel>{label}</InputLabel>
     <Select value={value} label={label} onChange={onChange}>
@@ -33,16 +34,12 @@ const FormSelect = memo(({ label, value, onChange, options = [], error, required
         </MenuItem>
       ))}
     </Select>
-    {error && (
-      <Typography color="error" variant="body2">
-        {error}
-      </Typography>
-    )}
+    {error && <Typography color="error" variant="body2">{error}</Typography>}
   </FormControl>
 ));
 FormSelect.displayName = "FormSelect";
 
-const FormTextField = memo(({ label, value, onChange, error, multiline = false, rows = 1 }) => (
+const FormTextField = memo(({ label, value, onChange, error, multiline = false, rows = 1, type }) => (
   <TextField
     fullWidth
     label={label}
@@ -53,22 +50,27 @@ const FormTextField = memo(({ label, value, onChange, error, multiline = false, 
     multiline={multiline}
     minRows={multiline ? rows : undefined}
     sx={{ mb: 2 }}
+    type={type}
   />
 ));
 FormTextField.displayName = "FormTextField";
 
 // ----------------- Main Component -----------------
-export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) {
+export default function Step3({ formData = {}, setFormData, onBack /* onSubmit not used here */ }) {
   const [errors, setErrors] = useState({});
   const [confirmDialog, setConfirmDialog] = useState(false);
-  const [otpDialog, setOtpDialog] = useState(false);
-  const [successDialog, setSuccessDialog] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [generatedOTP, setGeneratedOTP] = useState(""); // For dev mode display
 
-  // Ensure all fields have default values
+  const [loading, setLoading] = useState(false);
+
+  // OTP dialog states
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState("");
+
+  const [successDialog, setSuccessDialog] = useState(false);
+
   const safeFormData = {
     volunteerPrograms: [],
     affirmativeActionSubjects: [],
@@ -77,6 +79,8 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
     otherOrganization: "",
     organizationName: "",
     howDidYouHear: "",
+    username: "",
+    password: "",
     ...formData,
   };
 
@@ -99,29 +103,33 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
   const validate = useCallback(() => {
     const newErrors = {};
 
-    if (!safeFormData.volunteerPrograms || safeFormData.volunteerPrograms.length === 0) {
+    if (!safeFormData.volunteerPrograms || safeFormData.volunteerPrograms.length === 0)
       newErrors.volunteerPrograms = "Please select at least one program.";
-    }
 
-    if (!safeFormData.volunteerStatus) {
+    if (!safeFormData.volunteerStatus)
       newErrors.volunteerStatus = "This field is required.";
-    }
 
-    if (!safeFormData.tagapagUgnay) {
+    if (!safeFormData.tagapagUgnay)
       newErrors.tagapagUgnay = "This field is required.";
-    }
 
-    if (!safeFormData.otherOrganization) {
+    if (!safeFormData.otherOrganization)
       newErrors.otherOrganization = "This field is required.";
-    }
 
-    if (safeFormData.otherOrganization === "YES" && !safeFormData.organizationName) {
+    if (safeFormData.otherOrganization === "YES" && !safeFormData.organizationName)
       newErrors.organizationName = "Please provide the organization name.";
-    }
 
-    if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear) {
+    if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear)
       newErrors.howDidYouHear = "This field is required for first-time volunteers.";
-    }
+
+    if (!safeFormData.username)
+      newErrors.username = "Please provide a username.";
+
+    if (!safeFormData.password)
+      newErrors.password = "Please provide a password.";
+
+    // ensure email exists (email comes from Step1)
+    if (!safeFormData.email)
+      newErrors.email = "Email is required (from Step 1).";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -136,71 +144,133 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
     setConfirmDialog(true);
   };
 
+
+  // When user confirms, send OTP and open the OTP dialog
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
-    setLoading(true);
-
+    setOtpError("");
+    setOtpSending(true);
     try {
-      // Send OTP via API
-      const response = await sendOTP(formData.email || safeFormData.email);
-      
-      // In development mode, the API returns the OTP
-      if (response.otp) {
-        setGeneratedOTP(response.otp);
-        console.log("=".repeat(50));
-        console.log("🔐 VERIFICATION CODE (OTP):", response.otp);
-        console.log("Email:", response.email);
-        console.log("=".repeat(50));
-      }
-      
-      setLoading(false);
-      setOtpDialog(true);
-      setOtp("");
-      setOtpError("");
-    } catch (error) {
-      setLoading(false);
-      alert(error.error || "Failed to send OTP. Please try again.");
+      // sendOTP expects only email
+      const res = await sendOTP(safeFormData.email);
+      // backend should return something like { status: 'otp_sent', message: '...' }
+      console.log("sendOTP response:", res);
+      setOtpDialogOpen(true);
+    } catch (err) {
+      console.error("Failed to send OTP:", err);
+      alert((err && err.error) || "Failed to send OTP. Check email or server logs.");
+    } finally {
+      setOtpSending(false);
     }
   };
 
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setOtpError("Please enter a valid 6-digit OTP");
+
+const handleVerifyOtp = async () => {
+  setOtpVerifying(true);
+  setOtpError("");
+
+  try {
+    // Step 1: Verify OTP
+    await verifyOTP(safeFormData.email, otpValue);
+
+    // Step 2: Format birthdate
+    let formattedBirthdate = safeFormData.birthdate || null;
+    if (formattedBirthdate instanceof Date) {
+      formattedBirthdate = formattedBirthdate.toISOString().split("T")[0];
+    } else if (typeof formattedBirthdate === "string" && formattedBirthdate.includes("T")) {
+      formattedBirthdate = formattedBirthdate.split("T")[0];
+    }
+
+    // Step 3: Check required fields
+    if (
+      !safeFormData.firstName ||
+      !safeFormData.lastName ||
+      !safeFormData.middleName ||
+      !safeFormData.nickname ||
+      !safeFormData.sex ||
+      !formattedBirthdate
+    ) {
+      setOtpError("Please fill all required personal information fields before submitting.");
+      setOtpVerifying(false);
       return;
     }
 
-    setLoading(true);
-    try {
-      // Call the parent's onSubmit with formData and OTP
-      await onSubmit?.(safeFormData, otp);
-      setLoading(false);
-      setOtpDialog(false);
-      setSuccessDialog(true);
+    // Step 4: Build payload
+    const payload = {
+      email: safeFormData.email,
+      otp: otpValue,
+      volunteerData: {
+        first_name: safeFormData.firstName,
+        middle_name: safeFormData.middleName,
+        last_name: safeFormData.lastName,
+        nickname: safeFormData.nickname,
+        sex: safeFormData.sex,
+        birthdate: formattedBirthdate,
+
+        volunteer_programs: safeFormData.volunteerPrograms,
+        affirmative_action_subjects: safeFormData.affirmativeActionSubjects,
+        volunteer_status: safeFormData.volunteerStatus,
+        tagapag_ugnay: safeFormData.tagapagUgnay,
+        other_organization: safeFormData.otherOrganization,
+        organization_name: safeFormData.organizationName || "",
+        how_did_you_hear: safeFormData.howDidYouHear || "",
+
+        mobile_number: safeFormData.mobileNumber || "",
+        facebook_link: safeFormData.facebookLink || "",
+
+        street_address: safeFormData.streetBarangay || "",
+        province: safeFormData.province || "",
+        region: safeFormData.region || "",
+
+        degree_program: safeFormData.degreeProgram || "",
+        year_level: safeFormData.yearLevel || "",
+        college: safeFormData.college || "",
+        department: safeFormData.department || "",
+        year_graduated: safeFormData.yearGraduated || "",
+
+        emer_name: safeFormData.emerName || "",
+        emer_relation: safeFormData.emerRelation || "",
+        emer_contact: safeFormData.emerContact || "",
+        emer_address: safeFormData.emerAddress || "",
+
+        occupation: safeFormData.occupation || "",
+        org_affiliation: safeFormData.organizations || [],
+        hobbies_interests: safeFormData.hobbies || [],
+
+        affiliation: safeFormData.affiliation || "",
+
+        username: safeFormData.username,
+        password: safeFormData.password,
+      }
+    };
+
+  // Step 5: Submit final registration
+  const finalRes = await registerVolunteerWithOTP(payload);
+      console.log("Final registration response:", finalRes.data);
+
+      setOtpVerifying(false);
+      setActiveStep(3); // go to success or final step
+
     } catch (error) {
-      setLoading(false);
-      setOtpError(error.error || "OTP verification failed. Please try again.");
+      console.error("OTP verify / final registration error:", error);
+      setOtpError("Something went wrong during final registration.");
+      setOtpVerifying(false);
     }
   };
 
-  const handleResendOTP = async () => {
-    setLoading(true);
+
+
+  const handleResendOtp = async () => {
+    setOtpSending(true);
+    setOtpError("");
     try {
-      const response = await sendOTP(formData.email || safeFormData.email);
-      
-      if (response.otp) {
-        setGeneratedOTP(response.otp);
-        console.log("=".repeat(50));
-        console.log("🔐 NEW VERIFICATION CODE (OTP):", response.otp);
-        console.log("Email:", response.email);
-        console.log("=".repeat(50));
-      }
-      
-      setLoading(false);
-      setOtpError("");
-      setOtp("");
-    } catch (error) {
-      setLoading(false);
-      alert(error.error || "Failed to resend OTP");
+      await sendOTP(safeFormData.email);
+      alert("OTP resent. Check your email.");
+    } catch (err) {
+      console.error("Resend OTP error:", err);
+      alert((err && err.error) || "Failed to resend OTP.");
+    } finally {
+      setOtpSending(false);
     }
   };
 
@@ -234,15 +304,11 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        PROGRAMS YOU WISH TO PARTICIPATE IN
-      </Typography>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>PROGRAMS YOU WISH TO PARTICIPATE IN</Typography>
 
-      {/* Question 44: Volunteer Programs */}
+      {/* Volunteer Programs */}
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-        VOLUNTEER PROGRAMS *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>VOLUNTEER PROGRAMS *</Typography>
         <FormGroup>
           {volunteerProgramOptions.map((program) => (
             <FormControlLabel
@@ -257,17 +323,13 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
             />
           ))}
         </FormGroup>
-        {errors.volunteerPrograms && (
-          <Typography color="error" variant="body2">
-            {errors.volunteerPrograms}
-          </Typography>
-        )}
+        {errors.volunteerPrograms && <Typography color="error">{errors.volunteerPrograms}</Typography>}
       </Box>
 
-      {/* Question 45: Affirmative Action Subjects */}
+      {/* Affirmative Action Subjects */}
       <Box sx={{ mb: 3 }}>
         <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Under the AFFIRMATIVE ACTION PROGRAM, which of the following subjects are you interested in teaching for the academic enhancement sessions?
+          Under the AFFIRMATIVE ACTION PROGRAM, which subjects are you interested in teaching?
         </Typography>
         <FormGroup>
           {affirmativeActionSubjects.map((subject) => (
@@ -285,11 +347,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </FormGroup>
       </Box>
 
-      {/* Question 46: Volunteer Status */}
+      {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Kindly choose the status of your volunteer application to Ugnayan ng Pahinungod Mindanao. *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Kindly choose the status of your volunteer application *</Typography>
         <FormSelect
           label="Volunteer Status"
           value={safeFormData.volunteerStatus}
@@ -300,15 +360,12 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
             "Signed up in the previous sign up form and already have engagements with Pahinungod",
           ]}
           error={errors.volunteerStatus}
-          required
         />
       </Box>
 
-      {/* Question 47: Tagapag-Ugnay Group */}
+      {/* Tagapag-Ugnay Group */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Would you like to be part of the TAGAPAG-UGNAY Group? This group of volunteers is dedicated to helping with social media marketing, creating publication materials, and assisting during preparation of activities.
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Would you like to be part of the TAGAPAG-UGNAY Group?</Typography>
         <FormSelect
           label="Join Tagapag-Ugnay Group"
           value={safeFormData.tagapagUgnay}
@@ -318,27 +375,22 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         />
       </Box>
 
-      {/* Question 48: Other Organization */}
+      {/* Other Organization */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Are you a part of any other volunteer organization? *</Typography>
         <FormSelect
           label="Part of Other Organization"
           value={safeFormData.otherOrganization}
           onChange={(e) => handleChange("otherOrganization", e.target.value)}
           options={["YES", "NO"]}
           error={errors.otherOrganization}
-          required
         />
       </Box>
 
-      {/* Question 49: Organization Name */}
+      {/* Organization Name */}
       {safeFormData.otherOrganization === "YES" && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>
-            WHAT IS THE NAME OF THE ORGANIZATION?
-          </Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>What is the name of the organization?</Typography>
           <FormTextField
             label="Organization Name"
             value={safeFormData.organizationName}
@@ -348,12 +400,10 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </Box>
       )}
 
-      {/* Question 50: How Did You Hear (First Time Only) */}
+      {/* How Did You Hear */}
       {isFirstTimeVolunteer && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>
-            WHERE DID YOU HEAR ABOUT THE UGNAYAN NG PAHINUNGOD MINDANAO?
-          </Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>Where did you hear about us?</Typography>
           <FormTextField
             label="How did you hear about us?"
             value={safeFormData.howDidYouHear}
@@ -365,18 +415,34 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </Box>
       )}
 
+      {/* ---------------- Account Details ---------------- */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>ACCOUNT DETAILS</Typography>
+        <FormTextField
+          label="Preferred Username"
+          value={safeFormData.username}
+          onChange={(e) => handleChange("username", e.target.value)}
+          error={errors.username}
+        />
+        <FormTextField
+          label="Password"
+          type="password"
+          value={safeFormData.password}
+          onChange={(e) => handleChange("password", e.target.value)}
+          error={errors.password}
+        />
+      </Box>
+
       {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-        <Button variant="outlined" onClick={onBack}>
-          Back
-        </Button>
+        <Button variant="outlined" onClick={onBack}>Back</Button>
         <Button
           variant="contained"
           onClick={handleSubmitClick}
-          disabled={loading}
+          disabled={loading || otpSending}
           sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
         >
-          {loading ? <CircularProgress size={24} /> : "Submit"}
+          {(otpSending || loading) ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
 
@@ -384,56 +450,38 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
       <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to register as a volunteer? A verification code will be sent to your email.
-          </Typography>
+          <Typography>Are you sure you want to register as a volunteer?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
-          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">
-            Yes, Continue
-          </Button>
+          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">Yes, Continue</Button>
         </DialogActions>
       </Dialog>
 
       {/* OTP Dialog */}
-      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Enter Verification Code</DialogTitle>
+      <Dialog open={otpDialogOpen} onClose={() => setOtpDialogOpen(false)}>
+        <DialogTitle>Enter OTP</DialogTitle>
         <DialogContent>
-          {generatedOTP && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Development Mode: Your OTP is <strong>{generatedOTP}</strong>
-              <br />
-              (Also check browser console)
-            </Alert>
-          )}
-          <Typography sx={{ mb: 2 }}>
-            Please enter the 6-digit verification code:
-          </Typography>
+          <Typography sx={{ mb: 2 }}>We've sent an OTP to <strong>{safeFormData.email}</strong>. Enter it here.</Typography>
           <TextField
+            label="OTP"
+            value={otpValue}
+            onChange={(e) => setOtpValue(e.target.value)}
             fullWidth
-            label="Verification Code"
-            value={otp}
-            onChange={(e) => {
-              setOtp(e.target.value.replace(/\D/g, ''));
-              setOtpError("");
-            }}
-            placeholder="Enter 6-digit code"
-            inputProps={{ maxLength: 6 }}
-            error={!!otpError}
-            helperText={otpError}
+            sx={{ mb: 1 }}
           />
-          <Box sx={{ mt: 2, textAlign: "center" }}>
-            <Button onClick={handleResendOTP} size="small" disabled={loading}>
-              {loading ? "Sending..." : "Resend Code"}
+          {otpError && <Typography color="error" variant="body2" sx={{ mb: 1 }}>{otpError}</Typography>}
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Button onClick={handleVerifyOtp} disabled={otpVerifying || !otpValue} variant="contained">
+              {otpVerifying ? <CircularProgress size={18}/> : "Verify & Register"}
+            </Button>
+            <Button onClick={handleResendOtp} disabled={otpSending}>
+              {otpSending ? "Resending..." : "Resend OTP"}
             </Button>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOtpDialog(false)}>Cancel</Button>
-          <Button onClick={handleVerifyOTP} variant="contained" color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : "Verify"}
-          </Button>
+          <Button onClick={() => setOtpDialogOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
 
@@ -441,36 +489,11 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
-            SUBMITTED
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
-          </Typography>
-          <Typography sx={{ fontStyle: "italic", mb: 2 }}>
-            Makibahagi. Maglingkod. MagPahinungód.
-          </Typography>
-          <Box sx={{ textAlign: "left", mx: "auto", maxWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Email:</strong> pahinungod.upmin@up.edu.ph
-            </Typography>
-            <Typography variant="body2">
-              <strong>Facebook:</strong>{" "}
-              <a
-                href="https://www.facebook.com/upmin.pahinungod"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#1976d2" }}
-              >
-                facebook.com/upmin.pahinungod
-              </a>
-            </Typography>
-          </Box>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>SUBMITTED</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleSuccessClose} variant="contained" fullWidth>
-            Close
-          </Button>
+          <Button onClick={handleSuccessClose} variant="contained" fullWidth>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
