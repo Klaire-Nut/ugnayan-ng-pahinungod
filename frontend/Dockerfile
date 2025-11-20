@@ -1,4 +1,4 @@
-# Use Node 18 as base image
+# Use Node 20 as base image
 FROM node:20
 
 # Set working directory
@@ -11,11 +11,14 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Build the app
+# Make sure vite can be executed
+RUN chmod +x node_modules/.bin/vite
+
+# Build the app (production build)
 RUN npm run build
 
-# Expose the app port (Vite default 5173)
+# Expose the Vite dev server port
 EXPOSE 5173
 
-# Run the development server
+# Run the development server (or change to "serve" if using a built version)
 CMD ["npm", "run", "dev"]

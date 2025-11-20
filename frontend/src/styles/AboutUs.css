@@ -1,0 +1,242 @@
+/* ---------- GLOBAL PAGE BACKGROUND ---------- */
+html, body, .default-page {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: "Helvetica", sans-serif;
+  background-color: #ffffff; /* keep your intended white background */
+  color: #333;
+  width: 100%;
+  overflow-x: hidden;         /* ✅ prevent horizontal scroll */
+  overscroll-behavior: none;  /* ✅ stop trackpad "white bounce" */
+}
+
+/* =====================================================
+   MAIN CONTAINER for About Us page
+===================================================== */
+.aboutus-page {
+  min-height: 100vh;
+  padding: 80px 0;
+}
+
+/* =====================================================
+   ABOUT SECTION
+===================================================== */
+.about-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 80px;
+  max-width: 1200px;
+  margin: 0 auto 100px;
+  padding: 60px;
+}
+
+.about-content {
+  flex: 1;
+  text-align: left;
+}
+
+.about-content h1 {
+  margin-top: -5px;
+  font-size: 65px;
+  color: #7b1113;
+  margin-bottom: 15px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.about-content p {
+  font-size: 20px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.about-image {
+  flex: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.about-image img {
+  width: 340px;
+  height: 340px;
+  object-fit: contain;
+  border-radius: 25px;
+}
+
+/* =====================================================
+   VISION & MISSION SECTION
+===================================================== */
+.vision-section {
+  display: flex;
+  justify-content: flex-end; /* Aligns content to the right */
+  align-items: center;
+  gap: 80px;
+  width: 100%;
+  margin: 100px 0;
+  padding-right: 80px;
+  position: relative;
+}
+
+/* ========================
+   LEFT: Carousel Image
+======================== */
+.vision-image {
+  flex: 1;
+  display: flex;
+  justify-content: center; /* ✅ Centers image horizontally */
+  align-items: center;
+  position: relative;
+  padding-left: 60px; /* ✅ Adds spacing from left edge */
+}
+
+.vision-image img {
+  width: 610px;
+  height: auto;
+  object-fit: cover;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  transition: opacity 3s ease-in-out, transform 3s ease;
+  opacity: 1;
+}
+
+/* ========================
+   Carousel Arrows
+======================== */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  color: #7b1113;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 40%;
+  transition: background 0.10s ease;
+  z-index: 2;
+}
+
+.carousel-arrow:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ✅ Adjusted arrow placement to avoid overlapping the image */
+.carousel-arrow.left {
+  left: 80px;
+}
+
+.carousel-arrow.right {
+  right: 20px;
+}
+
+/* =====================================================
+   RIGHT: Vision & Mission Content
+===================================================== */
+.vision-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+  background: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vision-content h2 {
+  font-size: 60px;
+  color: #7b1113;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.vision-content p {
+  font-size: 20px;
+  line-height: 1.7;
+  color: #333;
+}
+
+/* =====================================================
+   ANIMATIONS (fade + slide)
+===================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 1.2s ease both;
+}
+
+.slide-right {
+  animation: slideInRight 1.4s ease both;
+}
+
+.slide-left {
+  animation: slideInLeft 1.4s ease both;
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+===================================================== */
+@media (max-width: 900px) {
+  .about-section,
+  .vision-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .vision-image {
+    padding-left: 0; /* ✅ removes side spacing on small screens */
+  }
+
+  .vision-image img {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  .carousel-arrow.left {
+    left: 10px;
+  }
+
+  .carousel-arrow.right {
+    right: 10px;
+  }
+
+  .carousel-arrow {
+    font-size: 26px;
+  }
+}
