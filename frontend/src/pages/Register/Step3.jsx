@@ -170,8 +170,11 @@ const handleVerifyOtp = async () => {
   setOtpError("");
 
   try {
+    console.log("Verifying OTP for:", safeFormData.email, "OTP:", otpValue);
+    
     // Step 1: Verify OTP
-    await verifyOTP(safeFormData.email, otpValue);
+    const verifyResponse = await verifyOTP(safeFormData.email, otpValue);
+    console.log("Verify OTP response:", verifyResponse);
 
     // Step 2: Format birthdate
     let formattedBirthdate = safeFormData.birthdate || null;
@@ -201,9 +204,9 @@ const handleVerifyOtp = async () => {
       otp: otpValue,
       volunteerData: {
         first_name: safeFormData.firstName,
-        middle_name: safeFormData.middleName,
+        middle_name: safeFormData.middleName || "",
         last_name: safeFormData.lastName,
-        nickname: safeFormData.nickname,
+        nickname: safeFormData.nickname || "",
         sex: safeFormData.sex,
         birthdate: formattedBirthdate,
 
@@ -234,8 +237,8 @@ const handleVerifyOtp = async () => {
         emer_address: safeFormData.emerAddress || "",
 
         occupation: safeFormData.occupation || "",
-        org_affiliation: safeFormData.organizations || [],
-        hobbies_interests: safeFormData.hobbies || [],
+        org_affiliation: safeFormData.organizations || "",
+        hobbies_interests: safeFormData.hobbies || "",
 
         affiliation: safeFormData.affiliation || "",
 
@@ -244,19 +247,37 @@ const handleVerifyOtp = async () => {
       }
     };
 
-  // Step 5: Submit final registration
-  const finalRes = await registerVolunteerWithOTP(payload);
-      console.log("Final registration response:", finalRes.data);
+    console.log("Final registration payload:", payload);
 
-      setOtpVerifying(false);
-      setActiveStep(3); // go to success or final step
+    // Step 5: Submit final registration
+    const finalRes = await registerVolunteerWithOTP(payload);
+    console.log("Final registration response:", finalRes.data);
 
-    } catch (error) {
-      console.error("OTP verify / final registration error:", error);
-      setOtpError("Something went wrong during final registration.");
-      setOtpVerifying(false);
+    // Close OTP dialog and show success
+    setOtpVerifying(false);
+    setOtpDialogOpen(false);
+    setSuccessDialog(true);
+
+  } catch (error) {
+    console.error("OTP verify / final registration error:", error);
+    
+    // Better error handling
+    let errorMessage = "Something went wrong during final registration.";
+    if (error?.response?.data?.error) {
+      errorMessage = typeof error.response.data.error === 'string' 
+        ? error.response.data.error 
+        : JSON.stringify(error.response.data.error);
+    } else if (error?.error) {
+      errorMessage = error.error;
+    } else if (error?.message) {
+      errorMessage = error.message;
     }
-  };
+    
+    console.error("Error message:", errorMessage);
+    setOtpError(errorMessage);
+    setOtpVerifying(false);
+  }
+};
 
 
 

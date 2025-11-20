@@ -33,10 +33,15 @@ export const sendOTP = async (email) => {
 
 
 export const verifyOTP = async (email, otp) => {
-  return api.post("/volunteers/verify-otp/", {
-    email: String(email),  
-    otp: String(otp),      
+  console.log("API call - verifyOTP:", { email, otp });
+  
+  const response = await api.post("/volunteers/verify-otp/", {
+    email: String(email).trim(),  
+    otp: String(otp).trim(),      
   });
+  
+  console.log("verifyOTP response:", response);
+  return response;
 };
 
 // ----------------- Final Registration -----------------

@@ -28,6 +28,7 @@ class Volunteer(models.Model):
 class VolunteerAccount(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="account")
     email = models.EmailField(unique=True, validators=[EmailValidator()])
+    username = models.CharField(max_length=150, unique=True, default='temp_user')  # Make sure this line exists
     password = models.CharField(max_length=255)
 
     def __str__(self):

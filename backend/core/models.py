@@ -74,6 +74,7 @@ class VolunteerAccount(models.Model):
     account_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='accounts')
     email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150, unique=True, default='temp_user')  # ADD THIS LINE
     password = models.CharField(max_length=255)
 
     # override save to hash password
