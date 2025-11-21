@@ -1,4 +1,27 @@
+# --- Node / Vite ---
 node_modules/
 dist/
-.env
 .vite/
+*.log
+
+# --- Environment ---
+.env
+.env.*
+
+# --- Python / Backend ---
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+
+# --- OS-generated files ---
+.DS_Store
+Thumbs.db
+
+# --- Editor junk ---
+.vscode/
+.idea/
+
+# --- Build output ---
+build/
+coverage/
