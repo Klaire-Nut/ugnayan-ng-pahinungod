@@ -1,0 +1,117 @@
+/* ---------- DASHBOARD PAGE ---------- */
+.dashboard-page {
+  display: flex;
+  min-height: 100vh;
+  background-color: #e1e1e1;
+  margin-left: 250px; /* sidebar width */
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.dashboard-content {
+  flex: 1;
+  padding: 2rem 3rem;
+  overflow-y: auto;
+}
+
+/* ---------- EVENTS SECTION ---------- */
+.events-section h2 {
+  font-size: 1.8rem;
+  color: #7B1113;
+  margin-bottom: 1rem;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.event-card {
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 1rem 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.status.ongoing { background-color: #28a745; }
+.status.done { background-color: #6c757d; }
+.status.cancel { background-color: #dc3545; }
+
+/* ---------- VOLUNTEERS TABLE ---------- */
+.volunteers-section {
+  margin-top: 3rem;
+}
+
+.volunteers-section h2 {
+  font-size: 1.8rem;
+  color: #7B1113;
+  margin-bottom: 1rem;
+}
+
+.volunteers-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.volunteers-table th,
+.volunteers-table td {
+  text-align: left;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.volunteers-table th {
+  background-color: #7B1113;
+  color: #fff;
+  font-weight: 600;
+}
+
+.volunteers-table tr:hover {
+  background-color: rgba(123, 17, 19, 0.05);
+}
+
+/* ---------- ANIMATIONS ---------- */
+.fade-in {
+  animation: fadeIn 1s ease forwards;
+}
+
+.slide-right {
+  animation: slideRight 0.8s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}

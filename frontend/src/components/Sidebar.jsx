@@ -2,6 +2,7 @@ import React from "react";
 import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle } from "react-icons/fa";
 import { MdEvent } from "react-icons/md";
 import { NavLink } from "react-router-dom";
+import logo from "../assets/UNP Logo.png";
 import "../styles/Sidebar.css";
 
 const Sidebar = () => {
@@ -9,8 +10,8 @@ const Sidebar = () => {
     <aside className="sidebar">
       {/* ======= Logo Section ======= */}
       <div className="sidebar-logo">
-        <img src="/assets/upmin-logo.png" alt="UP Mindanao Logo" />
-      </div>
+         <img src={logo} alt="UP Mindanao Logo" />
+    </div>
 
       {/* ======= Navigation Links ======= */}
       <nav className="sidebar-nav">

@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import Button from "./Button";
 import logo from "../assets/UNP Logo.png";
 import { User } from "lucide-react";
-import { Menu, MenuItem, Box } from "@mui/material";
+import { Menu, MenuItem, Box, IconButton } from "@mui/material";
 import LoginPopup from "./LoginPopup";
 
-function Header({ variant = "default" }) {
+function Header({ variant = "default", isLoggedIn = false, onLogout }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popupRole, setPopupRole] = useState(null);
   const open = Boolean(anchorEl);
@@ -18,6 +18,15 @@ function Header({ variant = "default" }) {
     handleClose();
   };
   const handleClosePopup = () => setPopupRole(null);
+
+  const handleProfileClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleLogoutClick = () => {
+    if (onLogout) onLogout();
+    handleClose();
+  };
 
   const styles = {
     container: {
@@ -68,7 +77,6 @@ function Header({ variant = "default" }) {
       {/* Left Section */}
       <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
         <div style={styles.leftSection}>
-          <img src={logo} alt="UNP Logo" style={styles.logo} />
           <div style={styles.title}>
             <div style={styles.subtitle}>
               University of the Philippines - Mindanao
@@ -80,20 +88,17 @@ function Header({ variant = "default" }) {
 
       {/* Right Section */}
       <div style={styles.rightSection}>
-        {variant === "default" ? (
+        {!isLoggedIn ? (
           <>
             <Link to="/" style={{ textDecoration: "none" }}>
               <Button text="Home" variant="text" />
             </Link>
-
             <Link to="/about" style={{ textDecoration: "none" }}>
               <Button text="About Us" variant="text" />
             </Link>
-
             <Link to="/events" style={{ textDecoration: "none" }}>
               <Button text="Events" variant="text" />
             </Link>
-
             <Link to="/register" style={{ textDecoration: "none" }}>
               <Button text="Register" variant="text" />
             </Link>
@@ -161,12 +166,33 @@ function Header({ variant = "default" }) {
             </Box>
           </>
         ) : (
-          <Link to="/profile" style={{ textDecoration: "none" }}>
-            <Button type="icon" variant="secondary" icon={User} />
-          </Link>
+          <Box>
+            <IconButton onClick={handleProfileClick} sx={{ color: "white" }}>
+              <User />
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              disableScrollLock={true}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+            >
+              <MenuItem onClick={() => { handleClose(); window.location.href = "/profile"; }}>
+                Profile
+              </MenuItem>
+              <MenuItem onClick={handleLogoutClick}>Logout</MenuItem>
+            </Menu>
+          </Box>
         )}
       </div>
-      
+
       {/* LOGIN POPUP */}
       <LoginPopup
         open={Boolean(popupRole)}
@@ -178,6 +204,3 @@ function Header({ variant = "default" }) {
 }
 
 export default Header;
-
-
-
