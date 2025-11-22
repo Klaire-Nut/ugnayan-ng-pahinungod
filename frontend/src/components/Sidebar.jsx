@@ -1,5 +1,5 @@
 import React from "react";
-import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle } from "react-icons/fa";
+import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle, } from "react-icons/fa";
 import { MdEvent } from "react-icons/md";
 import { NavLink } from "react-router-dom";
 import "../styles/Sidebar.css";

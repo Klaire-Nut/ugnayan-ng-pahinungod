@@ -105,7 +105,6 @@ export default function Register() {
   const progress = (step / 3) * 100;
 
   return (
-    <DefaultPage>
       <div className="register-page">
 
         <Box sx={{ width: "700px", maxWidth: "100%", py: 4 }} className="register-container">
@@ -164,6 +163,5 @@ export default function Register() {
         </Box>
 
       </div>
-    </DefaultPage> 
   );
 }
