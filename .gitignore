@@ -9,6 +9,9 @@ build/
 frontend/dist/
 frontend/.vite/
 
+.vite/
+*.log
+
 # Environment files
 .env
 *.env
@@ -19,16 +22,23 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Python virtual environment
+# --- Python / Backend ---
 venv/
+backend/venv/
+__pycache__/
+*.pyc
 
-# Temp files
+# --- OS-generated files ---
 .DS_Store
 Thumbs.db
 
-# IDE folders
+# --- Editor junk ---
 .vscode/
 .idea/
+
+# --- Build output ---
+build/
+coverage/
 
 # Generated lockfiles (optional)
 # You may keep these if you want, but if not used, ignore them:
