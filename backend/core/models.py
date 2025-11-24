@@ -76,12 +76,6 @@ class VolunteerAccount(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
 
-    # override save to hash password
-    def save(self, *args, **kwargs):
-        if not self.pk:  # only hash on create
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
-
     # check password method
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)

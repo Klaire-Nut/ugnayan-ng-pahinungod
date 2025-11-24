@@ -59,21 +59,36 @@ def volunteer_login(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST method required."}, status=400)
     
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON."}, status=400)
+
     email = data.get("email")
     password = data.get("password")
 
+    if not email or not password:
+        return JsonResponse({"error": "Email and password are required."}, status=400)
+
     try:
         account = VolunteerAccount.objects.get(email=email)
-        
-        # Use Django's check_password function to verify hashed password
         if check_password(password, account.password):
             request.session['volunteer_id'] = account.volunteer.volunteer_id
             return JsonResponse({"message": "Login successful!"})
         else:
-            return JsonResponse({"error": "Invalid credentials."}, status=400)
+            # Debugging output
+            return JsonResponse({
+                "error": "Password mismatch.",
+                "email_received": email,
+                "stored_password_hash": account.password
+            }, status=400)
     except VolunteerAccount.DoesNotExist:
-        return JsonResponse({"error": "Account not found."}, status=404)
+        # Debugging output
+        return JsonResponse({
+            "error": "Account not found.",
+            "email_received": email
+        }, status=404)
+
 
 @csrf_exempt
 def volunteer_logout(request):

@@ -19,8 +19,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { sendOTP, verifyOTP, registerVolunteerWithOTP } 
-from "../../services/volunteerApi.js";
+import { registerVolunteer } from "../../services/volunteerApi.js";
 
 
 // ----------------- Reusable Components -----------------
@@ -59,16 +58,7 @@ FormTextField.displayName = "FormTextField";
 export default function Step3({ formData = {}, setFormData, onBack /* onSubmit not used here */ }) {
   const [errors, setErrors] = useState({});
   const [confirmDialog, setConfirmDialog] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
-  // OTP dialog states
-  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
-  const [otpValue, setOtpValue] = useState("");
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpError, setOtpError] = useState("");
-
   const [successDialog, setSuccessDialog] = useState(false);
 
   const safeFormData = {
@@ -79,7 +69,6 @@ export default function Step3({ formData = {}, setFormData, onBack /* onSubmit n
     otherOrganization: "",
     organizationName: "",
     howDidYouHear: "",
-    username: "",
     password: "",
     ...formData,
   };
@@ -121,9 +110,6 @@ export default function Step3({ formData = {}, setFormData, onBack /* onSubmit n
     if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear)
       newErrors.howDidYouHear = "This field is required for first-time volunteers.";
 
-    if (!safeFormData.username)
-      newErrors.username = "Please provide a username.";
-
     if (!safeFormData.password)
       newErrors.password = "Please provide a password.";
 
@@ -137,140 +123,93 @@ export default function Step3({ formData = {}, setFormData, onBack /* onSubmit n
 
   // ----------------- Submit Handlers -----------------
   const handleSubmitClick = () => {
+    // Ensure email + password are present first
+    if (!safeFormData.email || !safeFormData.password) {
+      alert("Email and password are required.");
+      return;
+    }
+
+    // Optional: run your other form validations
     if (!validate()) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+
     setConfirmDialog(true);
   };
 
-
-  // When user confirms, send OTP and open the OTP dialog
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
-    setOtpError("");
-    setOtpSending(true);
+    setLoading(true);
+
     try {
-      // sendOTP expects only email
-      const res = await sendOTP(safeFormData.email);
-      // backend should return something like { status: 'otp_sent', message: '...' }
-      console.log("sendOTP response:", res);
-      setOtpDialogOpen(true);
-    } catch (err) {
-      console.error("Failed to send OTP:", err);
-      alert((err && err.error) || "Failed to send OTP. Check email or server logs.");
-    } finally {
-      setOtpSending(false);
-    }
-  };
+      // Flattened payload: email & password at top level; all volunteer fields also top-level
+      const payload = {
+        email: safeFormData.email,
+        password: safeFormData.password,
 
+        // Volunteer profile fields (flattened)
+        first_name: safeFormData.firstName || "",
+        middle_name: safeFormData.middleName || "",
+        last_name: safeFormData.lastName || "",
+        nickname: safeFormData.nickname || "",
+        // Ensure sex matches backend choices
+        sex: safeFormData.sex === "Male" ? "M" : safeFormData.sex === "Female" ? "F" : "",
 
-const handleVerifyOtp = async () => {
-  setOtpVerifying(true);
-  setOtpError("");
+        // Ensure birthdate is in YYYY-MM-DD format
+        birthdate: safeFormData.birthdate
+          ? new Date(safeFormData.birthdate).toISOString().split("T")[0]
+          : "",
 
-  try {
-    // Step 1: Verify OTP
-    await verifyOTP(safeFormData.email, otpValue);
-
-    // Step 2: Format birthdate
-    let formattedBirthdate = safeFormData.birthdate || null;
-    if (formattedBirthdate instanceof Date) {
-      formattedBirthdate = formattedBirthdate.toISOString().split("T")[0];
-    } else if (typeof formattedBirthdate === "string" && formattedBirthdate.includes("T")) {
-      formattedBirthdate = formattedBirthdate.split("T")[0];
-    }
-
-    // Step 3: Check required fields
-    if (
-      !safeFormData.firstName ||
-      !safeFormData.lastName ||
-      !safeFormData.middleName ||
-      !safeFormData.nickname ||
-      !safeFormData.sex ||
-      !formattedBirthdate
-    ) {
-      setOtpError("Please fill all required personal information fields before submitting.");
-      setOtpVerifying(false);
-      return;
-    }
-
-    // Step 4: Build payload
-    const payload = {
-      email: safeFormData.email,
-      otp: otpValue,
-      volunteerData: {
-        first_name: safeFormData.firstName,
-        middle_name: safeFormData.middleName,
-        last_name: safeFormData.lastName,
-        nickname: safeFormData.nickname,
-        sex: safeFormData.sex,
-        birthdate: formattedBirthdate,
-
-        volunteer_programs: safeFormData.volunteerPrograms,
-        affirmative_action_subjects: safeFormData.affirmativeActionSubjects,
-        volunteer_status: safeFormData.volunteerStatus,
-        tagapag_ugnay: safeFormData.tagapagUgnay,
-        other_organization: safeFormData.otherOrganization,
+        volunteer_programs: safeFormData.volunteerPrograms || [],
+        affirmative_action_subjects:
+          safeFormData.affirmativeActionSubjects || [],
+        volunteer_status: safeFormData.volunteerStatus || "",
+        tagapag_ugnay: safeFormData.tagapagUgnay || "",
+        other_organization: safeFormData.otherOrganization || "",
         organization_name: safeFormData.organizationName || "",
         how_did_you_hear: safeFormData.howDidYouHear || "",
-
         mobile_number: safeFormData.mobileNumber || "",
         facebook_link: safeFormData.facebookLink || "",
-
         street_address: safeFormData.streetBarangay || "",
         province: safeFormData.province || "",
         region: safeFormData.region || "",
-
         degree_program: safeFormData.degreeProgram || "",
         year_level: safeFormData.yearLevel || "",
         college: safeFormData.college || "",
         department: safeFormData.department || "",
         year_graduated: safeFormData.yearGraduated || "",
-
         emer_name: safeFormData.emerName || "",
         emer_relation: safeFormData.emerRelation || "",
         emer_contact: safeFormData.emerContact || "",
         emer_address: safeFormData.emerAddress || "",
-
         occupation: safeFormData.occupation || "",
         org_affiliation: safeFormData.organizations || [],
         hobbies_interests: safeFormData.hobbies || [],
+        affiliation: safeFormData.affiliation || "STUDENT"
+      };
 
-        affiliation: safeFormData.affiliation || "",
+      // debug log - inspect what you're sending
+      console.log("Payload being sent:", payload);
 
-        username: safeFormData.username,
-        password: safeFormData.password,
-      }
-    };
-
-  // Step 5: Submit final registration
-  const finalRes = await registerVolunteerWithOTP(payload);
-      console.log("Final registration response:", finalRes.data);
-
-      setOtpVerifying(false);
-      setActiveStep(3); // go to success or final step
-
+      const res = await registerVolunteer(payload); // your API call
+      console.log("Final registration response:", res.data);
+      setSuccessDialog(true);
     } catch (error) {
-      console.error("OTP verify / final registration error:", error);
-      setOtpError("Something went wrong during final registration.");
-      setOtpVerifying(false);
-    }
-  };
+      // better error message handling
+      console.error("Final registration error:", error);
 
+      // backend error response (axios)
+      const backendMessage =
+        error?.response?.data || error?.response?.data?.detail || null;
 
-
-  const handleResendOtp = async () => {
-    setOtpSending(true);
-    setOtpError("");
-    try {
-      await sendOTP(safeFormData.email);
-      alert("OTP resent. Check your email.");
-    } catch (err) {
-      console.error("Resend OTP error:", err);
-      alert((err && err.error) || "Failed to resend OTP.");
+      alert(
+        backendMessage?.error ||
+          backendMessage?.detail ||
+          "Something went wrong during registration."
+      );
     } finally {
-      setOtpSending(false);
+      setLoading(false);
     }
   };
 
@@ -278,6 +217,7 @@ const handleVerifyOtp = async () => {
     setSuccessDialog(false);
     window.location.href = "/";
   };
+
 
   // ----------------- Render -----------------
   const volunteerProgramOptions = [
@@ -415,15 +355,9 @@ const handleVerifyOtp = async () => {
         </Box>
       )}
 
-      {/* ---------------- Account Details ---------------- */}
+      {/* Account Details */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>ACCOUNT DETAILS</Typography>
-        <FormTextField
-          label="Preferred Username"
-          value={safeFormData.username}
-          onChange={(e) => handleChange("username", e.target.value)}
-          error={errors.username}
-        />
         <FormTextField
           label="Password"
           type="password"
@@ -439,12 +373,13 @@ const handleVerifyOtp = async () => {
         <Button
           variant="contained"
           onClick={handleSubmitClick}
-          disabled={loading || otpSending}
+          disabled={loading}
           sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
         >
-          {(otpSending || loading) ? <CircularProgress size={24} /> : "Submit"}
+          {loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
+
 
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
@@ -458,32 +393,6 @@ const handleVerifyOtp = async () => {
         </DialogActions>
       </Dialog>
 
-      {/* OTP Dialog */}
-      <Dialog open={otpDialogOpen} onClose={() => setOtpDialogOpen(false)}>
-        <DialogTitle>Enter OTP</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ mb: 2 }}>We've sent an OTP to <strong>{safeFormData.email}</strong>. Enter it here.</Typography>
-          <TextField
-            label="OTP"
-            value={otpValue}
-            onChange={(e) => setOtpValue(e.target.value)}
-            fullWidth
-            sx={{ mb: 1 }}
-          />
-          {otpError && <Typography color="error" variant="body2" sx={{ mb: 1 }}>{otpError}</Typography>}
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Button onClick={handleVerifyOtp} disabled={otpVerifying || !otpValue} variant="contained">
-              {otpVerifying ? <CircularProgress size={18}/> : "Verify & Register"}
-            </Button>
-            <Button onClick={handleResendOtp} disabled={otpSending}>
-              {otpSending ? "Resending..." : "Resend OTP"}
-            </Button>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOtpDialogOpen(false)}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialog} onClose={handleSuccessClose}>
