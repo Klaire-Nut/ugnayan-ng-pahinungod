@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { registerVolunteer } from "../../services/volunteerApi.js";
+import { formatBackendErrors } from "../../utils/errorHelpers";
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
@@ -144,9 +145,7 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
 
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
-    setLoading(true);
-
-    
+    setLoading(true);   
 
     try {
       const payload = {
@@ -198,16 +197,32 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
       const res = await registerVolunteer(payload);
       console.log("Final registration response:", res.data);
       setSuccessDialog(true);
+
     } catch (error) {
       console.error("❌ Registration Error:", error);
-      const backendMessage =
-        error?.response?.data || error?.response?.data?.detail || null;
 
-      alert(
-        backendMessage?.error ||
-        backendMessage?.detail ||
-        "Something went wrong during registration."
-      );
+      const backend = error?.response?.data;
+
+      let message = "Something went wrong during registration. Please make sure you filled all required fields.";
+
+      if (typeof backend === "string") {
+        message = backend;
+      } else if (backend?.detail) {
+        message = backend.detail;
+      } else if (backend?.error) {
+        message = backend.error;
+      } else if (typeof backend === "object") {
+        // Handle field-specific errors like { email: ["Email already exists"] }
+        const errors = Object.entries(backend).map(
+          ([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs[0] : msgs}`
+        );
+        if (errors.length > 0) {
+          message = errors.join("\n");
+        }
+      }
+
+      alert(message);
+
     } finally {
       setLoading(false);
     }
@@ -365,7 +380,7 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
         />
       </Box>
 
-      {/* Emergency Contact only for students */}
+      {/* Emergency Contact only for students 
       {safeFormData.affiliation?.toLowerCase() === "student" && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>EMERGENCY CONTACT</Typography>
@@ -394,7 +409,7 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
             error={errors.emerAddress}
           />
         </Box>
-      )}
+      )} */}
 
       {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>

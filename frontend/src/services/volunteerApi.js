@@ -12,7 +12,20 @@ const api = axios.create({
 // ----------------- Error Interceptor -----------------
 api.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error.response?.data || { error: error.message })
+  (error) => {
+    if (error.response && error.response.data) {
+      
+      return Promise.reject(error.response.data);
+    }
+
+    // Network error
+    if (error.message === "Network Error") {
+      return Promise.reject({ _general: "Unable to reach server. Please try again." });
+    }
+
+    // Other unexpected error
+    return Promise.reject({ _general: error.message || "Something went wrong." });
+  }
 );
 
 // ----------------- Registration -----------------
