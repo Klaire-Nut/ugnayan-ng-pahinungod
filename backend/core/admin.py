@@ -4,9 +4,9 @@ from .models import (
     VolunteerAccount,
     VolunteerContact,
     VolunteerAddress,
-    VolunteerEducation,
+    #VolunteerEducation,
     VolunteerBackground,
-    VolunteerAffiliation,
+    #VolunteerAffiliation,
     ProgramInterest,
     EmergencyContact,
     Event,
@@ -19,9 +19,9 @@ admin.site.register(Volunteer)
 admin.site.register(VolunteerAccount)
 admin.site.register(VolunteerContact)
 admin.site.register(VolunteerAddress)
-admin.site.register(VolunteerEducation)
+#admin.site.register(VolunteerEducation)
 admin.site.register(VolunteerBackground)
-admin.site.register(VolunteerAffiliation)
+#admin.site.register(VolunteerAffiliation)
 admin.site.register(ProgramInterest)
 admin.site.register(EmergencyContact)
 admin.site.register(Event)
