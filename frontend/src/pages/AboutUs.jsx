@@ -1,97 +1,66 @@
-import React, { useState, useEffect } from "react";
+// src/pages/AboutUs.jsx
+import React from "react";
+import { Box, Container, Typography, Grid, CardMedia } from "@mui/material";
+import DefaultPage from "../layout/default_page.jsx";
+import aboutImage from "../assets/about1.png"; // optional image
 import "../styles/AboutUs.css";
 
-// Assets
-import uplogo from "../assets/UNP Logo.png";
-import about1 from "../assets/about1.png";
-import about2 from "../assets/about2.png";
-import about3 from "../assets/about3.png";
-
-const AboutUs = () => {
-  // ✅ State to track current carousel image
-  const [currentImage, setCurrentImage] = useState(0);
-
-  // ✅ Array of images for carousel
-  const visionImages = [about1, about2, about3];
-
-  // ✅ Automatically change image every 3 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImage((prev) =>
-        prev === visionImages.length - 1 ? 0 : prev + 1
-      );
-    }, 3000); // ⏱ change image every 3 seconds
-
-    return () => clearInterval(interval); // cleanup on unmount
-  }, [visionImages.length]);
-
-  // ✅ Manual navigation (optional)
-  const prevImage = () => {
-    setCurrentImage((prev) =>
-      prev === 0 ? visionImages.length - 1 : prev - 1
-    );
-  };
-  const nextImage = () => {
-    setCurrentImage((prev) =>
-      prev === visionImages.length - 1 ? 0 : prev + 1
-    );
-  };
-
+export default function AboutUs() {
   return (
-    <div className="aboutus-page">
-      {/* ---------- ABOUT SECTION ---------- */}
-      <section className="about-section fade-in">
-        <div className="about-content slide-right">
-          <h1>About Us</h1>
-          <p>
-            Ugnayan ng Pahinungód is a volunteer service program dedicated to
-            serving communities through education, health, and socio-civic
-            engagement. We believe in empowering people through compassion,
-            knowledge, and collective action.
-          </p>
-        </div>
+    <DefaultPage>
+      <Box className="about-section">
+        <Container maxWidth="md">
+          <Typography
+            variant="h3"
+            fontWeight="700"
+            textAlign="center"
+            gutterBottom
+          >
+            About Us
+          </Typography>
+          <Typography
+            variant="body1"
+            textAlign="center"
+            color="text.secondary"
+            mb={5}
+          >
+            The Ugnayan ng Pahinungód is the volunteer service program of the
+            University of the Philippines. It promotes volunteerism and
+            community engagement as an expression of the University’s commitment
+            to serve the Filipino people.
+          </Typography>
 
-        <div className="about-image slide-left">
-          <img src={uplogo} alt="UP Ugnayan ng Pahinungód Logo" />
-        </div>
-      </section>
+          <Grid
+            container
+            spacing={4}
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Grid item xs={12} md={6}>
+              <Typography variant="h5" fontWeight="600" gutterBottom>
+                Our Mission
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                To inspire and empower the UP community to actively participate
+                in nation-building through meaningful volunteer work that
+                uplifts lives and strengthens communities.
+              </Typography>
+            </Grid>
 
-      {/* ---------- VISION & MISSION SECTION ---------- */}
-      <section className="vision-section fade-in">
-        <div className="vision-image slide-left">
-          {/* ✅ Carousel Image */}
-          <img
-            src={visionImages[currentImage]}
-            alt="Volunteers at work"
-            className="carousel-image"
-          />
-
-          {/* ✅ Carousel Arrows */}
-          <button className="carousel-arrow left" onClick={prevImage}>
-            &#10094;
-          </button>
-          <button className="carousel-arrow right" onClick={nextImage}>
-            &#10095;
-          </button>
-        </div>
-
-        <div className="vision-content glass-box slide-right">
-          <h2>Our Vision</h2>
-          <p>
-            A nation of empowered citizens working together to uplift
-            communities in need, anchored on compassion and service.
-          </p>
-
-          <h2>Our Mission</h2>
-          <p>
-            To connect individuals, students, and organizations who share the
-            same commitment to service and volunteerism through sustainable
-            outreach and education programs.
-          </p>
-        </div>
-      </section>
-    </div>
+            <Grid item xs={12} md={6}>
+              <CardMedia
+                component="img"
+                image={aboutImage}
+                alt="About Ugnayan ng Pahinungod"
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: 3,
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+    </DefaultPage>
   );
-};
-
-export default AboutUs;
+}
