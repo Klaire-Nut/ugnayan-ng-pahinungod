@@ -1,8 +1,10 @@
-from rest_framework.views import APIView
+# volunteers/views.py
+from rest_framework.views import APIView  # <-- THIS WAS MISSING
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 
+# your other imports
 from core.models import (
     Volunteer,
     VolunteerContact,
@@ -26,14 +28,12 @@ from .serializers import (
     EmergencyContactSerializer
 )
 
-
 class RegisterVolunteer(APIView):
     def post(self, request):
         data = request.data.get("volunteerData") or request.data
-
         email = data.get("email")
         password = data.get("password")
-        affiliation_type = data.get("affiliation_type")
+        affiliation_type = (data.get("affiliation_type") or "").lower()  # Safe
 
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=400)
@@ -43,8 +43,7 @@ class RegisterVolunteer(APIView):
 
         try:
             with transaction.atomic():
-
-                # 1. Create the core volunteer info
+                # Core volunteer
                 volunteer_serializer = VolunteerSerializer(data={
                     "first_name": data.get("first_name"),
                     "middle_name": data.get("middle_name"),
@@ -52,12 +51,12 @@ class RegisterVolunteer(APIView):
                     "nickname": data.get("nickname"),
                     "sex": data.get("sex"),
                     "birthdate": data.get("birthdate"),
-                    "affiliation_type": affiliation_type
+                    "affiliation_type": data.get("affiliation_type"),
                 })
                 volunteer_serializer.is_valid(raise_exception=True)
                 volunteer = volunteer_serializer.save()
 
-                # 2. Create account
+                # Account
                 account_serializer = VolunteerAccountSerializer(data={
                     "email": email,
                     "password": password
@@ -65,7 +64,7 @@ class RegisterVolunteer(APIView):
                 account_serializer.is_valid(raise_exception=True)
                 account_serializer.save(volunteer=volunteer)
 
-                # 3. Contact
+                # Contact
                 contact_serializer = VolunteerContactSerializer(data={
                     "mobile_number": data.get("mobile_number"),
                     "facebook_link": data.get("facebook_link")
@@ -73,7 +72,7 @@ class RegisterVolunteer(APIView):
                 contact_serializer.is_valid(raise_exception=True)
                 contact_serializer.save(volunteer=volunteer)
 
-                # 4. Address
+                # Address
                 address_serializer = VolunteerAddressSerializer(data={
                     "street_address": data.get("street_address"),
                     "province": data.get("province"),
@@ -82,17 +81,29 @@ class RegisterVolunteer(APIView):
                 address_serializer.is_valid(raise_exception=True)
                 address_serializer.save(volunteer=volunteer)
 
-                # 6. Emergency Contact
-                emergency_serializer = EmergencyContactSerializer(data={
-                    "name": data.get("emer_name"),
-                    "relationship": data.get("emer_relation"),
-                    "contact_number": data.get("emer_contact"),
-                    "address": data.get("emer_address"),
-                })
-                emergency_serializer.is_valid(raise_exception=True)
-                emergency_serializer.save(volunteer=volunteer)
+                # Emergency Contact (students only)
+                if affiliation_type == 'student':
+                    emer_name = data.get("emer_name")
+                    emer_relation = data.get("emer_relation")
+                    emer_contact = data.get("emer_contact")
+                    emer_address = data.get("emer_address")
 
-                # 7. Background
+                    if not (emer_name and emer_relation and emer_contact and emer_address):
+                        return Response(
+                            {"error": "Emergency contact fields are required for students."},
+                            status=400
+                        )
+
+                    emergency_serializer = EmergencyContactSerializer(data={
+                        "name": emer_name,
+                        "relationship": emer_relation,
+                        "contact_number": emer_contact,
+                        "address": emer_address,
+                    })
+                    emergency_serializer.is_valid(raise_exception=True)
+                    emergency_serializer.save(volunteer=volunteer)
+
+                # Background (all volunteers)
                 background_serializer = VolunteerBackgroundSerializer(data={
                     "occupation": data.get("occupation"),
                     "org_affiliation": data.get("org_affiliation"),
@@ -101,7 +112,7 @@ class RegisterVolunteer(APIView):
                 background_serializer.is_valid(raise_exception=True)
                 background_serializer.save(volunteer=volunteer)
 
-                # 7. Affiliation-specific profile
+                # Affiliation-specific profile
                 if affiliation_type == 'student':
                     StudentProfile.objects.create(
                         volunteer=volunteer,
