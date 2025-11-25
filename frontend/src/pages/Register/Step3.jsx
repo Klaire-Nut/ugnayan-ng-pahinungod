@@ -129,7 +129,6 @@ export default function Step3({ formData = {}, setFormData, onBack /* onSubmit n
       return;
     }
 
-    // Optional: run your other form validations
     if (!validate()) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -138,86 +137,142 @@ export default function Step3({ formData = {}, setFormData, onBack /* onSubmit n
     setConfirmDialog(true);
   };
 
-  const handleConfirmSubmit = async () => {
-    setConfirmDialog(false);
-    setLoading(true);
+ const handleConfirmSubmit = async () => {
+  setConfirmDialog(false);
+  setLoading(true);
 
-    try {
-      // Flattened payload: email & password at top level; all volunteer fields also top-level
-      const payload = {
-        email: safeFormData.email,
-        password: safeFormData.password,
+  try {
+    const payload = {
+      email: safeFormData.email,
+      password: safeFormData.password,
 
-        // Volunteer profile fields (flattened)
-        first_name: safeFormData.firstName || "",
-        middle_name: safeFormData.middleName || "",
-        last_name: safeFormData.lastName || "",
-        nickname: safeFormData.nickname || "",
-        // Ensure sex matches backend choices
-        sex: safeFormData.sex === "Male" ? "M" : safeFormData.sex === "Female" ? "F" : "",
-
-        // Ensure birthdate is in YYYY-MM-DD format
-        birthdate: safeFormData.birthdate
-          ? new Date(safeFormData.birthdate).toISOString().split("T")[0]
+      // Main Volunteer Profile
+      first_name: safeFormData.firstName || "",
+      middle_name: safeFormData.middleName || "",
+      last_name: safeFormData.lastName || "",
+      nickname: safeFormData.nickname || "",
+      sex:
+        safeFormData.sex === "Male"
+          ? "M"
+          : safeFormData.sex === "Female"
+          ? "F"
           : "",
+      birthdate: safeFormData.birthdate
+        ? new Date(safeFormData.birthdate).toISOString().split("T")[0]
+        : "",
 
-        volunteer_programs: safeFormData.volunteerPrograms || [],
-        affirmative_action_subjects:
-          safeFormData.affirmativeActionSubjects || [],
-        volunteer_status: safeFormData.volunteerStatus || "",
-        tagapag_ugnay: safeFormData.tagapagUgnay || "",
-        other_organization: safeFormData.otherOrganization || "",
-        organization_name: safeFormData.organizationName || "",
-        how_did_you_hear: safeFormData.howDidYouHear || "",
-        mobile_number: safeFormData.mobileNumber || "",
-        facebook_link: safeFormData.facebookLink || "",
-        street_address: safeFormData.streetBarangay || "",
-        province: safeFormData.province || "",
-        region: safeFormData.region || "",
-        degree_program: safeFormData.degreeProgram || "",
-        year_level: safeFormData.yearLevel || "",
-        college: safeFormData.college || "",
-        department: safeFormData.department || "",
-        year_graduated: safeFormData.yearGraduated || "",
-        emer_name: safeFormData.emerName || "",
-        emer_relation: safeFormData.emerRelation || "",
-        emer_contact: safeFormData.emerContact || "",
-        emer_address: safeFormData.emerAddress || "",
-        occupation: safeFormData.occupation || "",
-        org_affiliation: safeFormData.organizations || [],
-        hobbies_interests: safeFormData.hobbies || [],
-        affiliation: safeFormData.affiliation || "STUDENT"
-      };
+      // Affiliation (for backend reference)
+      studentType: safeFormData.affiliation
+        ? safeFormData.affiliation.toUpperCase()
+        : "",
 
-      // debug log - inspect what you're sending
-      console.log("Payload being sent:", payload);
+      // Contact & Address
+      mobile_number: safeFormData.mobileNumber || "",
+      facebook_link: safeFormData.facebookLink || "",
+      street_address: safeFormData.streetBarangay || "",
+      province: safeFormData.province || "",
+      region: safeFormData.region || "",
 
-      const res = await registerVolunteer(payload); // your API call
-      console.log("Final registration response:", res.data);
-      setSuccessDialog(true);
-    } catch (error) {
-      // better error message handling
-      console.error("Final registration error:", error);
+      // Academic / Org Info
+      degree_program: safeFormData.degreeProgram || "",
+      year_level: safeFormData.yearLevel || "",
+      college: safeFormData.college || "",
+      department: safeFormData.department || "",
+      year_graduated: safeFormData.yearGraduated || "",
 
-      // backend error response (axios)
-      const backendMessage =
-        error?.response?.data || error?.response?.data?.detail || null;
+      // Volunteer Info
+      volunteer_programs: safeFormData.volunteerPrograms || [],
+      affirmative_action_subjects:
+        safeFormData.affirmativeActionSubjects || [],
+      volunteer_status: safeFormData.volunteerStatus || "",
+      tagapag_ugnay: safeFormData.tagapagUgnay || "",
+      other_organization: safeFormData.otherOrganization || "",
+      organization_name: safeFormData.organizationName || "",
+      how_did_you_hear: safeFormData.howDidYouHear || "",
 
-      alert(
-        backendMessage?.error ||
-          backendMessage?.detail ||
-          "Something went wrong during registration."
-      );
-    } finally {
-      setLoading(false);
+      // Background
+      occupation: safeFormData.occupation || "",
+      org_affiliation: safeFormData.organizations || [],
+      hobbies_interests: safeFormData.hobbies || [],
+    };
+
+    // -------------------------
+    // Add Emergency Contact ONLY for STUDENT
+    // -------------------------
+    if (safeFormData.affiliation?.toUpperCase() === "STUDENT") {
+      payload.name = safeFormData.emerName || "";
+      payload.relationship = safeFormData.emerRelation || "";
+      payload.contact_number = safeFormData.emerContact || "";
+      payload.address = safeFormData.emerAddress || "";
     }
-  };
 
-  const handleSuccessClose = () => {
-    setSuccessDialog(false);
-    window.location.href = "/";
-  };
+    // -------------------------
+    // Add Profile Section Based on Affiliation
+    // -------------------------
+    switch (safeFormData.affiliation?.toLowerCase()) {
+      case "student":
+        payload.student_profile = {
+          degree_program: safeFormData.degreeProgram || "",
+          year_level: safeFormData.yearLevel || "",
+          college: safeFormData.college || "",
+          department: safeFormData.department || "",
+        };
+        break;
 
+      case "alumni":
+        payload.alumni_profile = {
+          degree_program: safeFormData.degreeProgram || "",
+          year_graduated: safeFormData.yearGraduated || "",
+          college: safeFormData.college || "",
+          department: safeFormData.department || "",
+        };
+        break;
+
+      case "staff":
+        payload.staff_profile = {
+          department: safeFormData.department || "",
+          position: safeFormData.position || "",
+        };
+        break;
+
+      case "faculty":
+        payload.faculty_profile = {
+          department: safeFormData.department || "",
+          college: safeFormData.college || "",
+        };
+        break;
+
+      case "retiree":
+        payload.retiree_profile = {
+          previous_position: safeFormData.position || "",
+          year_retired: safeFormData.yearRetired || "",
+        };
+        break;
+
+      default:
+        break;
+    }
+
+    console.log("Payload being sent:", payload);
+
+    const res = await registerVolunteer(payload);
+    console.log("Final registration response:", res.data);
+    setSuccessDialog(true);
+  } catch (error) {
+    console.error("Final registration error:", error);
+
+    const backendMessage =
+      error?.response?.data || error?.response?.data?.detail || null;
+
+    alert(
+      backendMessage?.error ||
+        backendMessage?.detail ||
+        "Something went wrong during registration."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ----------------- Render -----------------
   const volunteerProgramOptions = [

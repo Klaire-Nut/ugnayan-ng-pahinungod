@@ -1,6 +1,5 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-#from core.models import Affiliation
 from rest_framework import status
 from django.db import transaction
 
@@ -8,21 +7,25 @@ from core.models import (
     Volunteer,
     VolunteerContact,
     VolunteerAddress,
-    #VolunteerEducation,
     VolunteerBackground,
     EmergencyContact,
-    #VolunteerAffiliation,
-    VolunteerAccount
+    VolunteerAccount,
+    StudentProfile,
+    AlumniProfile,
+    StaffProfile,
+    FacultyProfile,
+    RetireeProfile
 )
 
 from .serializers import (
-    VolunteerSerializer, VolunteerAccountSerializer, VolunteerContactSerializer,
-    VolunteerAddressSerializer, 
-    #VolunteerEducationSerializer, 
+    VolunteerSerializer,
+    VolunteerAccountSerializer,
+    VolunteerContactSerializer,
+    VolunteerAddressSerializer,
     VolunteerBackgroundSerializer,
-    EmergencyContactSerializer, 
-    #VolunteerAffiliationSerializer
+    EmergencyContactSerializer
 )
+
 
 class RegisterVolunteer(APIView):
     def post(self, request):
@@ -30,6 +33,7 @@ class RegisterVolunteer(APIView):
 
         email = data.get("email")
         password = data.get("password")
+        affiliation_type = data.get("affiliation_type")
 
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=400)
@@ -48,6 +52,7 @@ class RegisterVolunteer(APIView):
                     "nickname": data.get("nickname"),
                     "sex": data.get("sex"),
                     "birthdate": data.get("birthdate"),
+                    "affiliation_type": affiliation_type
                 })
                 volunteer_serializer.is_valid(raise_exception=True)
                 volunteer = volunteer_serializer.save()
@@ -77,17 +82,6 @@ class RegisterVolunteer(APIView):
                 address_serializer.is_valid(raise_exception=True)
                 address_serializer.save(volunteer=volunteer)
 
-                # 5. Education
-                #education_serializer = VolunteerEducationSerializer(data={
-                    #"degree_program": data.get("degree_program"),
-                    #"year_level": data.get("year_level"),
-                    #"college": data.get("college"),
-                    #"department": data.get("department"),
-                    #"year_graduated": data.get("year_graduated"),
-                #})
-                #education_serializer.is_valid(raise_exception=True)
-                #education_serializer.save(volunteer=volunteer)
-
                 # 6. Emergency Contact
                 emergency_serializer = EmergencyContactSerializer(data={
                     "name": data.get("emer_name"),
@@ -107,17 +101,42 @@ class RegisterVolunteer(APIView):
                 background_serializer.is_valid(raise_exception=True)
                 background_serializer.save(volunteer=volunteer)
 
-                # 8. Affiliation
-                #affiliations_list = data.get("org_affiliation", [])  # expect an array of names
-                #for aff_name in affiliations_list:
-                    # Get existing Affiliation or create new
-                    #affiliation_obj, _ = Affiliation.objects.get_or_create(affiliation_name=aff_name)
-                    
-                    # Link to volunteer
-                    #VolunteerAffiliation.objects.create(volunteer=volunteer, affiliation=affiliation_obj)
+                # 7. Affiliation-specific profile
+                if affiliation_type == 'student':
+                    StudentProfile.objects.create(
+                        volunteer=volunteer,
+                        degree_program=data.get('degree_program'),
+                        year_level=data.get('year_level'),
+                        college=data.get('college'),
+                        department=data.get('department')
+                    )
+                elif affiliation_type == 'alumni':
+                    AlumniProfile.objects.create(
+                        volunteer=volunteer,
+                        constituent_unit=data.get('constituent_unit'),
+                        degree_program=data.get('degree_program'),
+                        year_graduated=data.get('year_graduated')
+                    )
+                elif affiliation_type == 'staff':
+                    StaffProfile.objects.create(
+                        volunteer=volunteer,
+                        office_department=data.get('office_department'),
+                        designation=data.get('designation')
+                    )
+                elif affiliation_type == 'faculty':
+                    FacultyProfile.objects.create(
+                        volunteer=volunteer,
+                        college=data.get('college'),
+                        department=data.get('department')
+                    )
+                elif affiliation_type == 'retiree':
+                    RetireeProfile.objects.create(
+                        volunteer=volunteer,
+                        designation_while_in_up=data.get('designation_while_in_up'),
+                        office_college_department=data.get('office_college_department')
+                    )
 
-
-                return Response({"message": "Registration successful!"}, status=201)
+            return Response({"message": "Registration successful!"}, status=201)
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)

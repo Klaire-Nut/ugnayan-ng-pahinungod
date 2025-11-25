@@ -88,8 +88,7 @@ class ProgramInterest(models.Model):
     program_name = models.CharField(max_length=255)
 
 
-# NEW PROFILE MODELS PER AFFILIATION
-
+# Models Per Affiliation
 class StudentProfile(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='student_profile')
     degree_program = models.CharField(max_length=100)
