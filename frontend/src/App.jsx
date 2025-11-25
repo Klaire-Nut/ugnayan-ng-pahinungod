@@ -9,7 +9,9 @@ import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login";
 
-import Dashboard from "./pages/Volunteers/Dashboard";
+// Dashboards
+import DashboardV from "./pages/Volunteers/Dashboard_V.jsx";
+import DashboardA from "./pages/Admin/Dashboard_A.jsx";
 
 function App() {
   return (
@@ -25,9 +27,10 @@ function App() {
           <Route path="login" element={<Login />} />
         </Route>
 
-        {/* VOLUNTEER DASHBOARD LAYOUT */}
+        {/* Dashboards using volunteer layout */}
         <Route element={<DefaultPageVolunteer />}>
-          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="dashboardV" element={<DashboardV />} />
+          <Route path="dashboardA" element={<DashboardA />} />
         </Route>
 
       </Routes>
