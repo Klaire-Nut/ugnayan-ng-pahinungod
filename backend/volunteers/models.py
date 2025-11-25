@@ -1,6 +1,5 @@
 # backend/volunteers/models.py
 from django.db import models
-from django.core.validators import EmailValidator
 
 
 class Volunteer(models.Model):
@@ -27,9 +26,9 @@ class Volunteer(models.Model):
 
 class VolunteerAccount(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="account")
-    email = models.EmailField(unique=True, validators=[EmailValidator()])
+    email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
-
+    
     def __str__(self):
         return self.email
 
