@@ -1,10 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ..models import Event, VolunteerEvent, Volunteer
+from core.models import VolunteerAccount
 from ..serializers import (
     EventListSerializer,
     EventDetailSerializer,
@@ -13,15 +14,27 @@ from ..serializers import (
 )
 
 # Custom permission for volunteers
-from rest_framework.permissions import BasePermission
-
 class IsVolunteer(BasePermission):
     """
     Custom permission to only allow volunteer users.
+    Checks if the authenticated user has an associated VolunteerAccount.
     """
     def has_permission(self, request, view):
-        # Adjust based on your authentication system
-        return hasattr(request.user, 'volunteer_id')
+        # Check if user is authenticated
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Check if user has an associated volunteer account
+        try:
+            volunteer_account = VolunteerAccount.objects.select_related('volunteer').get(
+                email=request.user.email
+            )
+            # Attach volunteer to request for easy access in views
+            request.volunteer = volunteer_account.volunteer
+            return True
+        except VolunteerAccount.DoesNotExist:
+            return False
+
 
 class VolunteerEventListView(generics.ListAPIView):
     """
@@ -57,10 +70,8 @@ class VolunteerJoinEventView(generics.CreateAPIView):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get volunteer from authenticated user
-        # Adjust based on your authentication system
-        volunteer = Volunteer.objects.get(accounts__email=self.request.user.email)
-        context['volunteer'] = volunteer
+        # Use the volunteer attached by IsVolunteer permission
+        context['volunteer'] = self.request.volunteer
         return context
     
     def create(self, request, *args, **kwargs):
@@ -84,8 +95,8 @@ class VolunteerMyEventsView(generics.ListAPIView):
     serializer_class = VolunteerEventSerializer
     
     def get_queryset(self):
-        # Get volunteer from authenticated user
-        volunteer = Volunteer.objects.get(accounts__email=self.request.user.email)
+        # Use the volunteer attached by IsVolunteer permission
+        volunteer = self.request.volunteer
         
         queryset = VolunteerEvent.objects.filter(volunteer=volunteer).select_related('event')
         
@@ -103,7 +114,8 @@ class VolunteerDropEventView(APIView):
     permission_classes = [IsAuthenticated, IsVolunteer]
     
     def post(self, request, event_id):
-        volunteer = Volunteer.objects.get(accounts__email=request.user.email)
+        # Use the volunteer attached by IsVolunteer permission
+        volunteer = request.volunteer
         
         volunteer_event = get_object_or_404(
             VolunteerEvent,
@@ -146,8 +158,8 @@ class VolunteerEventDetailView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         
-        # Add volunteer-specific data
-        volunteer = Volunteer.objects.get(accounts__email=request.user.email)
+        # Use the volunteer attached by IsVolunteer permission
+        volunteer = request.volunteer
         volunteer_event = VolunteerEvent.objects.filter(
             volunteer=volunteer,
             event=instance
@@ -170,7 +182,8 @@ class VolunteerUpdateAvailabilityView(APIView):
     permission_classes = [IsAuthenticated, IsVolunteer]
     
     def patch(self, request, event_id):
-        volunteer = Volunteer.objects.get(accounts__email=request.user.email)
+        # Use the volunteer attached by IsVolunteer permission
+        volunteer = request.volunteer
         
         volunteer_event = get_object_or_404(
             VolunteerEvent,

@@ -2,10 +2,16 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+# For debug endpoint
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
 from django.db import transaction
 from django.utils import timezone
 from datetime import timedelta
-
+#Add for token auth
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 
 from django.http import JsonResponse
 from accounts.decorators import volunteer_required
@@ -34,6 +40,22 @@ from .serializers import (
     EmergencyContactSerializer, VolunteerAffiliationSerializer, VolunteerOTPSerializer
 )
 
+# Add this new class to your views.py
+class VolunteerLogin(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username,
+            'email': user.email
+        }, status=status.HTTP_200_OK)
+    
 # Register and send OTP
 class RegisterStep1(APIView):
     def post(self, request):
@@ -238,3 +260,31 @@ def volunteer_dashboard(request):
             "status": "Active",  # or volunteer.status if added
         }
     })
+
+# Debug endpoint
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def debug_user(request):
+    """
+    Debug endpoint to check if user is properly linked to a volunteer account.
+    """
+    try:
+        volunteer_account = VolunteerAccount.objects.select_related('volunteer').get(
+            email=request.user.email
+        )
+        return Response({
+            "success": True,
+            "user": request.user.username,
+            "email": request.user.email,
+            "has_volunteer_account": True,
+            "volunteer_id": volunteer_account.volunteer.volunteer_id,
+            "volunteer_name": f"{volunteer_account.volunteer.first_name} {volunteer_account.volunteer.last_name}"
+        })
+    except VolunteerAccount.DoesNotExist:
+        return Response({
+            "success": False,
+            "user": request.user.username,
+            "email": request.user.email,
+            "has_volunteer_account": False,
+            "error": "No VolunteerAccount found for this user. Please link this user to a volunteer account."
+        })
