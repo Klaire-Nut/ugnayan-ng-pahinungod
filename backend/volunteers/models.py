@@ -92,13 +92,3 @@ class VolunteerAffiliation(models.Model):
     def __str__(self):
         return f"{self.volunteer.get_full_name()} Affiliation"
 
-
-class OTPVerification(models.Model):
-    email = models.EmailField()
-    otp_code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_verified = models.BooleanField(default=False)
-    expires_at = models.DateTimeField()
-
-    class Meta:
-        db_table = "otp_verifications"  

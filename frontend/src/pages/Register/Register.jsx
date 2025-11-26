@@ -1,5 +1,4 @@
 // MERGED REGISTER COMPONENT - UI + BACKEND
-
 import React, { useState } from "react";
 import { Box, Paper, Typography, LinearProgress } from "@mui/material";
 import Step1 from "./Step1";

@@ -1,6 +1,6 @@
 # backend/volunteers/admin.py
 from django.contrib import admin
-from .models import Volunteer, OTPVerification
+from .models import Volunteer
 
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
@@ -73,13 +73,3 @@ class VolunteerAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs
 
-# OTPVerification admin
-@admin.register(OTPVerification)
-class OTPVerificationAdmin(admin.ModelAdmin):
-    list_display = ['email', 'otp_code', 'is_verified', 'created_at', 'expires_at']
-    list_filter = ['is_verified', 'created_at']
-    search_fields = ['email', 'otp_code']
-    readonly_fields = ['created_at']
-    
-    def has_add_permission(self, request):
-        return False  # OTPs should only be created via API

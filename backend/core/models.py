@@ -1,10 +1,8 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import check_password
 
-# Models for the Table Set-up in the Database
-from django.db import models
+# Volunteer (Main Profile)
 
-# Volunteer Table
 class Volunteer(models.Model):
     STATUS_CHOICES = [
         ('Active', 'Active'),
@@ -12,29 +10,42 @@ class Volunteer(models.Model):
         ('Suspended', 'Suspended'),
     ]
 
+    AFFILIATION_CHOICES = [
+        ('student', 'Student'),
+        ('alumni', 'Alumni'),
+        ('staff', 'UP Staff'),
+        ('faculty', 'Faculty'),
+        ('retiree', 'Retiree'),
+    ]
+
     volunteer_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
     nickname = models.CharField(max_length=50, blank=True, null=True)
-    sex = models.CharField(max_length=10)  
+    sex = models.CharField(max_length=10)
     birthdate = models.DateField()
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     date_joined = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     total_hours = models.IntegerField(default=0)
-
+    affiliation_type = models.CharField(
+        max_length=20,
+        choices=AFFILIATION_CHOICES,
+        null=True,   
+        blank=True
+    )
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-# VolunteerContact
+# Contact, Address, Background, Emergency
 class VolunteerContact(models.Model):
     contact_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='contacts')
     mobile_number = models.CharField(max_length=15)
     facebook_link = models.URLField(blank=True, null=True)
 
-# VolunteerAddress
+
 class VolunteerAddress(models.Model):
     address_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='addresses')
@@ -42,17 +53,7 @@ class VolunteerAddress(models.Model):
     province = models.CharField(max_length=100)
     region = models.CharField(max_length=100)
 
-# VolunteerEducation
-class VolunteerEducation(models.Model):
-    education_id = models.AutoField(primary_key=True)
-    volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='educations')
-    degree_program = models.CharField(max_length=100)
-    year_level = models.CharField(max_length=10)
-    college = models.CharField(max_length=100)
-    department = models.CharField(max_length=100)
-    year_graduated = models.CharField(max_length=4, blank=True, null=True)
 
-# VolunteerBackground
 class VolunteerBackground(models.Model):
     background_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='backgrounds')
@@ -60,7 +61,7 @@ class VolunteerBackground(models.Model):
     org_affiliation = models.CharField(max_length=255, blank=True, null=True)
     hobbies_interests = models.TextField(blank=True, null=True)
 
-# Volunteer EmergencyContact
+
 class EmergencyContact(models.Model):
     contact_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='emergency_contacts')
@@ -69,46 +70,55 @@ class EmergencyContact(models.Model):
     contact_number = models.CharField(max_length=15)
     address = models.CharField(max_length=255)
 
-# VolunteerAccount
+
+# Volunteer Login
 class VolunteerAccount(models.Model):
     account_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='accounts')
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
 
-    # override save to hash password
-    def save(self, *args, **kwargs):
-        if not self.pk:  # only hash on create
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
-
-    # check password method
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
-    
-    
 
-# ProgramInterest
+# Program Interests
 class ProgramInterest(models.Model):
     program_interest_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='program_interests')
     program_name = models.CharField(max_length=255)
 
-# VolunteerAffiliation
-class VolunteerAffiliation(models.Model):
-    volunteer_affiliation_id = models.AutoField(primary_key=True)
-    volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='affiliations')
-    affiliation = models.ForeignKey('Affiliation', on_delete=models.CASCADE)
 
-# Affiliation
-class Affiliation(models.Model):
-    affiliation_id = models.AutoField(primary_key=True)
-    affiliation_name = models.CharField(max_length=255)
+# Models Per Affiliation
+class StudentProfile(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='student_profile')
+    degree_program = models.CharField(max_length=100)
+    year_level = models.CharField(max_length=10)
+    college = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
 
-    def __str__(self):
-        return self.affiliation_name
+class AlumniProfile(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='alumni_profile')
+    constituent_unit = models.CharField(max_length=100)
+    degree_program = models.CharField(max_length=100)
+    year_graduated = models.CharField(max_length=4)
 
-# Admin Table
+class StaffProfile(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='staff_profile')
+    office_department = models.CharField(max_length=100)
+    designation = models.CharField(max_length=100)
+
+class FacultyProfile(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='faculty_profile')
+    college = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
+
+class RetireeProfile(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='retiree_profile')
+    designation_while_in_up = models.CharField(max_length=100)
+    office_college_department = models.CharField(max_length=255)
+
+
+# Admin
 class Admin(models.Model):
     admin_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=100, unique=True)
@@ -117,7 +127,7 @@ class Admin(models.Model):
     def __str__(self):
         return self.username
 
-# Events Table
+# Events
 class Event(models.Model):
     event_id = models.AutoField(primary_key=True)
     event_name = models.CharField(max_length=255)
@@ -131,7 +141,7 @@ class Event(models.Model):
     def __str__(self):
         return self.event_name
 
-# VolunteerEvent
+
 class VolunteerEvent(models.Model):
     STATUS_CHOICES = [
         ('Joined', 'Joined'),
@@ -152,3 +162,4 @@ class VolunteerEvent(models.Model):
 
     def __str__(self):
         return f"{self.volunteer} - {self.event}"
+    
