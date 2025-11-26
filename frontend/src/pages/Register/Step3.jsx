@@ -12,23 +12,7 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-
-/**
- * Step3 - Programs & Submission
- *
- * Props:
- *  - formData: object
- *  - setFormData: function
- *  - onBack: function
- *  - onSubmit: function (handles the actual submission with OTP)
- */
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error, required = false }) => (
@@ -66,13 +50,8 @@ const FormTextField = memo(({ label, value, onChange, error, multiline = false, 
 FormTextField.displayName = "FormTextField";
 
 // ----------------- Main Component -----------------
-export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) {
+export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
   const [errors, setErrors] = useState({});
-  const [confirmDialog, setConfirmDialog] = useState(false);
-  const [otpDialog, setOtpDialog] = useState(false);
-  const [successDialog, setSuccessDialog] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
 
   // Ensure all fields have default values
   const safeFormData = {
@@ -133,54 +112,12 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
     return Object.keys(newErrors).length === 0;
   }, [safeFormData]);
 
-  // ----------------- Submit Handlers -----------------
-  const handleSubmitClick = () => {
+  const handleNextClick = () => {
     if (!validate()) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    setConfirmDialog(true);
-  };
-
-  const handleConfirmSubmit = async () => {
-    setConfirmDialog(false);
-    setLoading(true);
-
-    // Simulate sending OTP to email
-    try {
-      // Call API to send OTP (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLoading(false);
-      setOtpDialog(true);
-    } catch (error) {
-      setLoading(false);
-      alert("Failed to send OTP. Please try again.");
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length < 4) {
-      alert("Please enter a valid OTP");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Call the parent's onSubmit with formData and OTP
-      await onSubmit?.(safeFormData, otp);
-      setLoading(false);
-      setOtpDialog(false);
-      setSuccessDialog(true);
-    } catch (error) {
-      setLoading(false);
-      alert("OTP verification failed. Please try again.");
-    }
-  };
-
-  const handleSuccessClose = () => {
-    setSuccessDialog(false);
-    // Optionally redirect or reset form
-    window.location.href = "/";
+    onNext(); // navigate to next step
   };
 
   // ----------------- Render -----------------
@@ -212,11 +149,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         PROGRAMS YOU WISH TO PARTICIPATE IN
       </Typography>
 
-      {/* Question 44: Volunteer Programs */}
+      {/* Volunteer Programs */}
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-        VOLUNTEER PROGRAMS *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>VOLUNTEER PROGRAMS *</Typography>
         <FormGroup>
           {volunteerProgramOptions.map((program) => (
             <FormControlLabel
@@ -238,10 +173,10 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         )}
       </Box>
 
-      {/* Question 45: Affirmative Action Subjects */}
+      {/* Affirmative Action Subjects */}
       <Box sx={{ mb: 3 }}>
         <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Under the AFFIRMATIVE ACTION PROGRAM, which of the following subjects are you interested in teaching for the academic enhancement sessions?
+          Under the AFFIRMATIVE ACTION PROGRAM, which subjects are you interested in teaching?
         </Typography>
         <FormGroup>
           {affirmativeActionSubjects.map((subject) => (
@@ -259,10 +194,10 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </FormGroup>
       </Box>
 
-      {/* Question 46: Volunteer Status */}
+      {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
         <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Kindly choose the status of your volunteer application to Ugnayan ng Pahinungod Mindanao. *
+          Kindly choose the status of your volunteer application *
         </Typography>
         <FormSelect
           label="Volunteer Status"
@@ -278,10 +213,10 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         />
       </Box>
 
-      {/* Question 47: Tagapag-Ugnay Group */}
+      {/* Tagapag-Ugnay Group */}
       <Box sx={{ mb: 2 }}>
         <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Would you like to be part of the TAGAPAG-UGNAY Group? This group of volunteers is dedicated to helping with social media marketing, creating publication materials, and assisting during preparation of activities.
+          Would you like to be part of the TAGAPAG-UGNAY Group?
         </Typography>
         <FormSelect
           label="Join Tagapag-Ugnay Group"
@@ -292,11 +227,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         />
       </Box>
 
-      {/* Question 48: Other Organization */}
+      {/* Other Organization */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *</Typography>
         <FormSelect
           label="Part of Other Organization"
           value={safeFormData.otherOrganization}
@@ -307,12 +240,10 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         />
       </Box>
 
-      {/* Question 49: Organization Name */}
+      {/* Organization Name */}
       {safeFormData.otherOrganization === "YES" && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>
-            WHAT IS THE NAME OF THE ORGANIZATION?
-          </Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>WHAT IS THE NAME OF THE ORGANIZATION?</Typography>
           <FormTextField
             label="Organization Name"
             value={safeFormData.organizationName}
@@ -322,7 +253,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </Box>
       )}
 
-      {/* Question 50: How Did You Hear (First Time Only) */}
+      {/* How Did You Hear */}
       {isFirstTimeVolunteer && (
         <Box sx={{ mb: 2 }}>
           <Typography sx={{ mb: 1, fontWeight: 500 }}>
@@ -346,90 +277,12 @@ export default function Step3({ formData = {}, setFormData, onBack, onSubmit }) 
         </Button>
         <Button
           variant="contained"
-          onClick={handleSubmitClick}
-          disabled={loading}
+          onClick={handleNextClick}
           sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
         >
-          {loading ? <CircularProgress size={24} /> : "Submit"}
+          Next
         </Button>
       </Box>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
-        <DialogTitle>Confirm Submission</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to register as a volunteer? An OTP will be sent to your email for verification.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
-          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">
-            Yes, Continue
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* OTP Dialog */}
-      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)}>
-        <DialogTitle>Enter OTP</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ mb: 2 }}>
-            We've sent a verification code to your email. Please enter it below:
-          </Typography>
-          <TextField
-            fullWidth
-            label="OTP Code"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter 6-digit code"
-            inputProps={{ maxLength: 6 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOtpDialog(false)}>Cancel</Button>
-          <Button onClick={handleVerifyOTP} variant="contained" color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : "Verify"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Success Dialog */}
-      <Dialog open={successDialog} onClose={handleSuccessClose}>
-        <DialogContent sx={{ textAlign: "center", py: 4 }}>
-          <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
-            SUBMITTED
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
-          </Typography>
-          <Typography sx={{ fontStyle: "italic", mb: 2 }}>
-            Makibahagi. Maglingkod. MagPahinungód.
-          </Typography>
-          <Box sx={{ textAlign: "left", mx: "auto", maxWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Email:</strong> pahinungod.upmin@up.edu.ph
-            </Typography>
-            <Typography variant="body2">
-              <strong>Facebook:</strong>{" "}
-              <a
-                href="https://www.facebook.com/upmin.pahinungod"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#1976d2" }}
-              >
-                facebook.com/upmin.pahinungod
-              </a>
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSuccessClose} variant="contained" fullWidth>
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }
