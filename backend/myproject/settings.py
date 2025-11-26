@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "rest_framework",
     'rest_framework.authtoken',
     "accounts",
-    'volunteers', 
+    'volunteers',
+    'events',
     'corsheaders',
 ]
 
@@ -56,13 +57,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# changes
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        # Could be one of these:
         'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
 

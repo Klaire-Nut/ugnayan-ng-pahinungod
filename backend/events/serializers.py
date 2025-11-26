@@ -1,29 +1,26 @@
 import importlib
 import importlib.util
 
-# Try to import rest_framework.serializers at runtime only if it's available;
-# this avoids static analyzers raising "Import ... could not be resolved".
+# Try to import rest_framework.serializers at runtime only if it's available
 if importlib.util.find_spec('rest_framework.serializers') is not None:
     serializers = importlib.import_module('rest_framework.serializers')
 else:
-    # Fallback stubs so linters/IDEs won't flag unresolved import when DRF isn't available.
-    # These stubs are minimal and only exist to allow static analysis—install Django REST Framework
-    # in your environment for full functionality.
+    # Fallback stubs for static analysis
     class SerializerMethodField:
-        def __init__(self, *args, **kwargs):  # pragma: no cover
+        def __init__(self, *args, **kwargs):
             pass
 
     class StringRelatedField:
-        def __init__(self, *args, **kwargs):  # pragma: no cover
+        def __init__(self, *args, **kwargs):
             pass
 
-    class ValidationError(Exception):  # pragma: no cover
+    class ValidationError(Exception):
         pass
 
-    class ModelSerializer:  # pragma: no cover
+    class ModelSerializer:
         pass
 
-    class _serializers_stub:  # pragma: no cover
+    class _serializers_stub:
         ModelSerializer = ModelSerializer
         SerializerMethodField = SerializerMethodField
         StringRelatedField = StringRelatedField
@@ -31,15 +28,15 @@ else:
 
     serializers = _serializers_stub()
 
-from .models import (
-    Event, VolunteerEvent, Admin, Volunteer
-)
+from core.models import Event, VolunteerEvent, Admin, Volunteer
+
 
 class AdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Admin
         fields = ['admin_id', 'username']
         read_only_fields = ['admin_id']
+
 
 class EventListSerializer(serializers.ModelSerializer):
     """Serializer for listing events (public view)"""
@@ -64,6 +61,7 @@ class EventListSerializer(serializers.ModelSerializer):
     def get_is_full(self, obj):
         return self.get_available_slots(obj) <= 0
 
+
 class EventDetailSerializer(serializers.ModelSerializer):
     """Serializer for detailed event view"""
     available_slots = serializers.SerializerMethodField()
@@ -75,7 +73,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
         fields = [
             'event_id', 'event_name', 'description',
             'date_start', 'date_end', 'max_participants',
-            'location','available_slots', 
+            'location', 'available_slots', 
             'is_full', 'total_volunteers'
         ]
     
@@ -95,6 +93,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
             status__in=['Joined', 'Completed']
         ).count()
 
+
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating events (admin only)"""
     
@@ -105,7 +104,7 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
             'date_start', 'date_end', 'max_participants',
             'location'
         ]
-        read_only_fields = ['event_id', 'created_by']
+        read_only_fields = ['event_id']
     
     def validate(self, data):
         if data.get('date_start') and data.get('date_end'):
@@ -120,6 +119,7 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
             )
         
         return data
+
 
 class VolunteerEventSerializer(serializers.ModelSerializer):
     """Serializer for volunteer-event relationship"""
@@ -137,6 +137,7 @@ class VolunteerEventSerializer(serializers.ModelSerializer):
     
     def get_volunteer_name(self, obj):
         return f"{obj.volunteer.first_name} {obj.volunteer.last_name}"
+
 
 class VolunteerEventJoinSerializer(serializers.ModelSerializer):
     """Serializer for volunteers joining events"""
@@ -171,6 +172,7 @@ class VolunteerEventJoinSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'Joined'
         return super().create(validated_data)
 
+
 class EventVolunteersSerializer(serializers.ModelSerializer):
     """Serializer for listing volunteers in an event (admin view)"""
     volunteer_info = serializers.SerializerMethodField()
@@ -184,9 +186,10 @@ class EventVolunteersSerializer(serializers.ModelSerializer):
         ]
     
     def get_volunteer_info(self, obj):
+        volunteer = obj.volunteer
         return {
-            'volunteer_id': obj.volunteer.volunteer_id,
-            'name': f"{obj.volunteer.first_name} {obj.volunteer.last_name}",
-            'email': obj.volunteer.accounts.first().email if obj.volunteer.accounts.exists() else None,
-            'mobile': obj.volunteer.contacts.first().mobile_number if obj.volunteer.contacts.exists() else None,
+            'volunteer_id': volunteer.volunteer_id,
+            'name': f"{volunteer.first_name} {volunteer.last_name}",
+            'email': volunteer.accounts.first().email if volunteer.accounts.exists() else None,
+            'mobile': volunteer.contacts.first().mobile_number if volunteer.contacts.exists() else None,
         }

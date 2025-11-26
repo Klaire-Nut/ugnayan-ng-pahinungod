@@ -1,7 +1,8 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from django.utils import timezone
-from events.models import Event, VolunteerEvent
+
+from core.models import Event, VolunteerEvent
 from events.serializers import EventListSerializer, EventDetailSerializer
 
 

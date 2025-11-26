@@ -20,6 +20,8 @@ from .views.volunteer_views import (
     VolunteerUpdateAvailabilityView
 )
 
+app_name = 'events'  # This allows you to use reverse('events:public-event-list')
+
 urlpatterns = [
     # Public endpoints (no auth required)
     path('events/', PublicEventListView.as_view(), name='public-event-list'),
@@ -37,7 +39,7 @@ urlpatterns = [
     path('volunteer/events/', VolunteerEventListView.as_view(), name='volunteer-event-list'),
     path('volunteer/events/<int:event_id>/', VolunteerEventDetailView.as_view(), name='volunteer-event-detail'),
     path('volunteer/events/join/', VolunteerJoinEventView.as_view(), name='volunteer-join-event'),
-    path('volunteer/events/my-events/', VolunteerMyEventsView.as_view(), name='volunteer-my-events'),
+    path('volunteer/my-events/', VolunteerMyEventsView.as_view(), name='volunteer-my-events'),  # Simplified path
     path('volunteer/events/<int:event_id>/drop/', VolunteerDropEventView.as_view(), name='volunteer-drop-event'),
     path('volunteer/events/<int:event_id>/availability/', VolunteerUpdateAvailabilityView.as_view(), name='volunteer-update-availability'),
 ]

@@ -4,16 +4,16 @@ from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from ..models import Event, VolunteerEvent, Volunteer
-from core.models import VolunteerAccount
-from ..serializers import (
+
+from core.models import Event, VolunteerEvent, Volunteer, VolunteerAccount
+from events.serializers import (
     EventListSerializer,
     EventDetailSerializer,
     VolunteerEventJoinSerializer,
     VolunteerEventSerializer
 )
 
-# Custom permission for volunteers
+
 class IsVolunteer(BasePermission):
     """
     Custom permission to only allow volunteer users.
@@ -61,6 +61,7 @@ class VolunteerEventListView(generics.ListAPIView):
         ).count()
         return event.max_participants - joined_count
 
+
 class VolunteerJoinEventView(generics.CreateAPIView):
     """
     Authenticated volunteer can join an event.
@@ -87,6 +88,7 @@ class VolunteerJoinEventView(generics.CreateAPIView):
             status=status.HTTP_201_CREATED
         )
 
+
 class VolunteerMyEventsView(generics.ListAPIView):
     """
     Volunteer can view their joined events.
@@ -106,6 +108,7 @@ class VolunteerMyEventsView(generics.ListAPIView):
             queryset = queryset.filter(status=status_filter)
         
         return queryset.order_by('-signup_date')
+
 
 class VolunteerDropEventView(APIView):
     """
@@ -145,6 +148,7 @@ class VolunteerDropEventView(APIView):
             status=status.HTTP_200_OK
         )
 
+
 class VolunteerEventDetailView(generics.RetrieveAPIView):
     """
     Volunteer can view detailed information about a specific event.
@@ -174,6 +178,7 @@ class VolunteerEventDetailView(generics.RetrieveAPIView):
         }
         
         return Response(data)
+
 
 class VolunteerUpdateAvailabilityView(APIView):
     """

@@ -1,28 +1,30 @@
 # events/views/__init__.py
 
-# Import all views to make them accessible
-from .event_views import PublicEventListView, PublicEventDetailView
+from .event_views import (
+    PublicEventListView,
+    PublicEventDetailView
+)
+
 from .admin_views import (
     AdminEventListCreateView,
     AdminEventDetailView,
     AdminEventVolunteersView,
     AdminUpdateVolunteerEventView,
     AdminCancelEventView,
-    AdminEventStatsView,
-    IsAdmin,
+    AdminEventStatsView
 )
+
 from .volunteer_views import (
     VolunteerEventListView,
     VolunteerJoinEventView,
     VolunteerMyEventsView,
     VolunteerDropEventView,
     VolunteerEventDetailView,
-    VolunteerUpdateAvailabilityView,
-    IsVolunteer,
+    VolunteerUpdateAvailabilityView
 )
 
 __all__ = [
-    # Event views
+    # Public views
     'PublicEventListView',
     'PublicEventDetailView',
     
@@ -33,7 +35,6 @@ __all__ = [
     'AdminUpdateVolunteerEventView',
     'AdminCancelEventView',
     'AdminEventStatsView',
-    'IsAdmin',
     
     # Volunteer views
     'VolunteerEventListView',
@@ -42,5 +43,4 @@ __all__ = [
     'VolunteerDropEventView',
     'VolunteerEventDetailView',
     'VolunteerUpdateAvailabilityView',
-    'IsVolunteer',
 ]
