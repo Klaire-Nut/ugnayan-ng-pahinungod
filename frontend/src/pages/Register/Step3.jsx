@@ -20,7 +20,8 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { registerVolunteer } from "../../services/volunteerApi.js";
-import { formatBackendErrors } from "../../utils/errorHelpers";
+//import { formatBackendErrors } from "../../utils/errorHelpers.js";
+
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error }) => (

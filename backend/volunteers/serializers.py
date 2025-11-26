@@ -7,10 +7,16 @@ from core.models import (
     VolunteerBackground,
     EmergencyContact,
     VolunteerAccount,
+    StudentProfile,
+    AlumniProfile,
+    StaffProfile,
+    FacultyProfile,
+    RetireeProfile
 )
 
 
-# ----------------- Volunteer -----------------
+
+# Volunteer 
 class VolunteerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volunteer
@@ -24,8 +30,7 @@ class VolunteerSerializer(serializers.ModelSerializer):
             "affiliation_type",
         ]
 
-
-# ----------------- Account -----------------
+# Account 
 class VolunteerAccountSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -43,28 +48,28 @@ class VolunteerAccountSerializer(serializers.ModelSerializer):
         return VolunteerAccount.objects.create(**validated_data)
 
 
-# ----------------- Contact -----------------
+# Contact 
 class VolunteerContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerContact
         fields = ["mobile_number", "facebook_link"]
 
 
-# ----------------- Address -----------------
+# Address 
 class VolunteerAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerAddress
         fields = ["street_address", "province", "region"]
 
 
-# ----------------- Background -----------------
+# Background 
 class VolunteerBackgroundSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerBackground
         fields = ["occupation", "org_affiliation", "hobbies_interests"]
 
 
-# ----------------- Emergency Contact -----------------
+# Emergency Contact
 class EmergencyContactSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False, allow_blank=True)
     relationship = serializers.CharField(required=False, allow_blank=True)
