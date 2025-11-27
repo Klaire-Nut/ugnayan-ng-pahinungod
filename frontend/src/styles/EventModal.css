@@ -1,0 +1,137 @@
+/* BACKDROP */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(3px);
+}
+
+/* MODAL BOX */
+.modal-container {
+  background: #fff;
+  width: 520px;
+  max-width: 95%;
+  border-radius: 14px;
+  padding: 0;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* HEADER */
+.modal-header {
+  background: #7B1113;
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-weight: 500;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* BODY */
+.modal-body {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.form-inline {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-inline > div {
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #f7f7f7;
+  border-top: 1px solid #ddd;
+}
+
+/* BUTTONS */
+.btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #bbb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-confirm {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #7B1113;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-confirm:hover {
+  background: #5a0d0f;
+}
+
+/* ANIMATION */
+.animate-scale {
+  transform: scale(0.95);
+  animation: scaleIn 0.2s forwards;
+}
+
+@keyframes scaleIn {
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

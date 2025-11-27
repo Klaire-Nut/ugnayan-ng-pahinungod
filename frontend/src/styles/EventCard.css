@@ -1,0 +1,56 @@
+.event-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: 0.2s ease;
+  border-left: 5px solid #7B1113;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 6px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.edit-btn {
+  color: #007bff;
+}
+
+.edit-btn:hover {
+  background: #e7f0ff;
+}
+
+.delete-btn {
+  color: #d9534f;
+}
+
+.delete-btn:hover {
+  background: #ffe5e5;
+}
+
+.event-location {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.event-volunteers {
+  margin-top: 10px;
+  font-weight: 600;
+}

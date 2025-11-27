@@ -3,21 +3,18 @@ import {
   Box,
   Container,
   Typography,
-  Button,
   Grid,
   CardMedia,
-  Card
 } from "@mui/material";
-import DefaultPage from "../layout/default_page.jsx";
+import Button from "../components/Button"; // ✅ Use your custom Button
 import heroLogo from "../assets/UNP Logo.png";
 import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
 import "../styles/Home.css";
 
-
 export default function Home() {
   return (
-    <DefaultPage>
+    <>
       {/* ---------- HERO SECTION ---------- */}
       <Box
         className="hero-section"
@@ -29,7 +26,6 @@ export default function Home() {
           backgroundRepeat: "no-repeat",
         }}
       >
-        {/* Optional Overlay */}
         <Box className="overlay" />
         <Box className="glass-box">
           <img src={heroLogo} alt="Ugnayan ng Pahinungod Logo" className="hero-logo" />
@@ -40,9 +36,11 @@ export default function Home() {
             <Typography variant="body2" className="hero-subtext">
               Chancellor Lyre Anni E. Murao said the flag at the campus will be flown at half-mast starting August 1 for 10 days.
             </Typography>
-            <Button variant="contained" className="hero-button">
-              KNOW MORE
-            </Button>
+            <Button 
+              text="KNOW MORE" 
+              variant="primary" 
+              className="hero-button"
+            />
           </Box>
         </Box>
       </Box>
@@ -57,7 +55,6 @@ export default function Home() {
             justifyContent="space-between"
             columns={12}
           >
-            {/* Text + Button */}
             <Grid size={{ xs: 12, md: 6 }}>
               <Typography
                 variant="h4"
@@ -66,12 +63,13 @@ export default function Home() {
               >
                 Help shape tomorrow — <br /> volunteer today.
               </Typography>
-              <Button variant="contained" className="volunteer-button">
-                Volunteer
-              </Button>
+              <Button 
+                text="Volunteer" 
+                variant="primary"
+                className="volunteer-button"
+              />
             </Grid>
 
-            {/* Volunteer Image */}
             <Grid size={{ xs: 12, md: 5 }}>
               <Box className="volunteer-glass">
                 <CardMedia
@@ -85,6 +83,6 @@ export default function Home() {
           </Grid>
         </Container>
       </Box>
-    </DefaultPage>
+    </>
   );
 }

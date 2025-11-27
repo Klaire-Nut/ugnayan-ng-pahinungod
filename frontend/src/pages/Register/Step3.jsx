@@ -12,11 +12,6 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { registerVolunteer } from "../../services/volunteerApi.js";
@@ -303,7 +298,9 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
 
       {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Kindly choose the status of your volunteer application *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>
+          Kindly choose the status of your volunteer application *
+        </Typography>
         <FormSelect
           label="Volunteer Status"
           value={safeFormData.volunteerStatus}
@@ -319,7 +316,9 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
 
       {/* Tagapag-Ugnay Group */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Would you like to be part of the TAGAPAG-UGNAY Group?</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>
+          Would you like to be part of the TAGAPAG-UGNAY Group?
+        </Typography>
         <FormSelect
           label="Join Tagapag-Ugnay Group"
           value={safeFormData.tagapagUgnay}
@@ -331,7 +330,7 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
 
       {/* Other Organization */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Are you a part of any other volunteer organization? *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *</Typography>
         <FormSelect
           label="Part of Other Organization"
           value={safeFormData.otherOrganization}
@@ -344,7 +343,7 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
       {/* Organization Name */}
       {safeFormData.otherOrganization === "YES" && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>What is the name of the organization?</Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>WHAT IS THE NAME OF THE ORGANIZATION?</Typography>
           <FormTextField
             label="Organization Name"
             value={safeFormData.organizationName}
@@ -417,11 +416,10 @@ export default function Step3({ formData = {}, setFormData, onBack }) {
         <Button variant="outlined" onClick={onBack}>Back</Button>
         <Button
           variant="contained"
-          onClick={handleSubmitClick}
-          disabled={loading}
+          onClick={handleNextClick}
           sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
         >
-          {loading ? <CircularProgress size={24} /> : "Submit"}
+          Next
         </Button>
       </Box>
 
