@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
-
+from rest_framework import serializers
+from core.models import Event, VolunteerEvent, Admin, Volunteer
 # Try to import rest_framework.serializers at runtime only if it's available
 if importlib.util.find_spec('rest_framework.serializers') is not None:
     serializers = importlib.import_module('rest_framework.serializers')
@@ -28,7 +29,7 @@ else:
 
     serializers = _serializers_stub()
 
-from core.models import Event, VolunteerEvent, Admin, Volunteer
+
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -193,3 +194,30 @@ class EventVolunteersSerializer(serializers.ModelSerializer):
             'email': volunteer.accounts.first().email if volunteer.accounts.exists() else None,
             'mobile': volunteer.contacts.first().mobile_number if volunteer.contacts.exists() else None,
         }
+
+# Serializer For Event Registration
+class VolunteerEventSerializer(serializers.ModelSerializer):
+    volunteer_name = serializers.SerializerMethodField()
+    event_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VolunteerEvent
+        fields = [
+            "id",
+            "volunteer",
+            "volunteer_name",
+            "event",
+            "event_name",
+            "availability_time",
+            "availability_orientation",
+            "status",
+            "hours_rendered",
+            "signup_date",
+        ]
+        read_only_fields = ["id", "status", "hours_rendered", "signup_date"]
+
+    def get_volunteer_name(self, obj):
+        return f"{obj.volunteer.first_name} {obj.volunteer.last_name}"
+
+    def get_event_name(self, obj):
+        return obj.event.event_name

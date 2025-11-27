@@ -1,20 +1,29 @@
 from rest_framework.views import APIView
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password
-
+from django.shortcuts import get_object_or_404
 # Pagination from volunteers
 from .pagination import VolunteerListPagination
-
-
+#Implement this during production
+# from rest_framework.permissions import IsAdminUser
 # Models
 from core.models import (
-    Volunteer, VolunteerContact, VolunteerAddress, VolunteerBackground,
-    EmergencyContact, VolunteerAccount, StudentProfile, AlumniProfile,
-    StaffProfile, FacultyProfile, RetireeProfile
+    Volunteer,
+    VolunteerContact,
+    VolunteerAddress,
+    VolunteerBackground,
+    EmergencyContact,
+    VolunteerAccount,
+    VolunteerEvent,
+    StudentProfile,
+    AlumniProfile,
+    StaffProfile,
+    FacultyProfile,
+    RetireeProfile,
+    Event
 )
 
 # Serializers
@@ -23,7 +32,7 @@ from admin_api.serializers import (
     AdminVolunteerListSerializer
 )
 from volunteers.serializers import VolunteerAccountSerializer
-
+from events.serializers import VolunteerEventSerializer
 
 # For the Admin Dashboard
 class AdminDashboardAPI(APIView):
@@ -163,3 +172,27 @@ class AdminProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Admin View for the list of Registrations for an Event
+class EventRegistrationsView(APIView):
+    """
+    GET /api/admin/events/<event_id>/registrations/
+    Admin-only: list of registrations for a given event.
+    """
+    permission_classes = []  # replace with [IsAdminUser] in production
+
+    def get(self, request, event_id):
+        event = get_object_or_404(Event, event_id=event_id)
+        regs = VolunteerEvent.objects.filter(event=event).select_related('volunteer').order_by('-signup_date')
+        serializer = VolunteerEventSerializer(regs, many=True)
+        return Response(serializer.data)
+
+# Implement this in the Future
+# If we want admins to update a registration status
+#class RegistrationUpdateView(UpdateAPIView):
+#    permission_classes = []  # put IsAdminUser
+#    queryset = VolunteerEvent.objects.all()
+#    serializer_class = VolunteerEventSerializer
+#    lookup_field = 'id'  # registration id
+# Paste in the urls.py
+#path('registrations/<int:id>/', RegistrationUpdateView.as_view(), name='registration-update'),

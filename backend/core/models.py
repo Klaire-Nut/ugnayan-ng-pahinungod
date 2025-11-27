@@ -152,8 +152,10 @@ class VolunteerEvent(models.Model):
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     hours_rendered = models.IntegerField(default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-    availability_time = models.BooleanField(default=False)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Joined")
+    availability_time = models.CharField(max_length=255, blank=True, null=True)
+
     availability_orientation = models.BooleanField(default=False)
     signup_date = models.DateTimeField(auto_now_add=True)
 
@@ -162,4 +164,3 @@ class VolunteerEvent(models.Model):
 
     def __str__(self):
         return f"{self.volunteer} - {self.event}"
-    

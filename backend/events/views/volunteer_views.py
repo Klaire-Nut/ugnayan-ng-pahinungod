@@ -206,3 +206,33 @@ class VolunteerUpdateAvailabilityView(APIView):
         
         serializer = VolunteerEventSerializer(volunteer_event)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RegisterEventAPIView(APIView):
+    permission_classes = [IsAuthenticated]   # temporarily
+
+    def post(self, request, event_id):
+        volunteer_id = request.data.get("volunteer_id")
+        availability_time = request.data.get("availability_time", "")
+        availability_orientation = request.data.get("availability_orientation", False)
+
+        if not volunteer_id:
+            return Response({"error": "volunteer_id is required"}, status=400)
+
+        volunteer = get_object_or_404(Volunteer, volunteer_id=volunteer_id)
+        event = get_object_or_404(Event, event_id=event_id)
+
+        # Check if already registered
+        if VolunteerEvent.objects.filter(volunteer=volunteer, event=event).exists():
+            return Response({"error": "Already registered"}, status=400)
+
+        # Create registration
+        reg = VolunteerEvent.objects.create(
+            volunteer=volunteer,
+            event=event,
+            availability_time=availability_time,
+            availability_orientation=availability_orientation,
+            status="Joined",
+        )
+
+        serializer = VolunteerEventSerializer(reg)
+        return Response(serializer.data, status=201)

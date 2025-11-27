@@ -1,5 +1,6 @@
 # volunteers/views.py
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -7,10 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-
+from django.shortcuts import get_object_or_404
+from django.db import IntegrityError, transaction
+from datetime import timezone, datetime
 # Import the IsVolunteer permission from events app
 from events.views.volunteer_views import IsVolunteer
-
+from events.serializers import VolunteerEventSerializer
 from core.models import (
     Volunteer,
     VolunteerContact,
@@ -23,7 +26,8 @@ from core.models import (
     AlumniProfile,
     StaffProfile,
     FacultyProfile,
-    RetireeProfile
+    RetireeProfile,
+    Event
 )
 
 from .serializers import (
@@ -34,6 +38,7 @@ from .serializers import (
     VolunteerBackgroundSerializer,
     EmergencyContactSerializer
 )
+from events.serializers import VolunteerEventSerializer
 
 # Your existing RegisterVolunteer class stays here
 class RegisterVolunteer(APIView):
@@ -374,4 +379,59 @@ class ChangePasswordView(APIView):
             {"message": "Password changed successfully"},
             status=status.HTTP_200_OK
         )
+
+class RegisterEventAPIView(APIView):
+    """
+    POST /api/events/<event_id>/register/
+    Body: { "volunteer_id": <int>, "availability_time": "9AM - 12PM", "availability_orientation": true }
+    """
+    permission_classes = []  # or [IsVolunteer] IsAuthenticated
+
+    def post(self, request, event_id):
+        volunteer_id = request.data.get("volunteer_id") or request.data.get("volunteer")
+        availability_time = request.data.get("availability_time", "")
+        availability_orientation = bool(request.data.get("availability_orientation", False))
+
+        if not volunteer_id:
+            return Response({"error": "volunteer_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        volunteer = get_object_or_404(Volunteer, volunteer_id=volunteer_id)
+        event = get_object_or_404(Event, event_id=event_id)
+
+        # Prevent joining past events if you want:
+        if event.date_end and event.date_end < timezone.now():
+            return Response({"error": "Cannot register for past events."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create registration, but prevent duplicates using unique_together
+        try:
+            with transaction.atomic():
+                if VolunteerEvent.objects.filter(volunteer=volunteer, event=event).exists():
+                    return Response({"error": "Volunteer already registered for this event."}, status=status.HTTP_400_BAD_REQUEST)
+
+                reg = VolunteerEvent.objects.create(
+                    volunteer=volunteer,
+                    event=event,
+                    availability_time=availability_time,
+                    availability_orientation=availability_orientation,
+                    status="Joined",
+                )
+        except IntegrityError:
+            return Response({"error": "Registration failed (possible duplicate)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = VolunteerEventSerializer(reg)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# Let a volunteer see events they joined
+class VolunteerJoinedEventsView(ListAPIView):
+    """
+    GET /api/volunteers/<volunteer_id>/events/
+    Lists events the given volunteer joined.
+    """
+    serializer_class = VolunteerEventSerializer
+    permission_classes = [IsAuthenticated]  # or custom IsVolunteer
+
+    def get_queryset(self):
+        vol_id = self.kwargs.get("volunteer_id")
+        return VolunteerEvent.objects.filter(volunteer__volunteer_id=vol_id).order_by('-signup_date')
+
 

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'volunteers',
     'events',
     'corsheaders',
+    'rest_framework_simplejwt',
 ]
 
 

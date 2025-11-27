@@ -4,7 +4,7 @@ from .views import (
     VolunteerProfileView,
     VolunteerHistoryView,
     ChangePasswordView,
-    DeleteAccountView
+   # DeleteAccountView
 )
 
 app_name = "volunteers"
@@ -22,5 +22,5 @@ urlpatterns = [
     
     # Privacy Settings
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
-    path("delete-account/", DeleteAccountView.as_view(), name="delete-account"),
+   # path("delete-account/", DeleteAccountView.as_view(), name="delete-account"),
 ]
