@@ -2,7 +2,7 @@ import React from "react";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/Dashboard.css";
 
-const Dashboard = () => {
+const VolunteerDashboard = () => {
   return (
     <div className="dashboard-page">
       {/* Sidebar */}
@@ -114,4 +114,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default VolunteerDashboard;
