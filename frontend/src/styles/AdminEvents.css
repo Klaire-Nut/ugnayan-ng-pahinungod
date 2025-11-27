@@ -1,0 +1,12 @@
+.admin-events-wrapper {
+  /* no margin-left here; layout provides the sidebar */
+  padding: 8px 0;
+}
+.events-header {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:14px;
+}
+.events-title { font-size:28px; color:var(--accent); margin:0; }
+.add-event-btn { background:var(--accent); color:#fff; border:none; padding:8px 12px; border-radius:8px; }
+.events-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+.event-card { background:#fff; padding:16px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }

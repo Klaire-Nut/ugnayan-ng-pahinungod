@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 import logo from "../assets/UNP Logo.png";
 import "../styles/Sidebar.css";
 
-const Sidebar = () => {
+const AdminSidebar = () => {
   return (
     <aside className="sidebar">
       {/* ======= Logo Section ======= */}
@@ -15,19 +15,19 @@ const Sidebar = () => {
 
       {/* ======= Navigation Links ======= */}
       <nav className="sidebar-nav">
-        <NavLink to="/dashboard" className="sidebar-link">
+        <NavLink to="dashboard" className="sidebar-link">
           <FaChartBar /> Dashboard
         </NavLink>
-        <NavLink to="/events" className="sidebar-link">
+        <NavLink to="events" className="sidebar-link">
           <MdEvent /> Events
         </NavLink>
-        <NavLink to="/manage-volunteers" className="sidebar-link">
+        <NavLink to="volunteers" className="sidebar-link">
           <FaUsers /> Manage Volunteers
         </NavLink>
-        <NavLink to="/data-statistics" className="sidebar-link">
+        <NavLink to="stats" className="sidebar-link">
           <FaCog /> Data Statistics
         </NavLink>
-        <NavLink to="/privacy-settings" className="sidebar-link">
+        <NavLink to="privacy" className="sidebar-link">
           <FaLock /> Privacy Settings
         </NavLink>
       </nav>
@@ -51,4 +51,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default AdminSidebar;

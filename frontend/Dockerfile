@@ -7,18 +7,13 @@ WORKDIR /app
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
+RUN npm install -D tailwindcss postcss autoprefixer @tailwindcss/postcss
 
 # Copy all files
 COPY . .
 
-# Make sure vite can be executed
-RUN chmod +x node_modules/.bin/vite
-
-# Build the app (production build)
-RUN npm run build
-
 # Expose the Vite dev server port
 EXPOSE 5173
 
-# Run the development server (or change to "serve" if using a built version)
+# Start Vite dev server
 CMD ["npm", "run", "dev"]
