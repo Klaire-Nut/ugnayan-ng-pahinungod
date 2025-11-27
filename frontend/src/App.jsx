@@ -7,14 +7,10 @@ import DefaultPageAdmin from "./layout/default_page_admin";
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
-
 import Register from "./pages/Register/Register.jsx";
-
 import AuthTest from "./components/AuthTest";
-
 import Login from "./pages/Login";
-
-import VolunteerDashboard from "./pages/Volunteers/Dashboard";
+import VolunteerDashboard from "./pages/Volunteers/Dashboard_V.jsx";
 
 //Admin
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
@@ -27,10 +23,7 @@ import AdminDashboard from "./pages/Admin/Dashboard_A";
 function App() {
   return (
     <Router>
-      {/* TEMP: AuthTest is for testing login/logout functionality.
-          Remove this once the front end login components are fully integrated */}
-      <AuthTest />  
-
+      
       <Routes>
 
         {/* ALL PUBLIC PAGES UNDER DEFAULT LAYOUT */}

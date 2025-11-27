@@ -9,8 +9,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-// Component for the Admin Auth
-import { login } from "../services/auth";
+
+// Import admin login function
+import { login as adminLogin, volunteerLogin } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
 
@@ -21,20 +22,28 @@ export default function LoginPopup({ open, onClose, role }) {
 
   const navigate = useNavigate();
 
-  // Login Function to call Django
-  const handleLogin = async () => {
-  try {
-    const res = await login({ username, password }); // send credentials to backend
-    console.log(res.data); // contains user info
-    setErrorMessage(""); // clear errors
-    onClose(); // close the popup
-  } catch (err) {
-    console.error(err.response?.data);
-    setErrorMessage("Login failed. Check your username and password.");
-  }
-};
+    // Admin login handler
+   const handleLogin = async () => {
+    try {
+      let res;
+      if (role === "Admin") {
+        res = await adminLogin({ username, password }); // Admin uses username
+        navigate("/admin/dashboard");
+      } else {
+        res = await volunteerLogin({ email: username, password }); // Volunteer uses email
+        navigate("/dashboard"); // Volunteer dashboard route
+      }
+      console.log(res.data); // optional: backend returns user info
+      setErrorMessage("");
+      onClose(); // close the popup
+    } catch (err) {
+      console.error(err.response?.data);
+      setErrorMessage("Login failed. Check your username/email and password.");
+    }
+  };
 
 
+// Volunteer Registration Function
   const handleRegister = () => {
     onClose();
     navigate("/register");
