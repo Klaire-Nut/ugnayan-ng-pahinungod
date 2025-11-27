@@ -9,14 +9,31 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+// Component for the Admin Auth
+import { login } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
+
+  // State variables for the username/email and password
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState("");
+
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    console.log(`${role} logged in`);
-    onClose();
-  };
+  // Login Function to call Django
+  const handleLogin = async () => {
+  try {
+    const res = await login({ username, password }); // send credentials to backend
+    console.log(res.data); // contains user info
+    setErrorMessage(""); // clear errors
+    onClose(); // close the popup
+  } catch (err) {
+    console.error(err.response?.data);
+    setErrorMessage("Login failed. Check your username and password.");
+  }
+};
+
 
   const handleRegister = () => {
     onClose();
@@ -51,11 +68,13 @@ export default function LoginPopup({ open, onClose, role }) {
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
+            type="text"
             fullWidth
             variant="outlined"
             size="small"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             label="Password"
@@ -63,6 +82,8 @@ export default function LoginPopup({ open, onClose, role }) {
             fullWidth
             variant="outlined"
             size="small"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <Box display="flex" justifyContent="space-between" gap={1}>

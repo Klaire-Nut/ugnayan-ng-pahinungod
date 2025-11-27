@@ -45,3 +45,6 @@ coverage/
 # package-lock.json
 # pnpm-lock.yaml
 # yarn.lock
+.vite/
+**/__pycache__/
+*.pyc

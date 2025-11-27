@@ -24,6 +24,10 @@ import AdminDashboard from "./pages/Admin/Dashboard_A";
 function App() {
   return (
     <Router>
+      {/* TEMP: AuthTest is for testing login/logout functionality.
+          Remove this once the front end login components are fully integrated */}
+      <AuthTest />  
+
       <Routes>
 
         {/* ALL PUBLIC PAGES UNDER DEFAULT LAYOUT */}
