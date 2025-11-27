@@ -26,7 +26,6 @@ function App() {
     <Router>
       {/* TEMP: AuthTest is for testing login/logout functionality.
           Remove this once the front end login components are fully integrated */}
-      <AuthTest />  
 
       <Routes>
 
