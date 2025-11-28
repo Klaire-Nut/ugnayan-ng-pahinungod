@@ -11,21 +11,6 @@ import {
   Button,
 } from "@mui/material";
 
-/**
- * Step2 - Affiliation
- *
- * Props:
- *  - formData: object
- *  - setFormData: function
- *  - onNext: function
- *  - onBack: function
- *
- * Notes:
- *  - Emergency Contact only visible for STUDENT.
- *  - All fields properly initialized to prevent controlled/uncontrolled warnings.
- *  - Memoized components prevent unnecessary re-renders.
- */
-
 // ----------------- Reusable Components (Outside main component) -----------------
 const FormTextField = memo(({ label, field, value, onChange, error, multiline = false, rows = 1 }) => (
   <TextField
@@ -46,11 +31,15 @@ const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
   <FormControl fullWidth sx={{ mb: 2 }} error={!!error}>
     <InputLabel>{label}</InputLabel>
     <Select value={value} label={label} onChange={onChange}>
-      {options.map((opt) => (
-        <MenuItem key={opt} value={opt}>
-          {opt}
-        </MenuItem>
-      ))}
+      {options.map((opt) => {
+        const optValue = typeof opt === "object" ? opt.value : opt;
+        const optLabel = typeof opt === "object" ? opt.label : opt;
+        return (
+          <MenuItem key={optValue} value={optValue}>
+            {optLabel}
+          </MenuItem>
+        );
+      })}
     </Select>
     {error && (
       <Typography color="error" variant="body2">
@@ -65,7 +54,6 @@ FormSelect.displayName = "FormSelect";
 export default function Step2({ formData = {}, setFormData, onNext, onBack }) {
   const [errors, setErrors] = useState({});
 
-  // Ensure all fields have default values to prevent controlled/uncontrolled warnings
   const safeFormData = {
     affiliation: "",
     degreeProgram: "",
@@ -91,56 +79,56 @@ export default function Step2({ formData = {}, setFormData, onNext, onBack }) {
     retireOffice: "",
     staffOffice: "",
     staffPosition: "",
-    ...formData, // Override with actual values
+    ...formData, 
   };
 
-  // ----------------- Stable Change Handler -----------------
+  // Stable Change Handler 
   const handleChange = useCallback((field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, [setFormData]);
 
-  // ----------------- Validation -----------------
-  const validate = useCallback(() => {
+  // Validation 
+const validate = useCallback(() => {
     const newErrors = {};
 
-    if (!safeFormData.affiliation) {
-      newErrors.affiliation = "This field is required.";
-    }
+    if (!safeFormData.affiliation) newErrors.affiliation = "This field is required.";
 
-    if (safeFormData.affiliation === "STUDENT") {
-      if (!safeFormData.degreeProgram) newErrors.degreeProgram = "Required.";
-      if (!safeFormData.yearLevel) newErrors.yearLevel = "Required.";
-      if (!safeFormData.college) newErrors.college = "Required.";
-      if (!safeFormData.shsType) newErrors.shsType = "Required.";
-      if (!safeFormData.firstUP) newErrors.firstUP = "Required.";
+    switch (safeFormData.affiliation) {
+      case "STUDENT":
+          if (!safeFormData.degreeProgram) newErrors.degreeProgram = "Required.";
+          if (!safeFormData.yearLevel) newErrors.yearLevel = "Required.";
+          if (!safeFormData.college) newErrors.college = "Required.";
+          if (!safeFormData.shsType) newErrors.shsType = "Required.";
+          if (!safeFormData.firstUP) newErrors.firstUP = "Required.";
+          if (!safeFormData.emerName) newErrors.emerName = "Required.";
+          if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
+          if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
+          if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
+          break;
 
-      // Emergency contact only for STUDENT
-      if (!safeFormData.emerName) newErrors.emerName = "Required.";
-      if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
-      if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
-      if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
-    }
+      case "FACULTY":
+          if (!safeFormData.facultyDept) newErrors.facultyDept = "Required.";
+          break;
 
-    if (safeFormData.affiliation === "FACULTY" && !safeFormData.facultyDept) {
-      newErrors.facultyDept = "Required.";
-    }
+      case "ALUMNI":
+          if (!safeFormData.constituentUnit) newErrors.constituentUnit = "Required.";
+          if (!safeFormData.alumniDegree) newErrors.alumniDegree = "Required.";
+          if (!safeFormData.yearGrad) newErrors.yearGrad = "Required.";
+          if (!safeFormData.firstGradCollege) newErrors.firstGradCollege = "Required.";
+          if (!safeFormData.firstGradUP) newErrors.firstGradUP = "Required.";
+        break;
 
-    if (safeFormData.affiliation === "ALUMNI") {
-      if (!safeFormData.constituentUnit) newErrors.constituentUnit = "Required.";
-      if (!safeFormData.alumniDegree) newErrors.alumniDegree = "Required.";
-      if (!safeFormData.yearGrad) newErrors.yearGrad = "Required.";
-      if (!safeFormData.firstGradCollege) newErrors.firstGradCollege = "Required.";
-      if (!safeFormData.firstGradUP) newErrors.firstGradUP = "Required.";
-    }
-
-    if (safeFormData.affiliation === "RETIREE") {
-      if (!safeFormData.retireDesignation) newErrors.retireDesignation = "Required.";
-      if (!safeFormData.retireOffice) newErrors.retireOffice = "Required.";
-    }
-
-    if (safeFormData.affiliation === "UP STAFF") {
-      if (!safeFormData.staffOffice) newErrors.staffOffice = "Required.";
-      if (!safeFormData.staffPosition) newErrors.staffPosition = "Required.";
+      case "RETIREE":
+          if (!safeFormData.retireDesignation) newErrors.retireDesignation = "Required.";
+          if (!safeFormData.retireOffice) newErrors.retireOffice = "Required.";
+        break;
+      case "UP STAFF":
+          if (!safeFormData.staffOffice) newErrors.staffOffice = "Required.";
+          if (!safeFormData.staffPosition) newErrors.staffPosition = "Required.";
+        break;
+        
+      default:
+        break;
     }
 
     setErrors(newErrors);
@@ -166,7 +154,13 @@ export default function Step2({ formData = {}, setFormData, onNext, onBack }) {
         label="In what way are you affiliated to UP? *"
         value={safeFormData.affiliation}
         onChange={(e) => handleChange("affiliation", e.target.value)}
-        options={["STUDENT", "ALUMNI", "UP STAFF", "FACULTY", "RETIREE"]}
+        options={[
+          { label: "STUDENT", value: "STUDENT" },
+          { label: "ALUMNI", value: "ALUMNI" },
+          { label: "UP STAFF", value: "UP STAFF" },
+          { label: "FACULTY", value: "FACULTY" },
+          { label: "RETIREE", value: "RETIREE" },
+        ]}
         error={errors.affiliation}
       />
 

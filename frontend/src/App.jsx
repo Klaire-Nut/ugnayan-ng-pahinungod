@@ -7,10 +7,9 @@ import DefaultPageAdmin from "./layout/default_page_admin";
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
-
 import Register from "./pages/Register/Register.jsx";
+import AuthTest from "./components/AuthTest";
 import Login from "./pages/Login";
-
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V.jsx";
 
 //Admin
@@ -24,6 +23,7 @@ import AdminDashboard from "./pages/Admin/Dashboard_A";
 function App() {
   return (
     <Router>
+      
       <Routes>
 
         {/* ALL PUBLIC PAGES UNDER DEFAULT LAYOUT */}
@@ -55,5 +55,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;
