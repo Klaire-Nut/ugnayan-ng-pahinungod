@@ -9,7 +9,10 @@ import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login";
+
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V.jsx";
+
+//Admin
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
 import AdminVolunteers from "./pages/Admin/AdminVolunteers";
