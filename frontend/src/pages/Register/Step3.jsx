@@ -13,6 +13,13 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
+<<<<<<< HEAD
+=======
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { registerVolunteer } from "../../services/volunteerApi.js";
+//import { formatBackendErrors } from "../../utils/errorHelpers.js";
+
+>>>>>>> main
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error }) => (

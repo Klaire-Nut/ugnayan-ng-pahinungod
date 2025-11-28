@@ -9,7 +9,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { login } from "../services/auth"; // Import the login function
+
+// Import admin login function
+import { login as adminLogin, volunteerLogin } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
   // State variables
@@ -19,11 +21,25 @@ export default function LoginPopup({ open, onClose, role }) {
 
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+    // Admin login handler
+   const handleLogin = async () => {
     try {
-      // in handleLogin()
-      const res = await login({ email, password, role }); // Send credentials to backend
-      console.log(res.data); // Log the success message or user info
+      let res;
+      if (role === "Admin") {
+        res = await adminLogin({ username, password }); // Admin uses username
+        navigate("/admin/dashboard");
+      } else {
+        res = await volunteerLogin({ email: username, password }); // Volunteer uses email
+        navigate("/dashboard"); // Volunteer dashboard route
+      }
+      console.log(res.data); // optional: backend returns user info
+      setErrorMessage("");
+      onClose(); // close the popup
+    } catch (err) {
+      console.error(err.response?.data);
+      setErrorMessage("Login failed. Check your username/email and password.");
+    }
+  };
 
       if (res.data.message === "Login successful!") {
         // If login is successful, handle the response
@@ -37,6 +53,7 @@ export default function LoginPopup({ open, onClose, role }) {
     }
   };
 
+// Volunteer Registration Function
   const handleRegister = () => {
     onClose();
     navigate("/register");

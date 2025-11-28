@@ -8,8 +8,8 @@ import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
+import AuthTest from "./components/AuthTest";
 import Login from "./pages/Login";
-
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V.jsx";
 
 //Admin
@@ -56,5 +56,4 @@ function App() {
     </AuthProvider>
   );
 }
-
 export default App;

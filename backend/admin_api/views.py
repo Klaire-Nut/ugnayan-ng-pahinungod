@@ -34,6 +34,7 @@ from admin_api.serializers import (
 from volunteers.serializers import VolunteerAccountSerializer
 from events.serializers import VolunteerEventSerializer
 
+
 # For the Admin Dashboard
 class AdminDashboardAPI(APIView):
     """
@@ -45,14 +46,14 @@ class AdminDashboardAPI(APIView):
       - events: [] placeholder for now
     """
     permission_classes = []
-    # replace it later with frontend
-    # permission_classes = [IsAdminUser]
+    # replace with [IsAdminUser] in production
 
     def get(self, request):
+        # --- Volunteers ---
         total_volunteers = Volunteer.objects.count()
 
-        # latest 5 volunteers
-        recent_qs = Volunteer.objects.order_by('-volunteer_id')[:5].values(
+        # latest volunteers
+        recent_qs = Volunteer.objects.order_by('-volunteer_id')[:8].values(
             'first_name', 'last_name', 'affiliation_type', 'date_joined'
         )
         recent_volunteers = [
@@ -70,16 +71,30 @@ class AdminDashboardAPI(APIView):
             "inactive": Volunteer.objects.filter(status="Inactive").count(),
             "suspended": Volunteer.objects.filter(status="Suspended").count(),
         }
+        
+        # --- Events ---
+        events_qs = Event.objects.order_by('-event_id')[:5].values(
+            'event_id', 'event_name', 'date_start', 'date_end'
+        )
+        recent_events = [
+            {
+                "id": e['event_id'],
+                "title": e['event_name'],
+                "start_date": e['date_start'],
+                "end_date": e['date_end'],
+            }
+            for e in events_qs
+        ]
 
         data = {
             "total_volunteers": total_volunteers,
             "recent_volunteers": recent_volunteers,
             "status_summary": status_summary,
-            "events": [],  # placeholder (events backend not ready yet)
+            "recent_events": recent_events,  
         }
         return Response(data)
 
-# Admin Dashboard for Viewing of the Volunteers Data only (Fetching data)
+# Admin for Viewing of the Volunteers Data only (Fetching data)
 class AdminVolunteerListView(ListAPIView):
     """
     GET /api/admin/volunteers/?page=1&search=&affiliation_type=student&year=2025&degree_program=BSCS&college=CCS
@@ -137,7 +152,7 @@ class AdminVolunteerListView(ListAPIView):
 
         return qs
 
-# Admin Dashboard for Managing Volunteers for Viewing and Editing of the Volunteers Data 
+# Admin for Managing Volunteers for Viewing and Editing of the Volunteers Data 
 class AdminVolunteerFullView(RetrieveUpdateDestroyAPIView):
     """
     GET: Fetch full volunteer details
