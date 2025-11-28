@@ -11,49 +11,35 @@ import {
 import { useNavigate } from "react-router-dom";
 
 // Import admin login function
-import { login as adminLogin, volunteerLogin } from "../services/auth";
+import { login } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
-  // State variables
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
 
   const navigate = useNavigate();
 
-    // Admin login handler
-   const handleLogin = async () => {
-    try {
-      let res;
-      if (role === "Admin") {
-        res = await adminLogin({ username, password }); // Admin uses username
-        navigate("/admin/dashboard");
-      } else {
-        res = await volunteerLogin({ email: username, password }); // Volunteer uses email
-        navigate("/dashboard"); // Volunteer dashboard route
-      }
-      console.log(res.data); // optional: backend returns user info
-      setErrorMessage("");
-      onClose(); // close the popup
-    } catch (err) {
-      console.error(err.response?.data);
-      setErrorMessage("Login failed. Check your username/email and password.");
-    }
-  };
+  // --- Corrected Login Handler ---
+  const handleLogin = async () => {
+  try {
+    const res = await login({ email, password, role });
 
-      if (res.data.message === "Login successful!") {
-        // If login is successful, handle the response
-        setErrorMessage(""); // Clear any previous error messages
-        onClose(); // Close the login popup
-        navigate("/dashboard"); // Navigate to a dashboard or home page after successful login
-      }
-    } catch (err) {
-      console.error(err.response?.data);
-      setErrorMessage("Login failed. Check your email and password.");
+    if (role === "Admin") {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/dashboard");
     }
-  };
 
-// Volunteer Registration Function
+    setErrorMessage("");
+    onClose();
+  } catch (err) {
+    console.error(err.response?.data);
+    setErrorMessage("Login failed. Check your credentials.");
+  }
+};
+
+  // Volunteer Registration Function
   const handleRegister = () => {
     onClose();
     navigate("/register");
@@ -81,8 +67,8 @@ export default function LoginPopup({ open, onClose, role }) {
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Email"
-            type="email"
+            label={role === "Admin" ? "Username" : "Email"}
+            type={role === "Admin" ? "text" : "email"}
             fullWidth
             variant="outlined"
             size="small"
