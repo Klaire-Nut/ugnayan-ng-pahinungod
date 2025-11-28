@@ -9,31 +9,33 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-// Component for the Admin Auth
-import { login } from "../services/auth";
+import { login } from "../services/auth"; // Import the login function
 
 export default function LoginPopup({ open, onClose, role }) {
-
-  // State variables for the username/email and password
-  const [username, setUsername] = React.useState("");
+  // State variables
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
 
   const navigate = useNavigate();
 
-  // Login Function to call Django
   const handleLogin = async () => {
-  try {
-    const res = await login({ username, password }); // send credentials to backend
-    console.log(res.data); // contains user info
-    setErrorMessage(""); // clear errors
-    onClose(); // close the popup
-  } catch (err) {
-    console.error(err.response?.data);
-    setErrorMessage("Login failed. Check your username and password.");
-  }
-};
+    try {
+      // in handleLogin()
+      const res = await login({ email, password, role }); // Send credentials to backend
+      console.log(res.data); // Log the success message or user info
 
+      if (res.data.message === "Login successful!") {
+        // If login is successful, handle the response
+        setErrorMessage(""); // Clear any previous error messages
+        onClose(); // Close the login popup
+        navigate("/dashboard"); // Navigate to a dashboard or home page after successful login
+      }
+    } catch (err) {
+      console.error(err.response?.data);
+      setErrorMessage("Login failed. Check your email and password.");
+    }
+  };
 
   const handleRegister = () => {
     onClose();
@@ -55,26 +57,20 @@ export default function LoginPopup({ open, onClose, role }) {
         },
       }}
     >
-      <DialogTitle
-        sx={{
-          textAlign: "center",
-          color: "#7B1113",
-          fontWeight: 600,
-        }}
-      >
+      <DialogTitle sx={{ textAlign: "center", color: "#7B1113", fontWeight: 600 }}>
         {role === "Admin" ? "Admin Login" : "Volunteer Login"}
       </DialogTitle>
 
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Username"
-            type="text"
+            label="Email"
+            type="email"
             fullWidth
             variant="outlined"
             size="small"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
             label="Password"
@@ -85,6 +81,12 @@ export default function LoginPopup({ open, onClose, role }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {errorMessage && (
+            <Typography variant="body2" color="error" textAlign="center" sx={{ mt: 1 }}>
+              {errorMessage}
+            </Typography>
+          )}
 
           <Box display="flex" justifyContent="space-between" gap={1}>
             <Button

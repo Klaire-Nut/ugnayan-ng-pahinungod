@@ -1,3 +1,4 @@
+# events/views/volunteer_views.py
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, BasePermission
@@ -207,8 +208,12 @@ class VolunteerUpdateAvailabilityView(APIView):
         serializer = VolunteerEventSerializer(volunteer_event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class RegisterEventAPIView(APIView):
-    permission_classes = [IsAuthenticated]   # temporarily
+    """
+    Legacy endpoint for event registration.
+    """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, event_id):
         volunteer_id = request.data.get("volunteer_id")
