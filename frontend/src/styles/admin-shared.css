@@ -167,3 +167,28 @@ Sidebar inner
   .admin-sidebar { display:none; position:static; width:0; min-width:0; }
   .admin-content { margin-left:0; }
 }
+
+.link-button {
+  background: none;
+  border: none;
+  color: #7d0a0a;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.small-view-btn {
+  background: none;
+  border: 1px solid #7d0a0a;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #7d0a0a;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.small-view-btn:hover {
+  background: #7d0a0a;
+  color: white;
+}

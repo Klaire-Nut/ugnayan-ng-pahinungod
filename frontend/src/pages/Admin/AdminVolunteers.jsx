@@ -1,41 +1,102 @@
-import React, { useState } from "react";
-import { Box, Typography, Paper, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import React, { useState, useMemo } from "react";
+import { Box, Button } from "@mui/material";
+import { useOutletContext } from "react-router-dom";
+import AdminTable from "../../components/AdminTable";
+import SearchFilter from "../../components/SearchFilter";
 
 export default function AdminVolunteers() {
-  const [volunteers] = useState([
-    { id: 1, name: "Juan Dela Cruz", email: "juan@example.com", contact: "09123456789" },
-    { id: 2, name: "Maria Santos", email: "maria@example.com", contact: "09987654321" },
-  ]);
+  const { volunteers = [] } = useOutletContext();
+
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
+
+  // Volunteer ID generator
+  const generateVolunteerID = (v, indexOnDay) => {
+    if (!v.registeredAt) return "UNP-UNKNOWN";
+    const d = new Date(v.registeredAt);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const seq = String(indexOnDay + 1).padStart(2, "0");
+    return `UNP${mm}${dd}${yyyy}-${seq}`;
+  };
+
+  // Process data
+  const processed = volunteers.map((v, _, arr) => {
+    const sameDay = arr.filter((x) => x.registeredAt === v.registeredAt);
+    const indexOnDay = sameDay.findIndex((x) => x.id === v.id);
+    return {
+      ...v,
+      volunteerID: generateVolunteerID(v, indexOnDay),
+      name: `${v.firstName} ${v.lastName}`,
+    };
+  });
+
+  const uniqueAffiliations = Array.from(new Set(volunteers.map((v) => v.affiliation)));
+
+  // FILTER + SEARCH
+  const filtered = useMemo(() => {
+    return processed.filter((v) => {
+      const matchesSearch =
+        v.name.toLowerCase().includes(search.toLowerCase()) ||
+        v.volunteerID.toLowerCase().includes(search.toLowerCase()) ||
+        v.affiliation.toLowerCase().includes(search.toLowerCase());
+
+      const matchesFilter = filter ? v.affiliation === filter : true;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [processed, search, filter]);
+
+  const columns = [
+    { header: "Volunteer ID", field: "volunteerID" },
+    { header: "Name", field: "name" },
+    { header: "Affiliation", field: "affiliation" },
+  ];
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" fontWeight="bold" mb={2}>
-        Volunteers
-      </Typography>
+    <div className="admin-events-wrapper">
+      {/* Header Section */}
+      <div className="events-header" style={{ display: "flex", justifyContent: "space-between" }}>
+        <h2 className="events-title">VOLUNTEERS</h2>
 
-      <Paper sx={{ padding: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>Name</strong></TableCell>
-              <TableCell><strong>Email</strong></TableCell>
-              <TableCell><strong>Contact</strong></TableCell>
-            </TableRow>
-          </TableHead>
+        {/* Search + Filter */}
+        <SearchFilter
+          search={search}
+          setSearch={setSearch}
+          filter={filter}
+          setFilter={setFilter}
+          affiliations={uniqueAffiliations}
+        />
+      </div>
 
-          <TableBody>
-            {volunteers.map((v) => (
-              <TableRow key={v.id}>
-                <TableCell>{v.id}</TableCell>
-                <TableCell>{v.name}</TableCell>
-                <TableCell>{v.email}</TableCell>
-                <TableCell>{v.contact}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
-    </Box>
+      {/* Table */}
+      <section className="events-section fade-in">
+        <Box sx={{ mt: 1 }}>
+          <AdminTable
+            columns={columns}
+            rows={filtered}
+            actions={(row) => (
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{
+                  borderColor: "#7b1d1d",
+                  color: "#7b1d1d",
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "#7b1d1d",
+                    color: "white",
+                  },
+                }}
+                onClick={() => console.log("View volunteer", row.id)}
+              >
+                View
+              </Button>
+            )}
+          />
+        </Box>
+      </section>
+    </div>
   );
 }

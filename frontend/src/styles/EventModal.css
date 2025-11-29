@@ -1,137 +1,93 @@
-/* BACKDROP */
+/* modal backdrop */
 .modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.45);
+  inset: 0;
+  background: rgba(8,10,12,0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(3px);
+  z-index: 3000;
 }
 
-/* MODAL BOX */
+/* container */
 .modal-container {
-  background: #fff;
-  width: 520px;
+  width: 880px;
   max-width: 95%;
-  border-radius: 14px;
-  padding: 0;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(10,10,20,0.35);
   overflow: hidden;
-  animation: fadeIn 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+  animation: pop 160ms ease;
 }
 
-/* HEADER */
+/* header */
 .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: #7B1113;
   color: white;
-  padding: 1rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 14px 18px;
 }
-
-.modal-header h2 {
-  margin: 0;
-  font-weight: 500;
-}
-
+.modal-header h2 { margin: 0; font-size: 1.05rem; font-weight: 700; }
 .close-btn {
   background: transparent;
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
 }
 
-/* BODY */
+/* body */
 .modal-body {
-  padding: 1.5rem;
+  padding: 16px 18px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fafafa;
 }
 
-.form-group {
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  font-size: 0.9rem;
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+/* form */
+.form-group { margin-bottom: 12px; display:flex; flex-direction:column; gap:6px; }
+.form-group input, .form-group textarea, .form-inline input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
   font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
 }
 
-.form-inline {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
+.form-inline { display:flex; gap:12px; align-items:flex-end; }
+.small-row { gap: 12px; }
 
-.form-inline > div {
-  flex: 1;
-}
+.mode-switch { display:flex; gap:8px; align-items:center; }
+.mode-switch label { font-size: 0.85rem; margin-right:8px; }
 
-.modal-footer {
-  padding: 1rem 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  background: #f7f7f7;
-  border-top: 1px solid #ddd;
-}
+/* days list */
+.days-list { margin-top: 8px; }
+.days-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.day-row { display:flex; gap:12px; align-items:center; padding:8px; background: #fff; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; }
+.day-index { width:64px; font-weight:600; color:#444; }
+.day-fields { display:flex; gap:8px; flex:1; align-items:center; }
+.day-fields input { width: 100%; max-width: 220px; }
 
-/* BUTTONS */
-.btn-cancel {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #bbb;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
+/* actions */
+.day-actions { width: 100px; display:flex; justify-content:flex-end; }
+.small-btn { padding:6px 10px; border-radius:6px; border: none; background:#eee; cursor:pointer; }
+.small-btn.danger { background: #ffebeb; color: #a00; }
 
-.btn-confirm {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #7B1113;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
+/* footer */
+.modal-footer { padding: 12px 18px; display:flex; justify-content:flex-end; gap:8px; background: #fff; }
+.btn-cancel { padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; background: white; cursor:pointer; }
+.btn-confirm { padding: 8px 14px; border-radius: 8px; border: none; background: #7B1113; color: white; cursor:pointer; }
 
-.btn-confirm:hover {
-  background: #5a0d0f;
-}
+/* errors */
+.field-error { color: #b00020; font-size: 0.85rem; margin-top:4px; }
+.field-note { color: #666; font-size: 0.9rem; }
 
-/* ANIMATION */
-.animate-scale {
-  transform: scale(0.95);
-  animation: scaleIn 0.2s forwards;
-}
-
-@keyframes scaleIn {
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* animation */
+@keyframes pop { from { transform: scale(.98); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.animate-scale { animation: pop 0.14s ease-out; }
