@@ -20,11 +20,13 @@ from django.contrib.auth import get_user_model
 class AdminVolunteerListSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
+    volunteer_identifier = serializers.CharField(read_only=True)
 
     class Meta:
         model = Volunteer
         fields = [
             "volunteer_id",
+            "volunteer_identifier",
             "full_name",
             "email",
             "affiliation_type",
@@ -44,8 +46,7 @@ class AdminVolunteerListSerializer(serializers.ModelSerializer):
         return " ".join(p for p in parts if p).strip()
 
 
-
-# Admin Dashboard - Volunteer Management for Full Detail View and Editing
+# Volunteer Management for Full Detail View and Editing
 class VolunteerContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerContact
@@ -117,6 +118,8 @@ class AdminVolunteerDetailSerializer(serializers.ModelSerializer):
     faculty_profile = FacultyProfileSerializer(required=False, allow_null=True)
     retiree_profile = RetireeProfileSerializer(required=False, allow_null=True)
 
+    volunteer_identifier = serializers.CharField(read_only=True)
+    
     class Meta:
         model = Volunteer
         fields = "__all__"

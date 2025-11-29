@@ -1,7 +1,7 @@
 import importlib
 import importlib.util
 from rest_framework import serializers
-from core.models import Event, VolunteerEvent, Admin, Volunteer
+from core.models import Event, VolunteerEvent, Admin, Volunteer, EventSchedule
 # Try to import rest_framework.serializers at runtime only if it's available
 if importlib.util.find_spec('rest_framework.serializers') is not None:
     serializers = importlib.import_module('rest_framework.serializers')
@@ -221,3 +221,50 @@ class VolunteerEventSerializer(serializers.ModelSerializer):
 
     def get_event_name(self, obj):
         return obj.event.event_name
+
+# Serializer for Creating Event in the Admin Side
+class EventScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventSchedule
+        fields = ["schedule_id", "day", "start_time", "end_time"]
+
+class AdminEventSerializer(serializers.ModelSerializer):
+    schedules = EventScheduleSerializer(many=True, required=False)
+
+    class Meta:
+        model = Event
+        fields = [
+            "event_id",
+            "event_name",
+            "description",
+            "location",
+            "date_start",
+            "date_end",
+            "max_participants",
+            "created_by",
+            "schedules",
+        ]
+        read_only_fields = ["event_id"]
+
+    def create(self, validated_data):
+        schedules_data = validated_data.pop("schedules", [])
+        event = Event.objects.create(**validated_data)
+        for sched in schedules_data:
+            EventSchedule.objects.create(event=event, **sched)
+        return event
+
+    def update(self, instance, validated_data):
+        schedules_data = validated_data.pop("schedules", None)
+
+        # update simple fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # if schedules provided, replace them
+        if schedules_data is not None:
+            instance.schedules.all().delete()
+            for sched in schedules_data:
+                EventSchedule.objects.create(event=instance, **sched)
+
+        return instance

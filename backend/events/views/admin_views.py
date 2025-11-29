@@ -12,7 +12,8 @@ from events.serializers import (
     EventDetailSerializer,
     EventCreateUpdateSerializer,
     EventVolunteersSerializer,
-    VolunteerEventSerializer
+    VolunteerEventSerializer,
+    AdminEventSerializer
 )
 
 
@@ -194,3 +195,17 @@ class AdminEventStatsView(APIView):
             'is_full': available_slots <= 0,
             'total_active': active_volunteers
         })
+
+# For Admin Events (Creating, Deleting, Editing)
+class AdminEventListCreateView(generics.ListCreateAPIView):
+    queryset = Event.objects.all().order_by("-event_id")
+    serializer_class = AdminEventSerializer
+    permission_classes = []       # change to IsAdminUser later
+    authentication_classes = []          # disable auth for simple testing
+
+class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = AdminEventSerializer
+    lookup_field = "event_id"
+    permission_classes = []       # change to IsAdminUser later
+    authentication_classes = []

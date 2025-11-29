@@ -9,7 +9,10 @@ from .views.admin_views import (
     AdminEventVolunteersView,
     AdminUpdateVolunteerEventView,
     AdminCancelEventView,
-    AdminEventStatsView
+    AdminEventStatsView,
+    AdminEventListCreateView, 
+    AdminEventDetailView
+
 )
 from .views.volunteer_views import (
     VolunteerEventListView,
@@ -49,5 +52,11 @@ urlpatterns = [
     path('<int:event_id>/register/', RegisterEventAPIView.as_view(), name='event-register'),
 
     path('volunteers/<int:volunteer_id>/events/', VolunteerJoinEventView.as_view(), name='volunteer-joined-events'),
+
+    # Admin create/list events
+    path('admin/events/', AdminEventListCreateView.as_view(), name='admin-event-list-create'),
+
+    # Admin detail / update / delete event
+    path('admin/events/<int:event_id>/', AdminEventDetailView.as_view(), name='admin-event-detail'),
 
 ]

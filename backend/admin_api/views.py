@@ -5,8 +5,9 @@ from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
-# Pagination from volunteers
 from .pagination import VolunteerListPagination
+from django.db.models import Count
+from datetime import date
 #Implement this during production
 # from rest_framework.permissions import IsAdminUser
 # Models
@@ -40,39 +41,33 @@ class AdminDashboardAPI(APIView):
     """
     GET /api/admin/dashboard/
     Admin-only endpoint returning:
-      - total_volunteers
-      - recent_volunteers (latest 5)
-      - status_summary (Active/Inactive/Suspended counts)
-      - events: [] placeholder for now
+      - recent_volunteers 
+      - recent events
     """
     permission_classes = []
     # replace with [IsAdminUser] in production
 
     def get(self, request):
-        # --- Volunteers ---
-        total_volunteers = Volunteer.objects.count()
-
-        # latest volunteers
+        # Recent Volunteers (show Name, Affiliation, Date Joined, Unique ID)
         recent_qs = Volunteer.objects.order_by('-volunteer_id')[:8].values(
-            'first_name', 'last_name', 'affiliation_type', 'date_joined'
+            'first_name', 
+            'last_name', 
+            'affiliation_type', 
+            'date_joined',
+            'volunteer_identifier'
         )
+
         recent_volunteers = [
             {
                 "name": f"{r['first_name']} {r['last_name']}".strip(),
                 "affiliation": (r.get('affiliation_type') or ""),
-                "date_joined": r.get('date_joined')
+                "date_joined": r.get('date_joined'),
+                "identifier": r.get('volunteer_identifier'), 
             }
             for r in recent_qs
         ]
-
-        # status summary
-        status_summary = {
-            "active": Volunteer.objects.filter(status="Active").count(),
-            "inactive": Volunteer.objects.filter(status="Inactive").count(),
-            "suspended": Volunteer.objects.filter(status="Suspended").count(),
-        }
         
-        # --- Events ---
+        # Recent Events
         events_qs = Event.objects.order_by('-event_id')[:5].values(
             'event_id', 'event_name', 'date_start', 'date_end'
         )
@@ -87,14 +82,12 @@ class AdminDashboardAPI(APIView):
         ]
 
         data = {
-            "total_volunteers": total_volunteers,
             "recent_volunteers": recent_volunteers,
-            "status_summary": status_summary,
             "recent_events": recent_events,  
         }
         return Response(data)
 
-# Admin for Viewing of the Volunteers Data only (Fetching data)
+# Managing Volunteers - Admin for Viewing of the Volunteers Data only (Fetching data and searching Data)
 class AdminVolunteerListView(ListAPIView):
     """
     GET /api/admin/volunteers/?page=1&search=&affiliation_type=student&year=2025&degree_program=BSCS&college=CCS
@@ -119,6 +112,7 @@ class AdminVolunteerListView(ListAPIView):
                 Q(first_name__icontains=search) |
                 Q(last_name__icontains=search) |
                 Q(nickname__icontains=search) |
+                Q(volunteer_identifier__icontains=search) |
                 Q(accounts__email__icontains=search)
             ).distinct()
 
@@ -152,7 +146,7 @@ class AdminVolunteerListView(ListAPIView):
 
         return qs
 
-# Admin for Managing Volunteers for Viewing and Editing of the Volunteers Data 
+# Mananging Volunteers - Admin for Managing Volunteers for Viewing and Editing of the Volunteers Data 
 class AdminVolunteerFullView(RetrieveUpdateDestroyAPIView):
     """
     GET: Fetch full volunteer details
@@ -188,7 +182,7 @@ class AdminProfileView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Admin View for the list of Registrations for an Event
+# Event - Admin View for the list of Registrations for an Event
 class EventRegistrationsView(APIView):
     """
     GET /api/admin/events/<event_id>/registrations/
@@ -202,12 +196,47 @@ class EventRegistrationsView(APIView):
         serializer = VolunteerEventSerializer(regs, many=True)
         return Response(serializer.data)
 
-# Implement this in the Future
-# If we want admins to update a registration status
-#class RegistrationUpdateView(UpdateAPIView):
-#    permission_classes = []  # put IsAdminUser
-#    queryset = VolunteerEvent.objects.all()
-#    serializer_class = VolunteerEventSerializer
-#    lookup_field = 'id'  # registration id
-# Paste in the urls.py
-#path('registrations/<int:id>/', RegistrationUpdateView.as_view(), name='registration-update'),
+# Admin Data Statistics 
+class AdminDataStatisticsAPI(APIView):
+    """
+    GET /api/admin/data-statistics/
+    Returns:
+      - total_volunteers
+      - total_events
+      - total_active_volunteers
+      - volunteer_growth_percentage (compared to previous year)
+      - volunteers_by_affiliation
+    """
+    permission_classes = []
+    # replace with [IsAdminUser] in production
+
+    def get(self, request):
+        # Total volunteers
+        total_volunteers = Volunteer.objects.count()
+
+        # Total active volunteers
+        total_active = Volunteer.objects.filter(status="Active").count()
+
+        # Total events
+        total_events = Event.objects.count()
+
+        # Volunteer growth %
+        current_year = date.today().year
+        previous_year_count = Volunteer.objects.filter(date_joined__year=current_year - 1).count()
+        current_year_count = Volunteer.objects.filter(date_joined__year=current_year).count()
+        growth_percentage = 0
+        if previous_year_count > 0:
+            growth_percentage = ((current_year_count - previous_year_count) / previous_year_count) * 100
+
+        # Volunteers by affiliation
+        affiliation_data = Volunteer.objects.values('affiliation_type').annotate(count=Count('affiliation_type'))
+
+        data = {
+            "total_volunteers": total_volunteers,
+            "total_active_volunteers": total_active,
+            "total_events": total_events,
+            "volunteer_growth_percentage": round(growth_percentage, 2),
+            "volunteers_by_affiliation": list(affiliation_data),
+        }
+
+        return Response(data)

@@ -13,4 +13,7 @@ urlpatterns = [
     # Auth API
     path('api/auth/', include('accounts.urls')),
     path('api/', include('events.urls')),
+
+    # Admin Events (Creating, Deleting, Editing)
+    path('api/', include('events.urls')),
 ]

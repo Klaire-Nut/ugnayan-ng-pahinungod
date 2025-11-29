@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.hashers import check_password
 
 # Volunteer (Main Profile)
-
 class Volunteer(models.Model):
     STATUS_CHOICES = [
         ('Active', 'Active'),
@@ -19,6 +18,12 @@ class Volunteer(models.Model):
     ]
 
     volunteer_id = models.AutoField(primary_key=True)
+    volunteer_identifier = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        null=True
+    )
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
@@ -141,7 +146,19 @@ class Event(models.Model):
     def __str__(self):
         return self.event_name
 
+# Event Schedule
+class EventSchedule(models.Model):
+    schedule_id = models.AutoField(primary_key=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='schedules')
+    day = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
 
+    def __str__(self):
+        return f"{self.event.event_name} - {self.day} {self.start_time}-{self.end_time}"
+
+
+#Volunteer Event (Volunteers who Join event)
 class VolunteerEvent(models.Model):
     STATUS_CHOICES = [
         ('Joined', 'Joined'),
