@@ -1,6 +1,5 @@
-// ============================================================================
 // STEP 1 COMPONENT - src/pages/Register/Step1.jsx
-// ============================================================================
+
 import React, { useState, memo, useCallback } from "react";
 import {
   Box,
