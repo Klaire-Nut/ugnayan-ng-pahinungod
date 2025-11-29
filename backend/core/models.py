@@ -142,6 +142,8 @@ class Event(models.Model):
     max_participants = models.IntegerField()
     location = models.CharField(max_length=255)
     created_by = models.ForeignKey(Admin, on_delete=models.CASCADE, related_name='events')
+    is_canceled = models.BooleanField(default=False) 
+    is_deleted = models.BooleanField(default=False) 
 
     def __str__(self):
         return self.event_name

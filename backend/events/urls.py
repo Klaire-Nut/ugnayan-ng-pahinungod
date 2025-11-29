@@ -11,8 +11,9 @@ from .views.admin_views import (
     AdminCancelEventView,
     AdminEventStatsView,
     AdminEventListCreateView, 
-    AdminEventDetailView
-
+    AdminEventDetailView,
+    AdminDeleteEventView,
+    AdminRestoreEventView
 )
 from .views.volunteer_views import (
     VolunteerEventListView,
@@ -58,5 +59,9 @@ urlpatterns = [
 
     # Admin detail / update / delete event
     path('admin/events/<int:event_id>/', AdminEventDetailView.as_view(), name='admin-event-detail'),
+    path('admin/events/<int:event_id>/cancel/', AdminCancelEventView.as_view(), name='admin-cancel-event'),
+    path('admin/events/<int:event_id>/delete/', AdminDeleteEventView.as_view(), name='admin-delete-event'),
+    path('admin/events/<int:event_id>/restore/', AdminRestoreEventView.as_view(), name='admin-restore-event'),
+
 
 ]

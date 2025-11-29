@@ -10,7 +10,8 @@ from events.serializers import (
     EventListSerializer,
     EventDetailSerializer,
     VolunteerEventJoinSerializer,
-    VolunteerEventSerializer
+    VolunteerEventSerializer,
+    AdminEventSerializer
 )
 
 
@@ -40,6 +41,7 @@ class VolunteerEventListView(generics.ListAPIView):
     """
     Authenticated volunteer can view all available events.
     """
+    serializer_class = AdminEventSerializer 
     permission_classes = [IsAuthenticated, IsVolunteer]
     serializer_class = EventListSerializer
     

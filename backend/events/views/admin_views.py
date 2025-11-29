@@ -196,9 +196,11 @@ class AdminEventStatsView(APIView):
             'total_active': active_volunteers
         })
 
+
+# ---------------------------------------------------------
 # For Admin Events (Creating, Deleting, Editing)
 class AdminEventListCreateView(generics.ListCreateAPIView):
-    queryset = Event.objects.all().order_by("-event_id")
+    queryset = Event.objects.filter(is_deleted=False).order_by("-event_id")
     serializer_class = AdminEventSerializer
     permission_classes = []       # change to IsAdminUser later
     authentication_classes = []          # disable auth for simple testing
@@ -209,3 +211,36 @@ class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "event_id"
     permission_classes = []       # change to IsAdminUser later
     authentication_classes = []
+
+# Cancel Event
+class AdminCancelEventView(APIView):
+    permission_classes = []  # Replace with [IsAdminUser] in production
+
+    def post(self, request, event_id):
+        event = Event.objects.get(event_id=event_id)
+        event.is_canceled = True
+        event.save()
+        return Response({"message": "Event canceled successfully."})
+
+# Delete Event (Soft Delete)
+class AdminDeleteEventView(APIView):
+    permission_classes = []
+
+    def delete(self, request, event_id):
+        event = Event.objects.get(event_id=event_id)
+        event.is_deleted = True
+        event.save()
+        return Response({"message": "Event deleted (soft delete)."})
+
+# Restore Event
+class AdminRestoreEventView(APIView):
+    permission_classes = []
+
+    def post(self, request, event_id):
+        event = Event.objects.get(event_id=event_id)
+        if event.is_deleted:
+            event.is_deleted = False
+            event.is_canceled = False  # Optional: restore also uncancels
+            event.save()
+            return Response({"message": "Event restored successfully."})
+        return Response({"message": "Event is not deleted."}, status=400)

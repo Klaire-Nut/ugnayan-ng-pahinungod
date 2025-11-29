@@ -222,7 +222,7 @@ class VolunteerEventSerializer(serializers.ModelSerializer):
     def get_event_name(self, obj):
         return obj.event.event_name
 
-# Serializer for Creating Event in the Admin Side
+# Serializer for Event in the Admin Side
 class EventScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventSchedule
@@ -230,6 +230,9 @@ class EventScheduleSerializer(serializers.ModelSerializer):
 
 class AdminEventSerializer(serializers.ModelSerializer):
     schedules = EventScheduleSerializer(many=True, required=False)
+    is_canceled = serializers.BooleanField(read_only=True)
+    is_deleted = serializers.BooleanField(read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -243,8 +246,23 @@ class AdminEventSerializer(serializers.ModelSerializer):
             "max_participants",
             "created_by",
             "schedules",
+            "is_canceled",
+            "is_deleted",
+            "status",
         ]
         read_only_fields = ["event_id"]
+
+    def get_status(self, obj):
+        from django.utils import timezone
+        now = timezone.now()
+        if obj.is_canceled:
+            return "Canceled"
+        elif obj.date_start <= now <= obj.date_end:
+            return "Ongoing"
+        elif obj.date_end < now:
+            return "Done"
+        else:
+            return "Upcoming"
 
     def create(self, validated_data):
         schedules_data = validated_data.pop("schedules", [])
