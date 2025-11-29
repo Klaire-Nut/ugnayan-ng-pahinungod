@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// ----------------- Error Interceptor -----------------
+// Error Interceptor 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -28,10 +28,22 @@ api.interceptors.response.use(
   }
 );
 
-// ----------------- Registration -----------------
-export const registerVolunteer = (payload) => {
-  return api.post("/volunteers/register/", payload);
+// Registration 
+export const registerVolunteer = async (formData) => {
+  try {
+    const res = await api.post("/volunteers/register/", formData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return { success: true, data: res.data };
+  } catch (err) {
+    return {
+      success: false,
+      error: err._general || err.account?.email || "Something went wrong.",
+    };
+  }
 };
+
+
 
 
 // ----------------- Volunteers List / Get / Update -----------------

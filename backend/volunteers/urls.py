@@ -1,19 +1,18 @@
 from django.urls import path
 from .views import (
-    RegisterVolunteer,
     VolunteerProfileView,
     VolunteerHistoryView,
     ChangePasswordView,
-   # DeleteAccountView
+    RegisterVolunteer,
 )
 
 app_name = "volunteers"
 
 
 urlpatterns = [
-    # Registration
+    # Volunteer Registration
     path("register/", RegisterVolunteer.as_view(), name="register-volunteer"),
-    
+
     # Profile Management
     path("profile/", VolunteerProfileView.as_view(), name="volunteer-profile"),
     
@@ -22,5 +21,4 @@ urlpatterns = [
     
     # Privacy Settings
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
-   # path("delete-account/", DeleteAccountView.as_view(), name="delete-account"),
 ]

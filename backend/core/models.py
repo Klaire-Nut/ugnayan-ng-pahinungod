@@ -97,7 +97,7 @@ class ProgramInterest(models.Model):
 class StudentProfile(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='student_profile')
     degree_program = models.CharField(max_length=100)
-    year_level = models.CharField(max_length=10)
+    year_level = models.CharField(max_length=20)
     college = models.CharField(max_length=100)
     department = models.CharField(max_length=100)
 

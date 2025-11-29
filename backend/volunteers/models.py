@@ -1,6 +1,6 @@
 # backend/volunteers/models.py
 from django.db import models
-
+from core.models import Volunteer
 
 class Volunteer(models.Model):
     """Main volunteer registration model"""
@@ -11,7 +11,8 @@ class Volunteer(models.Model):
     nickname = models.CharField(max_length=100, blank=True)
     sex = models.CharField(max_length=50)
     birthdate = models.DateField()
-    
+    volunteer_identifier = models.CharField(max_length=50, unique=True, blank=True)
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,7 +36,7 @@ class VolunteerAccount(models.Model):
 
 class VolunteerContact(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="contact")
-    mobile_number = models.CharField(max_length=20)
+    mobile_number = models.CharField(max_length=20, blank=True)
     facebook_link = models.URLField(max_length=500, blank=True)
 
     def __str__(self):
@@ -44,9 +45,9 @@ class VolunteerContact(models.Model):
 
 class VolunteerAddress(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="address")
-    street_address = models.CharField(max_length=255)
-    province = models.CharField(max_length=100)
-    region = models.CharField(max_length=100)
+    street_address = models.CharField(max_length=255, blank=True)
+    province = models.CharField(max_length=100, blank=True)
+    region = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return f"{self.volunteer.get_full_name()} Address"
@@ -66,10 +67,10 @@ class VolunteerEducation(models.Model):
 
 class EmergencyContact(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="emergency_contact")
-    name = models.CharField(max_length=200)
-    relationship = models.CharField(max_length=100)
-    contact_number = models.CharField(max_length=20)
-    address = models.TextField()
+    name = models.CharField(max_length=200, blank=True)
+    relationship = models.CharField(max_length=100,blank=True)
+    contact_number = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.volunteer.get_full_name()} Emergency Contact"
@@ -86,9 +87,9 @@ class VolunteerBackground(models.Model):
 
 
 class VolunteerAffiliation(models.Model):
-    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="affiliation")
-    affiliation = models.CharField(max_length=50)
-
-    def __str__(self):
-        return f"{self.volunteer.get_full_name()} Affiliation"
-
+    volunteer = models.ForeignKey(
+        'core.Volunteer',  
+        on_delete=models.CASCADE
+    )
+    affiliation = models.CharField(max_length=255)
+    organization = models.CharField(max_length=255, blank=True, null=True)

@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-c7%3n_-amyhne&37hqymfxdfd*y&eo!au@3m5vqfw$jvlv1vt@
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -60,11 +59,13 @@ MIDDLEWARE = [
 
 # changes
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # Could be one of these:
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        
     ],
 }
 

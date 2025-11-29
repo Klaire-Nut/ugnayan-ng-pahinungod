@@ -30,26 +30,25 @@ from core.models import (
     Event
 )
 
-from .serializers import (
-    VolunteerSerializer,
-    VolunteerAccountSerializer,
-    VolunteerContactSerializer,
-    VolunteerAddressSerializer,
-    VolunteerBackgroundSerializer,
-    EmergencyContactSerializer
-)
+from .serializers import RegisterVolunteerSerializer
 from events.serializers import VolunteerEventSerializer
 
-# Your existing RegisterVolunteer class stays here
+# Your RegisterVolunteer class
 class RegisterVolunteer(APIView):
-    # ... (keep your existing code)
-    pass
+    def post(self, request):
+        serializer = RegisterVolunteerSerializer(data=request.data)
+
+        if serializer.is_valid():
+            volunteer = serializer.save()
+            return Response({
+                "message": "Registration successful",
+                "volunteer_identifier": volunteer.volunteer_identifier
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ============================================
-# NEW VIEWS - Add below RegisterVolunteer
-# ============================================
-
+# Volunteer - Events Setializers
 class VolunteerProfileView(APIView):
     """
     GET: Retrieve volunteer profile
