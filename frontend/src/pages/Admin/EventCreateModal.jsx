@@ -1,106 +1,233 @@
-import React, { useState } from "react";
-import "./../../styles/EventModal.css";
+import React, { useState, useEffect } from "react";
+import "../../styles/EventModal.css";
 
-export default function EventCreateModal({ onClose, onCreate }) {
-  const [formData, setFormData] = useState({
+export default function EventCreateModal({
+  mode = "create",
+  eventData = null,
+  onCreate,
+  onUpdate,
+  onClose,
+}) {
+  const [form, setForm] = useState({
     event_name: "",
     description: "",
     location: "",
-    date_start: "",
-    date_end: "",
-    volunteers_needed: 0,
+    volunteers_needed: 1,
+    days: [],
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [dayInputMode, setDayInputMode] = useState("byCount");
+  const [dayCount, setDayCount] = useState(1);
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (mode === "edit" && eventData) {
+      setForm({
+        event_name: eventData.event_name,
+        description: eventData.description,
+        location: eventData.location,
+        volunteers_needed: eventData.volunteers_needed,
+        days: eventData.schedules.map((s) => ({
+          date: s.date,
+          start_time: s.start_time,
+          end_time: s.end_time,
+        })),
+      });
+
+      setDayCount(eventData.schedules.length);
+      setRangeStart(eventData.schedules[0].date);
+      setRangeEnd(eventData.schedules[eventData.schedules.length - 1].date);
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      setForm((f) => ({
+        ...f,
+        days: [{ date: today, start_time: "08:00", end_time: "12:00" }],
+      }));
+      setRangeStart(today);
+      setRangeEnd(today);
+    }
+  }, [mode, eventData]);
+
+  const updateField = (name, value) =>
+    setForm((f) => ({ ...f, [name]: value }));
+
+  const updateDay = (index, field, value) => {
+    const updated = [...form.days];
+    updated[index][field] = value;
+    setForm((f) => ({ ...f, days: updated }));
   };
 
-  const handleSubmit = () => {
-    if (!onCreate) {
-      console.error("❌ ERROR: onCreate PROP NOT PASSED TO MODAL");
-      return;
-    }
+  const generateDaysFromCount = (count, baseDate) => {
+    const base = new Date(baseDate);
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      return {
+        date: d.toISOString().slice(0, 10),
+        start_time: "08:00",
+        end_time: "12:00",
+      };
+    });
+  };
 
-    onCreate(formData); // send data UP to AdminEvents
+  const generateDaysFromRange = (start, end) => {
+    const s = new Date(start);
+    const e = new Date(end);
+    const days = [];
+
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      days.push({
+        date: d.toISOString().slice(0, 10),
+        start_time: "08:00",
+        end_time: "12:00",
+      });
+    }
+    return days;
+  };
+
+  useEffect(() => {
+    if (dayInputMode === "byCount") {
+      if (!rangeStart) return;
+      setForm((f) => ({
+        ...f,
+        days: generateDaysFromCount(dayCount, rangeStart),
+      }));
+    }
+  }, [dayCount, dayInputMode, rangeStart]);
+
+  useEffect(() => {
+    if (dayInputMode === "byRange" && rangeStart && rangeEnd) {
+      const days = generateDaysFromRange(rangeStart, rangeEnd);
+      setForm((f) => ({ ...f, days }));
+      setDayCount(days.length);
+    }
+  }, [rangeStart, rangeEnd, dayInputMode]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const schedules = form.days.map((d) => ({
+      date: d.date,
+      start_time: d.start_time,
+      end_time: d.end_time,
+    }));
+
+    const payload = {
+      event_name: form.event_name,
+      description: form.description,
+      location: form.location,
+      volunteers_needed: Number(form.volunteers_needed),
+      schedules,
+    };
+
+    if (mode === "create") onCreate(payload);
+    else onUpdate({ ...payload, id: eventData.id });
+
+    onClose();
+  };
+
+  const addDay = () => {
+    setForm((f) => ({
+      ...f,
+      days: [...f.days, { date: "", start_time: "08:00", end_time: "12:00" }],
+    }));
+  };
+
+  const removeDay = (index) => {
+    setForm((f) => ({
+      ...f,
+      days: f.days.filter((_, i) => i !== index),
+    }));
   };
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-container animate-scale">
-
+      <form className="modal-container animate-scale" onSubmit={handleSubmit}>
         <div className="modal-header">
-          <h2>Create New Event</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <h2>{mode === "create" ? "Create Event" : "Edit Event"}</h2>
+          <button type="button" className="close-btn" onClick={onClose}>
+            ×
+          </button>
         </div>
 
         <div className="modal-body">
-
           <div className="form-group">
             <label>Event Title</label>
-            <input 
-              name="event_name"
-              placeholder="Enter event name"
-              onChange={handleChange}
+            <input
+              value={form.event_name}
+              onChange={(e) => updateField("event_name", e.target.value)}
             />
           </div>
 
           <div className="form-group">
             <label>Description</label>
             <textarea
-              name="description"
-              rows="3"
-              placeholder="Write a short description..."
-              onChange={handleChange}
-            ></textarea>
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+            />
           </div>
 
           <div className="form-group">
             <label>Venue</label>
-            <input 
-              name="location"
-              placeholder="Enter venue"
-              onChange={handleChange}
+            <input
+              value={form.location}
+              onChange={(e) => updateField("location", e.target.value)}
             />
-          </div>
-
-          <div className="form-inline">
-            <div>
-              <label>Start Time</label>
-              <input 
-                type="datetime-local" 
-                name="date_start"
-                onChange={handleChange} 
-              />
-            </div>
-
-            <div>
-              <label>End Time</label>
-              <input 
-                type="datetime-local" 
-                name="date_end"
-                onChange={handleChange} 
-              />
-            </div>
           </div>
 
           <div className="form-group">
             <label>Volunteers Needed</label>
-            <input 
+            <input
               type="number"
-              min="1"
-              name="volunteers_needed"
-              onChange={handleChange}
+              value={form.volunteers_needed}
+              onChange={(e) =>
+                updateField("volunteers_needed", e.target.value)
+              }
             />
           </div>
 
+          <h3>Daily Schedules</h3>
+
+          {form.days.map((day, i) => (
+            <div className="day-row" key={i}>
+              <input
+                type="date"
+                value={day.date}
+                onChange={(e) => updateDay(i, "date", e.target.value)}
+              />
+              <input
+                type="time"
+                value={day.start_time}
+                onChange={(e) => updateDay(i, "start_time", e.target.value)}
+              />
+              <input
+                type="time"
+                value={day.end_time}
+                onChange={(e) => updateDay(i, "end_time", e.target.value)}
+              />
+
+              <button type="button" onClick={() => removeDay(i)}>
+                Remove
+              </button>
+            </div>
+          ))}
+
+          <button type="button" onClick={addDay}>
+            + Add Day
+          </button>
         </div>
 
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="btn-confirm" onClick={handleSubmit}>Create Event</button>
+          <button type="button" className="btn-cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn-confirm">
+            {mode === "create" ? "Create Event" : "Save Changes"}
+          </button>
         </div>
-
-      </div>
+      </form>
     </div>
   );
 }
