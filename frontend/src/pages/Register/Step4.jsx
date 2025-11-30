@@ -1,4 +1,3 @@
-// src/pages/Register/Step4.jsx
 import React, { useState, useCallback } from "react";
 import {
   Box,
@@ -140,9 +139,9 @@ export default function Step4({ formData = {}, setFormData, onBack, onSubmit, lo
           <Button onClick={() => setConfirmDialog(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleConfirmSubmit} 
-            variant="contained" 
+          <Button
+            onClick={handleConfirmSubmit}
+            variant="contained"
             color="primary"
             disabled={submitting}
           >
