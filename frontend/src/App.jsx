@@ -45,6 +45,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="events" element={<AdminEvents />} />
+          <Route path="events/:id/edit" element={<AdminEvents />} />
           <Route path="events/:id" element={<EventDetails />} />
           <Route path="volunteers" element={<AdminVolunteers />} />
           <Route path="stats" element={<DataStatistics />} />

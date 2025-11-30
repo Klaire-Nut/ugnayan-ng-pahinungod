@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import "../../styles/Dashboard.css";
-import { getAdminDashboard } from "../../services/adminApi";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import EventCard from "../../components/EventCard";
+import AdminTable from "../../components/AdminTable";
+import { getAdminDashboard } from "../../api/AdminAPI";
 
-const AdminDashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
+// Fetch data from backend
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -25,59 +24,113 @@ const AdminDashboard = () => {
   if (loading) return <div className="loading">Loading dashboard...</div>;
   if (!dashboardData) return <div>No data available.</div>;
 
+  // ---------------------------
+  // Process Events (same logic as incoming)
+  // ---------------------------
+  const recentEvents = [...dashboardData.recent_events]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 3);
+
+  // ---------------------------
+  // Process Volunteers
+  // backend data:
+  // name, affiliation, date_joined, identifier
+  // ---------------------------
+  const recentVolunteers = [...dashboardData.recent_volunteers]
+    .sort((a, b) => new Date(b.date_joined) - new Date(a.date_joined))
+    .slice(0, 5);
+
+  const volunteerColumns = [
+    { header: "Volunteer ID", field: "identifier" },
+    { header: "Name", field: "name" },
+    { header: "Affiliation", field: "affiliation" },
+  ];
+
+  const processedRows = recentVolunteers.map((v) => ({
+    ...v,
+    name: v.name, // backend already gives full name
+  }));
+
+
   return (
-    <div className="admin-dashboard-wrapper fade-in">
+          <div className="admin-dashboard-wrapper">
+      {/* Events Section */}
+      <section className="events-section fade-in">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h2 style={{ margin: 0 }}>CURRENT EVENTS</h2>
 
-      {/* EVENTS SECTION */}
-      <section className="events-section">
-        <h2 className="section-title">Upcoming Events</h2>
+          <button
+            onClick={() => navigate("/admin/events")}
+            className="link-button"
+          >
+            View all events →
+          </button>
+        </div>
 
-        {dashboardData.recent_events.length === 0 ? (
-          <p className="empty-text">No events yet.</p>
-        ) : (
-          <div className="events-cards-container">
-            {dashboardData.recent_events.map((event) => (
-              <div key={event.id} className="event-card">
-                <h3 className="event-title">{event.title}</h3>
-                <p><strong>Start:</strong> {new Date(event.start_date).toLocaleString()}</p>
-                <p><strong>End:</strong> {new Date(event.end_date).toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* RECENT VOLUNTEERS */}
-      <section className="recent-volunteers slide-up">
-        <h2 className="section-title">Recent Volunteers</h2>
-
-        <div className="volunteer-table-wrapper">
-          <table className="volunteers-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Affiliation</th>
-                <th>Date Joined</th>
-                <th>ID</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {dashboardData.recent_volunteers.map((vol, idx) => (
-                <tr key={idx}>
-                  <td>{vol.name}</td>
-                  <td>{vol.affiliation}</td>
-                  <td>{vol.date_joined}</td>
-                  <td>{vol.identifier || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="events-grid">
+          {recentEvents.length === 0 ? (
+            <p>No events yet.</p>
+          ) : (
+            recentEvents.map((ev) => (
+              <EventCard
+                key={ev.id}
+                event={ev}
+                onOpen={() => navigate(`/admin/events/${ev.id}`)}
+                onEdit={() => {}}     // you can fill this later
+                onDelete={() => {}}   // you can fill this later
+              />
+            ))
+          )}
         </div>
       </section>
 
-    </div>
-  );
-};
+    {/* RECENT VOLUNTEERS */}
+    <section className="volunteers-section fade-in" style={{ marginTop: "40px" }}>
+              
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 style={{ margin: 0 }}>RECENT VOLUNTEERS</h2>
 
-export default AdminDashboard;
+        <button
+          onClick={() => navigate("/admin/volunteers")}
+          className="link-button"
+        >
+          View all volunteers →
+        </button>
+      </div>
+
+      {/* Table */}
+      <div style={{ marginTop: "10px" }}>
+        <AdminTable
+          columns={[
+            { field: "name", headerName: "Name", width: 200 },
+            { field: "affiliation", headerName: "Affiliation", width: 150 },
+            { field: "date_joined", headerName: "Date Joined", width: 150 },
+            { field: "identifier", headerName: "ID", width: 120 },
+          ]}
+          rows={dashboardData.recent_volunteers.map((vol, index) => ({
+            id: index,
+            name: vol.name,
+            affiliation: vol.affiliation,
+            date_joined: vol.date_joined,
+            identifier: vol.identifier || "—",
+          }))}
+          actions={(row) => (
+            <button
+              onClick={() => navigate(`/admin/volunteers/${row.identifier}`)}
+              className="small-view-btn"
+            >
+              View
+            </button>
+          )}
+        />
+      </div>
+
+    </section>
+);
