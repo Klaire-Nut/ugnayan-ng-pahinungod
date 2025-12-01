@@ -24,11 +24,29 @@ export default function AdminDashboard() {
     { header: "Affiliation", field: "affiliation" },
   ];
 
+  // Generate Volunteer ID (same logic as AdminVolunteers)
+  const generateVolunteerID = (v, indexOnDay) => {
+    if (!v.registeredAt) return "UNP-UNKNOWN";
+    const d = new Date(v.registeredAt);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const seq = String(indexOnDay + 1).padStart(2, "0");
+    return `UNP${mm}${dd}${yyyy}-${seq}`;
+  };
+  
   // Format table rows
-  const processedRows = recentVolunteers.map((v) => ({
-    ...v,
-    name: `${v.firstName} ${v.lastName}`,
-  }));
+  const processedRows = recentVolunteers.map((v, _, arr) => {
+  const sameDay = arr.filter((x) => x.registeredAt === v.registeredAt);
+  const indexOnDay = sameDay.findIndex((x) => x.id === v.id);
+
+  return {
+      ...v,
+      volunteerID: generateVolunteerID(v, indexOnDay),
+      name: `${v.firstName} ${v.lastName}`,
+    };
+  });
+
 
   return (
     <div className="admin-dashboard-wrapper">

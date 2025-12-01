@@ -5,6 +5,7 @@
   "dependencies": {
     "@mui/x-data-grid": "^8.20.0",
     "axios": "^1.13.2",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "recharts": "^3.5.1"
   }
 }
