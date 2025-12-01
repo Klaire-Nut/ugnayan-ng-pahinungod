@@ -1,5 +1,5 @@
 /* ---------- SIDEBAR CONTAINER ---------- */
-.vol-sidebar {
+.sidebar {
   width: 250px;
   min-height: 100vh;
   background-color: #fff;
@@ -19,9 +19,9 @@
 .sidebar-logo {
   display: flex;
   justify-content: center;
-  margin-top: 50px;
   align-items: center;
   padding: 1rem 0;
+  margin-top: 50px;
 }
 
 .sidebar-logo img {
@@ -30,7 +30,13 @@
 }
 
 /* ---------- NAVIGATION LINKS ---------- */
-.vol-link {
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-link {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -42,15 +48,15 @@
   border-left: 4px solid transparent;
 }
 
-.vol-link:hover,
-.vol-link.active {
+.sidebar-link:hover,
+.sidebar-link.active {
   background-color: rgba(123, 17, 19, 0.1); /* light red tint */
   border-left: 4px solid #7b1113;          /* active side indicator */
   color: #7b1113;
 }
 
 /* ---------- BOTTOM SECTION ---------- */
-.vol-sidebar-bottom {
+.sidebar-bottom {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -58,7 +64,44 @@
   border-top: 1px solid rgba(123, 17, 19, 0.2);
 }
 
-.vol-link.logout,
-.vol-link.help {
+.sidebar-link.logout,
+.sidebar-link.help {
   cursor: pointer;
+}
+
+/* ---------- DARK MODE TOGGLE (ADMIN STYLE) ---------- */
+.dark-mode-toggle {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark-mode-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.dark-mode-toggle label {
+  width: 40px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+}
+
+.dark-mode-toggle label::after {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: 0.3s;
+}
+
+.dark-mode-toggle input[type="checkbox"]:checked + label::after {
+  transform: translateX(20px);
 }
