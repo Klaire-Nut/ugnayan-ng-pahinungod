@@ -24,13 +24,14 @@ html, body, .default-page {
 ===================================================== */
 .about-section {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;  /* aligns everything to the left */
   align-items: center;
-  gap: 80px;
+  gap: 90px;                     /* reduce the space between text & image */
   max-width: 1200px;
   margin: 0 auto 100px;
-  padding: 60px;
+  padding: 30px;                 /* reduce overall padding */
 }
+
 
 .about-content {
   flex: 1;

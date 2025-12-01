@@ -1,18 +1,19 @@
 import React from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  CardMedia,
-} from "@mui/material";
-import Button from "../components/Button"; // ✅ Use your custom Button
+import { Box, Container, Typography, Grid, CardMedia } from "@mui/material";
+import { useNavigate } from "react-router-dom";  // ✅ import useNavigate
+import Button from "../components/Button"; 
 import heroLogo from "../assets/UNP Logo.png";
 import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
 import "../styles/Home.css";
 
 export default function Home() {
+  const navigate = useNavigate();  // ✅ initialize navigate
+
+  const handleVolunteerClick = () => {
+    navigate("/register"); // ✅ path to your Register.jsx page
+  };
+
   return (
     <>
       {/* ---------- HERO SECTION ---------- */}
@@ -34,7 +35,8 @@ export default function Home() {
               UGNAYAN NG PAHINUNGOD
             </Typography>
             <Typography variant="body2" className="hero-subtext">
-              Chancellor Lyre Anni E. Murao said the flag at the campus will be flown at half-mast starting August 1 for 10 days.
+              The Ugnayan ng Pahinungód/Oblation Corps (UP/OC), also
+              known as Pahinungód, was established in 1994.
             </Typography>
             <Button 
               text="KNOW MORE" 
@@ -63,10 +65,12 @@ export default function Home() {
               >
                 Help shape tomorrow — <br /> volunteer today.
               </Typography>
+              {/* ✅ Button navigates to /register */}
               <Button 
                 text="Volunteer" 
                 variant="primary"
                 className="volunteer-button"
+                onClick={handleVolunteerClick}
               />
             </Grid>
 

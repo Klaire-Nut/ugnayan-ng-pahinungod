@@ -92,7 +92,7 @@ export default function Register() {
       }
     }
   };
-
+s
   const progress = (step / 4) * 100;
 
   return (
@@ -179,7 +179,7 @@ export default function Register() {
                   onSubmit={handleSubmit}
                 />
               )}
-
+              
           </Box>
 
         </div>
