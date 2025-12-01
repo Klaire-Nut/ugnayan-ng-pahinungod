@@ -3,7 +3,6 @@ import DefaultPage from "./layout/default_page";
 import DefaultPageVolunteer from "./layout/default_page_volunteers";
 import DefaultPageAdmin from "./layout/default_page_admin";
 
-
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
@@ -11,9 +10,10 @@ import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login";
 
-import VolunteerDashboard from "./pages/Volunteers/Dashboard";
+import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
+import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
+import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
 
-//Admin
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
 import AdminVolunteers from "./pages/Admin/AdminVolunteers";
@@ -26,7 +26,7 @@ function App() {
     <Router>
       <Routes>
 
-        {/* ALL PUBLIC PAGES UNDER DEFAULT LAYOUT */}
+        {/* PUBLIC PAGES */}
         <Route element={<DefaultPage />}>
           <Route index element={<Home />} />
           <Route path="about" element={<AboutUs />} />
@@ -35,9 +35,29 @@ function App() {
           <Route path="login" element={<Login />} />
         </Route>
 
-        {/* Dashboards using volunteer layout */}
-        <Route element={<DefaultPageVolunteer />}>
+        {/* VOLUNTEER PAGES (FIXED!!!) */}
+        <Route path="/volunteer" element={<DefaultPageVolunteer />}>
+          <Route index element={<VolunteerDashboard />} />
           <Route path="dashboard" element={<VolunteerDashboard />} />
+          <Route path="events" element={<Events />} />
+          <Route
+                path="profile"
+                element={
+                  <VolunteerProfile
+                    user={{
+                      firstName: "John",
+                      lastName: "Doe",
+                      email: "john@example.com",
+                      phone: "1234567890",
+                      birthday: "1990-01-01",
+                      address: "123 Street, City",
+                      profilePhoto: "/path/to/default.jpg"
+                    }}
+                  />
+                }
+              />
+          <Route path="history" element={<VolunteeringHistory />} />
+          <Route path="privacy" element={<PrivacySettings />} />
         </Route>
 
         {/* ADMIN PAGES */}

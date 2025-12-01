@@ -1,0 +1,72 @@
+export const fakeUser = {
+  id: 1,
+  volunteerID: "VOL-2025-0001",
+
+  // STEP 1 — PERSONAL INFORMATION
+  firstName: "Klaire",
+  middleName: "Santos",
+  lastName: "Napolitano",
+  nickname: "Kla",
+  age: 22,
+  sex: "Female",
+  birthdate: "2003-05-17",
+  indigenousAffiliation: "None",
+  mobileNumber: "09171234567",
+  email: "klaire.napolitano@example.com",
+  facebookLink: "https://facebook.com/klaire.napolitano",
+  hobbies: "Reading, Hiking",
+  organizations: "CS Society",
+  streetBarangay: "GRG Subdiv. Phase 2",
+  cityMunicipality: "Davao City",
+  province: "Davao del Sur",
+  region: "Region XI",
+  sameAsPermanent: true,
+  upStreetBarangay: "GRG Subdiv. Phase 2",
+  upCityMunicipality: "Davao City",
+  upProvince: "Davao del Sur",
+  upRegion: "Region XI",
+
+  // STEP 2 — AFFILIATION / EDUCATION
+  affiliation: "Undergraduate",
+  degreeProgram: "BS Computer Science",
+  yearLevel: "3rd Year",
+  college: "School of Computing",
+  shsType: "Academic",
+  gradBachelors: "None",
+  firstCollege: "UP Mindanao",
+  firstGrad: "N/A",
+  firstUP: "Yes",
+  emerName: "Juan Napolitano",
+  emerRelation: "Father",
+  emerContact: "09171234568",
+  emerAddress: "GRG Subdiv. Phase 2, Davao City",
+  facultyDept: "School of Computing",
+  constituentUnit: "UP Mindanao",
+  alumniDegree: "None",
+  yearGrad: "N/A",
+  firstGradCollege: "N/A",
+  firstGradUP: "N/A",
+  occupation: "Student",
+  retireDesignation: "N/A",
+  retireOffice: "N/A",
+  staffOffice: "N/A",
+  staffPosition: "N/A",
+
+  // STEP 3 — VOLUNTEER PROGRAMS / STATUS
+  volunteerPrograms: ["Tree Planting Activity", "Blood Donation Drive"],
+  affirmativeActionSubjects: ["Community Service"],
+  volunteerStatus: "Active",
+  tagapagUgnay: "Juan Dela Cruz",
+  otherOrganization: "Youth for Change",
+  organizationName: "CS Society",
+  howDidYouHear: "Friend Referral",
+
+  // STEP 4 — ACCOUNT DETAILS (won't be displayed)
+  username: "klaireVol",
+  password: "hashedpassword123",
+  securityQuestion: "What is your favorite color?",
+  securityAnswer: "Blue",
+
+  // PROFILE PHOTO
+  profilePhoto: "https://via.placeholder.com/150"
+};

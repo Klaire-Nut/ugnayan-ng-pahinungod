@@ -1,0 +1,65 @@
+/* src/styles/VolunteeringHistoryTable.css */
+
+.vh-wrapper {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.vh-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #6e1b1b;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #6e1b1b;
+  padding-bottom: 0.5rem;
+}
+
+/* MAIN SCROLL AREA */
+.vh-table-container {
+  max-height: 350px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* TABLE */
+.vh-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vh-table th,
+.vh-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.vh-table th {
+  background: #6e1b1b;
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.vh-table tr:hover {
+  background: #f7eded;
+}
+
+/* src/styles/VolunteerHistory.css */
+
+.vol-history-page {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.vol-history-main {
+  margin-left: 260px; /* Same width as your sidebar */
+  padding: 2rem;
+  width: calc(100% - 260px);
+}

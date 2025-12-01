@@ -1,33 +1,42 @@
 import React from "react";
-import Header1 from "../components/Header1";
+import VolunteerHeader from "../components/VolunteerHeader";
+import VolunteerSidebar from "../components/VolunteerSidebar";
 import Footer from "../components/Footer";
-import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
+import "../styles/admin-shared.css"; // reuse same layout CSS
 
 export default function DefaultPageVolunteer() {
-  // Example auth logic; replace with your real auth state
+  // Example auth logic
   const isLoggedIn = Boolean(localStorage.getItem("token"));
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.href = "/login"; // or use navigate
+    window.location.href = "/login";
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Header1 instead of Header */}
-      <Header1 isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+    <div className="admin-layout">
+      {/* Header */}
+      <div className="admin-header">
+        <VolunteerHeader isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      </div>
 
-      <Box component="main" sx={{ flexGrow: 1 }}>
-        <Outlet /> {/* render nested routes */}
-      </Box>
+      {/* Main content */}
+      <div className="admin-main">
+        <aside className="vol-sidebar">
+          <VolunteerSidebar />
+        </aside>
 
-      <Footer />
-    </Box>
+        <section className="admin-content">
+          <div className="admin-content-inner">
+            <Outlet /> {/* Nested route (dashboard, profile, events) will render here */}
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="admin-footer">
+        <Footer />
+      </footer>
+    </div>
   );
 }

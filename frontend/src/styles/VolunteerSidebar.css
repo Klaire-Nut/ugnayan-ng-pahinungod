@@ -1,0 +1,64 @@
+/* ---------- SIDEBAR CONTAINER ---------- */
+.vol-sidebar {
+  width: 250px;
+  min-height: 100vh;
+  background-color: #fff;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 1rem 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* ---------- LOGO ---------- */
+.sidebar-logo {
+  display: flex;
+  justify-content: center;
+  margin-top: 50px;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.sidebar-logo img {
+  width: 160px;
+  height: auto;
+}
+
+/* ---------- NAVIGATION LINKS ---------- */
+.vol-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #000;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.vol-link:hover,
+.vol-link.active {
+  background-color: rgba(123, 17, 19, 0.1); /* light red tint */
+  border-left: 4px solid #7b1113;          /* active side indicator */
+  color: #7b1113;
+}
+
+/* ---------- BOTTOM SECTION ---------- */
+.vol-sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(123, 17, 19, 0.2);
+}
+
+.vol-link.logout,
+.vol-link.help {
+  cursor: pointer;
+}
