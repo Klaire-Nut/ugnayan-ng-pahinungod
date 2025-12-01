@@ -5,12 +5,18 @@ import Step1 from "./Step1";
 import Step2 from "./Step2";
 import Step3 from "./Step3";
 import Step4 from "./Step4";
+import LoginPopup from "../../components/LoginPopup";   // ✅ you MUST add this import
 import { registerVolunteer } from "../../services/volunteerApi.js";
 import "../../styles/Register.css";
 import oblation from "../../assets/oblation.png";
 
 export default function Register() {
   const [step, setStep] = useState(1);
+
+  // ✅ ADD THESE TWO STATES (required for login modal)
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginRole, setLoginRole] = useState("");
+
   const [formData, setFormData] = useState({
     email: "",
     dataConsent: false,
@@ -67,7 +73,7 @@ export default function Register() {
     organizationName: "",
     howDidYouHear: "",
   });
-
+  
   const handleSubmit = async (data) => {
     try {
       console.log("Submitting registration...");
@@ -92,7 +98,7 @@ export default function Register() {
       }
     }
   };
-  
+
   const progress = (step / 4) * 100;
 
   return (
@@ -102,7 +108,6 @@ export default function Register() {
         <h1 className="big">MAKIBAHAGI</h1>
         <h1 className="big1">MAGLINGKOD</h1>
 
-        {/* MAG and PAHINUNGOD side by side */}
         <div className="mag-pahinungod-row">
           <h1 className="big">MAG</h1>
           <h1 className="pahinungod">PAHINUNGOD</h1>
@@ -176,7 +181,10 @@ export default function Register() {
                   formData={formData}
                   setFormData={setFormData}
                   onBack={() => setStep(3)}
-                  onSubmit={handleSubmit}
+                  onOpenLogin={(role) => {
+                    setShowLogin(true);
+                    setLoginRole(role);
+                  }}
                 />
               )}
               
@@ -185,7 +193,13 @@ export default function Register() {
         </div>
       </div>
 
+      {/* ✅ LOGIN POPUP (ADDED AT THE VERY END) */}
+      <LoginPopup
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        role={loginRole}
+      />
+
     </div>
   );
 }
-
