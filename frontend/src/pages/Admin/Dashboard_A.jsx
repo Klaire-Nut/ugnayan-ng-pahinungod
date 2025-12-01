@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import EventCard from "../../components/EventCard";
 import AdminTable from "../../components/AdminTable";
-import { getAdminDashboard } from "../../api/AdminAPI";
+import { getAdminDashboard } from "../../services/adminApi";
+
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -64,11 +65,27 @@ export default function AdminDashboard() {
             recentEvents.map((ev) => (
               <EventCard
                 key={ev.id}
-                event={ev}
+                event={{
+                  id: ev.id,
+                  event_name: ev.title,                 
+                  location: ev.location || "No location provided",
+
+                  // schedules: convert start & end into a single-day schedule array
+                  schedules: [
+                    {
+                      date: ev.start_date,
+                      start_time: "08:00 AM",
+                      end_time: "05:00 PM",
+                    },
+                  ],
+
+                  volunteers_needed: ev.volunteers_needed || 0,
+                  volunteered: ev.volunteered || 0,
+                  status: ev.status || "UPCOMING",
+                }}
                 onOpen={() => navigate(`/admin/events/${ev.id}`)}
-                onEdit={() => {}}
-                onDelete={() => {}}
               />
+
             ))
           )}
         </div>

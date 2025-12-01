@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from .pagination import VolunteerListPagination
 from django.db.models import Count
 from datetime import date
+from django.utils import timezone
 #Implement this during production
 # from rest_framework.permissions import IsAdminUser
 # Models
@@ -48,11 +49,11 @@ class AdminDashboardAPI(APIView):
     # replace with [IsAdminUser] in production
 
     def get(self, request):
-        # Recent Volunteers (show Name, Affiliation, Date Joined, Unique ID)
+    # Recent volunteers
         recent_qs = Volunteer.objects.order_by('-volunteer_id')[:8].values(
-            'first_name', 
-            'last_name', 
-            'affiliation_type', 
+            'first_name',
+            'last_name',
+            'affiliation_type',
             'date_joined',
             'volunteer_identifier'
         )
@@ -62,30 +63,62 @@ class AdminDashboardAPI(APIView):
                 "name": f"{r['first_name']} {r['last_name']}".strip(),
                 "affiliation": (r.get('affiliation_type') or ""),
                 "date_joined": r.get('date_joined'),
-                "identifier": r.get('volunteer_identifier'), 
+                "identifier": r.get('volunteer_identifier'),
             }
             for r in recent_qs
         ]
-        
-        # Recent Events
-        events_qs = Event.objects.order_by('-event_id')[:5].values(
-            'event_id', 'event_name', 'date_start', 'date_end'
-        )
-        recent_events = [
-            {
-                "id": e['event_id'],
-                "title": e['event_name'],
-                "start_date": e['date_start'],
-                "end_date": e['date_end'],
-            }
-            for e in events_qs
-        ]
 
-        data = {
+        # Recent events (FIXED)
+        events_qs = Event.objects.filter(is_deleted=False).order_by('-event_id')[:5]
+
+        recent_events = []
+        now = timezone.now().date()
+
+        for event in events_qs:
+            volunteers_joined = VolunteerEvent.objects.filter(
+                event=event, status="Joined"
+            ).count()
+
+            schedules = [
+                {
+                    "date": s.day,
+                    "start_time": s.start_time,
+                    "end_time": s.end_time,
+                }
+                for s in event.schedules.all().order_by("day")
+            ]
+
+            # Determine status
+            if event.is_canceled:
+                status = "CANCELLED"
+            elif not schedules:
+                status = "UPCOMING"
+            else:
+                first = schedules[0]["date"]
+                last = schedules[-1]["date"]
+                if now < first:
+                    status = "UPCOMING"
+                elif first <= now <= last:
+                    status = "HAPPENING"
+                else:
+                    status = "DONE"
+
+            recent_events.append({
+                "id": event.event_id,
+                "event_name": event.event_name,
+                "location": event.location,
+                "description": event.description,
+                "max_participants": event.max_participants,
+                "volunteers_needed": event.max_participants,
+                "volunteered": volunteers_joined,
+                "schedules": schedules,
+                "status": status,
+            })
+
+        return Response({
             "recent_volunteers": recent_volunteers,
-            "recent_events": recent_events,  
-        }
-        return Response(data)
+            "recent_events": recent_events,
+        })
 
 # Managing Volunteers - Admin for Viewing of the Volunteers Data only (Fetching data and searching Data)
 class AdminVolunteerListView(ListAPIView):
