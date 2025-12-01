@@ -63,9 +63,6 @@ function Footer() {
       textDecoration: "none",
       transition: "color 0.2s ease",
     },
-    linkHover: {
-      color: "#D3D3E0",
-    },
     copyright: {
       fontSize: "0.8rem",
       color: "#D3D3E0",
@@ -88,15 +85,14 @@ function Footer() {
       "UNIVERSITY POLICIES",
       "DOWNLOADABLE FORMS",
     ],
-    "UP WEBSITES": [
-      "SYSTEM",
-      "DILIMAN",
-      "LOS BAÑOS",
-      "MANILA",
-      "VISAYAS",
-      "OPEN UNIVERSITY",
-      "BAGUIO",
-      "CEBU",
+    "UGNAYAN NG PAHINUNGOD CAMPUSES": [
+      { name: "DILIMAN", url: "https://pahinungod.upd.edu.ph" },
+      { name: "LOS BAÑOS", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwiW1NqK5JuRAxXBkq8BHRdyDj4QFnoECDcQAQ&url=https%3A%2F%2Finternational.uplb.edu.ph%2Fpublic-service%2F&usg=AOvVaw3WHa3spZ_HN0Nb2UTmwFTW&opi=89978449" },
+      { name: "MANILA", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjwxdfQ5JuRAxUej68BHeSNABQQFnoECDsQAQ&url=https%3A%2F%2Fwww.facebook.com%2Fpahinungod.manila%2F&usg=AOvVaw3iklf61OS0Sje3cqAA9Lum&opi=89978449" },
+      { name: "VISAYAS", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_wI3d5JuRAxXoi68BHRpnMY0QFnoECCMQAQ&url=https%3A%2F%2Fwww.facebook.com%2FPahinungodSaVisayas%2F&usg=AOvVaw0nkjYh8pgcR8dUDNUQsdG2&opi=89978449" },
+      { name: "OPEN UNIVERSITY", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjImMPx5JuRAxWFaPUHHSM8DG0QFnoECBoQAQ&url=https%3A%2F%2Fpahinungod.upou.edu.ph%2F&usg=AOvVaw04fMffvfzrSYO1Ovaoa7S4&opi=89978449" },
+      { name: "BAGUIO", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwiEpsz85JuRAxVBUfUHHfB2KwgQFnoECBAQAQ&url=https%3A%2F%2Fwww.facebook.com%2Fpahinungod.upbaguio%2F&usg=AOvVaw1OqQ1DoLKkYN8ddAgMEH_x&opi=89978449" },
+      { name: "CEBU", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwiDuOWI5ZuRAxWQavUHHQW3E4kQFnoECCIQAQ&url=https%3A%2F%2Fwww.upcebu.edu.ph%2Fugnayan-ng-pahinungod%2F&usg=AOvVaw0ExLEWjUWHACdk-5GuWG10&opi=89978449" },
     ],
   };
 
@@ -116,17 +112,35 @@ function Footer() {
         {Object.entries(footerLinks).map(([section, links]) => (
           <div key={section} style={styles.column}>
             <div style={styles.heading}>{section}</div>
-            {links.map((link) => (
-              <a
-                key={link}
-                href="#"
-                style={styles.link}
-                onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
-                onMouseLeave={(e) => (e.target.style.color = "white")}
-              >
-                {link}
-              </a>
-            ))}
+            {links.map((link, index) => {
+              if (typeof link === "string") {
+                return (
+                  <a
+                    key={index}
+                    href="#"
+                    style={styles.link}
+                    onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
+                    onMouseLeave={(e) => (e.target.style.color = "white")}
+                  >
+                    {link}
+                  </a>
+                );
+              } else {
+                return (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.link}
+                    onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
+                    onMouseLeave={(e) => (e.target.style.color = "white")}
+                  >
+                    {link.name}
+                  </a>
+                );
+              }
+            })}
           </div>
         ))}
       </div>
