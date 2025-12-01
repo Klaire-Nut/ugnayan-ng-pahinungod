@@ -92,7 +92,7 @@ export default function Register() {
       }
     }
   };
-s
+  
   const progress = (step / 4) * 100;
 
   return (
