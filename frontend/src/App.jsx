@@ -18,7 +18,7 @@ import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
 import AdminVolunteers from "./pages/Admin/AdminVolunteers";
 import DataStatistics from "./pages/Admin/DataStatistics";
-import PrivacySettings from "./pages/Admin/PrivacySettings";
+import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import AdminDashboard from "./pages/Admin/Dashboard_A";
 
 function App() {
@@ -70,7 +70,7 @@ function App() {
           <Route path="events/:id" element={<EventDetails />} />
           <Route path="volunteers" element={<AdminVolunteers />} />
           <Route path="stats" element={<DataStatistics />} />
-          <Route path="privacy" element={<PrivacySettings />} />
+          <Route path="privacy" element={<AdminSettings />} />
         </Route>
 
       </Routes>

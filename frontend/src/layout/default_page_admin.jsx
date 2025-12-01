@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminHeader from "../components/AdminHeader";
 import AdminSidebar from "../components/AdminSidebar";
 import Footer from "../components/Footer";
@@ -33,6 +33,21 @@ export default function DefaultPageAdmin() {
       registeredAt: "2025-01-11",
     },
   ]);
+
+  // 🔥 Fetch events once
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/events");
+        const data = await res.json();
+        setEvents(data); 
+      } catch (err) {
+        console.error("Failed to load events:", err);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   return (
     <div className="admin-layout">

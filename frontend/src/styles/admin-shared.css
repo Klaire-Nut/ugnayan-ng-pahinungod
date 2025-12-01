@@ -110,13 +110,19 @@ Sidebar inner
   flex: 1 1 auto;
   padding: 20px 24px;
   overflow-y: auto;
-  min-height: calc(100vh - var(--admin-header-h));
-  /* ensure content never goes under sidebar due to absolute positioning */
-  background: transparent;
+
+  /* REQUIRED FOR RECHARTS FIX */
+  min-width: 0;
+  min-height: 0;
 }
 
+
 /* Add extra bottom spacing so Footer doesn't overlap content when shown */
-.admin-content-inner { padding-bottom: 160px; }
+.admin-content-inner { 
+  padding-bottom: 160px;
+  min-width: 0;
+  min-height: 0;
+}
 
 /* -------------------------
    Footer (outside the scrolling content)
