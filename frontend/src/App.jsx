@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
 import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
 import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
+import PrivacySettings from "./pages/Volunteers/PrivacySettings"; // ✅ Added this import
 
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
@@ -24,7 +25,6 @@ import AdminDashboard from "./pages/Admin/Dashboard_A";
 function App() {
   return (
     <Router>
-      
       <Routes>
 
         {/* PUBLIC PAGES */}
@@ -36,29 +36,29 @@ function App() {
           <Route path="login" element={<Login />} />
         </Route>
 
-        {/* VOLUNTEER PAGES (FIXED!!!) */}
+        {/* VOLUNTEER PAGES */}
         <Route path="/volunteer" element={<DefaultPageVolunteer />}>
           <Route index element={<VolunteerDashboard />} />
           <Route path="dashboard" element={<VolunteerDashboard />} />
           <Route path="events" element={<Events />} />
           <Route
-                path="profile"
-                element={
-                  <VolunteerProfile
-                    user={{
-                      firstName: "John",
-                      lastName: "Doe",
-                      email: "john@example.com",
-                      phone: "1234567890",
-                      birthday: "1990-01-01",
-                      address: "123 Street, City",
-                      profilePhoto: "/path/to/default.jpg"
-                    }}
-                  />
-                }
+            path="profile"
+            element={
+              <VolunteerProfile
+                user={{
+                  firstName: "John",
+                  lastName: "Doe",
+                  email: "john@example.com",
+                  phone: "1234567890",
+                  birthday: "1990-01-01",
+                  address: "123 Street, City",
+                  profilePhoto: "/path/to/default.jpg"
+                }}
               />
+            }
+          />
           <Route path="history" element={<VolunteeringHistory />} />
-          <Route path="privacy" element={<PrivacySettings />} />
+          <Route path="privacy" element={<PrivacySettings />} /> {/* ✅ Fixed */}
         </Route>
 
         {/* ADMIN PAGES */}
@@ -77,4 +77,5 @@ function App() {
     </Router>
   );
 }
+
 export default App;

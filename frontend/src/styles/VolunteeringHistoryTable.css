@@ -1,5 +1,3 @@
-/* src/styles/VolunteeringHistoryTable.css */
-
 .vh-wrapper {
   margin-top: 1rem;
   width: 100%;
@@ -14,11 +12,11 @@
   padding-bottom: 0.5rem;
 }
 
-/* MAIN SCROLL AREA */
+/* TABLE CONTAINER */
 .vh-table-container {
-  max-height: 350px;
+  max-height: 400px; /* slightly taller */
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto; /* horizontal scroll if needed */
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -27,14 +25,16 @@
 /* TABLE */
 .vh-table {
   width: 100%;
+  min-width: 700px; /* ensures it stretches horizontally */
   border-collapse: collapse;
 }
 
 .vh-table th,
 .vh-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem; /* wider spacing */
   border-bottom: 1px solid #ddd;
   text-align: left;
+  white-space: nowrap; /* prevent wrapping */
 }
 
 .vh-table th {
@@ -48,18 +48,4 @@
 
 .vh-table tr:hover {
   background: #f7eded;
-}
-
-/* src/styles/VolunteerHistory.css */
-
-.vol-history-page {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-}
-
-.vol-history-main {
-  margin-left: 260px; /* Same width as your sidebar */
-  padding: 2rem;
-  width: calc(100% - 260px);
 }

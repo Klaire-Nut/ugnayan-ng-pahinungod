@@ -21,3 +21,5 @@ backend/libs/
 
 # System files
 .DS_Store
+
+frontend/package-lock.json

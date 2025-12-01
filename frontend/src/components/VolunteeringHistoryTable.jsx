@@ -1,13 +1,12 @@
-// src/components/VolunteeringHistoryTable.jsx
 import React from "react";
 import "../styles/VolunteeringHistoryTable.css";
 
-const VolunteeringHistoryTable = ({ data }) => {
+const VolunteeringHistoryTable = ({ data = [] }) => {
   return (
     <div className="vh-wrapper">
       <div className="vh-title">Volunteering History</div>
 
-      {/* AUTO-RESIZE container */}
+      {/* Table container with scroll */}
       <div className="vh-table-container">
         <table className="vh-table">
           <thead>
@@ -21,15 +20,23 @@ const VolunteeringHistoryTable = ({ data }) => {
           </thead>
 
           <tbody>
-            {data.map((item, index) => (
-              <tr key={index}>
-                <td>{item.event}</td>
-                <td>{item.date}</td>
-                <td>{item.timeIn}</td>
-                <td>{item.timeOut}</td>
-                <td>{item.timeAllotted}</td>
+            {data.length > 0 ? (
+              data.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.event}</td>
+                  <td>{item.date}</td>
+                  <td>{item.timeIn}</td>
+                  <td>{item.timeOut}</td>
+                  <td>{item.timeAllotted}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", padding: "1rem" }}>
+                  No volunteering history found.
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
