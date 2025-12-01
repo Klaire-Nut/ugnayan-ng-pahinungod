@@ -1,23 +1,19 @@
-// ============================================================================
-// MAIN REGISTER COMPONENT - src/pages/Register/Register.jsx
-// ============================================================================
+// MERGED REGISTER COMPONENT - UI + BACKEND
 import React, { useState } from "react";
 import { Box, Paper, Typography, LinearProgress } from "@mui/material";
 import Step1 from "./Step1";
 import Step2 from "./Step2";
 import Step3 from "./Step3";
 import Step4 from "./Step4";
+import { registerVolunteer } from "../../services/volunteerApi.js";
 import "../../styles/Register.css";
 import oblation from "../../assets/oblation.png";
 
 export default function Register() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    // Email & Consent
     email: "",
     dataConsent: false,
-
-    // Step 1 - Basic Information
     lastName: "",
     firstName: "",
     middleName: "",
@@ -30,24 +26,16 @@ export default function Register() {
     facebookLink: "",
     hobbies: "",
     organizations: "",
-    
-    // Permanent Address
     streetBarangay: "",
     cityMunicipality: "",
     province: "",
     region: "",
-    
-    // UP Address
     sameAsPermanent: false,
     upStreetBarangay: "",
     upCityMunicipality: "",
     upProvince: "",
     upRegion: "",
-
-    // Step 2 - Affiliation
     affiliation: "",
-    
-    // Student fields
     degreeProgram: "",
     yearLevel: "",
     college: "",
@@ -56,33 +44,21 @@ export default function Register() {
     firstCollege: "",
     firstGrad: "",
     firstUP: "",
-    
-    // Emergency Contact
     emerName: "",
     emerRelation: "",
     emerContact: "",
     emerAddress: "",
-    
-    // Faculty fields
     facultyDept: "",
-    
-    // Alumni fields
     constituentUnit: "",
     alumniDegree: "",
     yearGrad: "",
     firstGradCollege: "",
     firstGradUP: "",
     occupation: "",
-    
-    // Retiree fields
     retireDesignation: "",
     retireOffice: "",
-    
-    // Staff fields
     staffOffice: "",
     staffPosition: "",
-
-    // Step 3 - Programs
     volunteerPrograms: [],
     affirmativeActionSubjects: [],
     volunteerStatus: "",
@@ -92,12 +68,29 @@ export default function Register() {
     howDidYouHear: "",
   });
 
-  const handleSubmit = async (data, otp) => {
-    console.log("Submitting:", data, otp);
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    return true;
+  const handleSubmit = async (data) => {
+    try {
+      console.log("Submitting registration...");
+      const response = await registerVolunteer(data);
+      console.log("Registration successful:", response);
+      alert("Registration successful!");
+      setStep(1);
+    } catch (error) {
+      console.error("Registration failed:", error);
+      if (error.error) {
+        alert(error.error);
+      } else if (typeof error === "object") {
+        const errorMessages = Object.entries(error)
+          .map(
+            ([field, messages]) =>
+              `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
+          )
+          .join("\n");
+        alert(`Registration failed:\n${errorMessages}`);
+      } else {
+        alert("Registration failed. Please try again.");
+      }
+    }
   };
 
   const progress = (step / 4) * 100;
@@ -195,3 +188,4 @@ export default function Register() {
     </div>
   );
 }
+

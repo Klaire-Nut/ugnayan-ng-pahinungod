@@ -6,8 +6,8 @@ import DefaultPageAdmin from "./layout/default_page_admin";
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
-
 import Register from "./pages/Register/Register.jsx";
+import AuthTest from "./components/AuthTest";
 import Login from "./pages/Login";
 
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
@@ -24,6 +24,7 @@ import AdminDashboard from "./pages/Admin/Dashboard_A";
 function App() {
   return (
     <Router>
+      
       <Routes>
 
         {/* PUBLIC PAGES */}
@@ -65,6 +66,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="events" element={<AdminEvents />} />
+          <Route path="events/:id/edit" element={<AdminEvents />} />
           <Route path="events/:id" element={<EventDetails />} />
           <Route path="volunteers" element={<AdminVolunteers />} />
           <Route path="stats" element={<DataStatistics />} />
@@ -75,5 +77,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;

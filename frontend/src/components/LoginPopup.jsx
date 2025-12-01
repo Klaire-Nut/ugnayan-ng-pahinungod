@@ -10,14 +10,40 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+// Import admin login function
+import { login as adminLogin, volunteerLogin } from "../services/auth";
+
 export default function LoginPopup({ open, onClose, role }) {
+
+  // State variables for the username/email and password
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState("");
+
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    console.log(`${role} logged in`);
-    onClose();
+    // Admin login handler
+   const handleLogin = async () => {
+    try {
+      let res;
+      if (role === "Admin") {
+        res = await adminLogin({ username, password }); // Admin uses username
+        navigate("/admin/dashboard");
+      } else {
+        res = await volunteerLogin({ email: username, password }); // Volunteer uses email
+        navigate("/dashboard"); // Volunteer dashboard route
+      }
+      console.log(res.data); // optional: backend returns user info
+      setErrorMessage("");
+      onClose(); // close the popup
+    } catch (err) {
+      console.error(err.response?.data);
+      setErrorMessage("Login failed. Check your username/email and password.");
+    }
   };
 
+
+// Volunteer Registration Function
   const handleRegister = () => {
     onClose();
     navigate("/register");
@@ -51,11 +77,13 @@ export default function LoginPopup({ open, onClose, role }) {
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
+            type="text"
             fullWidth
             variant="outlined"
             size="small"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             label="Password"
@@ -63,6 +91,8 @@ export default function LoginPopup({ open, onClose, role }) {
             fullWidth
             variant="outlined"
             size="small"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <Box display="flex" justifyContent="space-between" gap={1}>

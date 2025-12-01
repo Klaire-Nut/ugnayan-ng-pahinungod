@@ -1,11 +1,25 @@
 import React from "react";
 import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle } from "react-icons/fa";
 import { MdEvent } from "react-icons/md";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom"; 
 import logo from "../assets/UNP Logo.png";
 import "../styles/VolunteerSidebar.css";
+import "../styles/Sidebar.css";
+import { logout } from "../services/auth";
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();                 // backend clears session
+      navigate("/", { replace: true }); // redirect to main page
+      window.location.reload();        // ensure cached pages cleared
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
   return (
     <aside className="sidebar">
       {/* ======= Logo Section ======= */}
@@ -37,7 +51,7 @@ const AdminSidebar = () => {
         <div className="sidebar-link help">
           <FaQuestionCircle /> Help
         </div>
-        <div className="sidebar-link logout">
+        <div className="sidebar-link logout" onClick={handleLogout}>
           <FaSignOutAlt /> Log out
         </div>
 
