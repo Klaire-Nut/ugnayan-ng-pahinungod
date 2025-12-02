@@ -1,17 +1,15 @@
 # volunteers/views.py
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from django.contrib.auth.hashers import check_password, make_password
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import transaction
-from django.shortcuts import get_object_or_404
-
+from django.contrib.auth.hashers import check_password, make_password
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-import json
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 from core.models import (
     Volunteer,
@@ -29,23 +27,28 @@ from core.models import (
     Event
 )
 
+from events.serializers import VolunteerEventSerializer
+import json
+
 
 # ================================================================
-#  🔎 AUTH HELPER — GET VOLUNTEER FROM DJANGO SESSION
+#  🔎 SESSION AUTH HELPER
 # ================================================================
-def get_volunteer_from_request(request):
+def get_volunteer_from_session(request):
+    """Return logged-in volunteer via Django session"""
     volunteer_id = request.session.get("volunteer_id")
-    if not volunteer_id:
-        return None
 
-    try:
-        return Volunteer.objects.get(volunteer_id=volunteer_id)
-    except Volunteer.DoesNotExist:
-        return None
+    if volunteer_id:
+        try:
+            return Volunteer.objects.get(volunteer_id=volunteer_id)
+        except Volunteer.DoesNotExist:
+            return None
+
+    return None
 
 
 # ================================================================
-#  📌 FIXED SESSION LOGIN (VOLUNTEER LOGIN)
+#  🔐 VOLUNTEER LOGIN (SESSION-BASED)
 # ================================================================
 @csrf_exempt
 def volunteer_login(request):
@@ -65,33 +68,31 @@ def volunteer_login(request):
 
     # Find account
     try:
-        account = VolunteerAccount.objects.get(email=email)
+        account = VolunteerAccount.objects.select_related("volunteer").get(email=email)
     except VolunteerAccount.DoesNotExist:
         return JsonResponse({"error": "Account not found"}, status=404)
 
-    # Validate password
+    # Check password
     if not check_password(password, account.password):
         return JsonResponse({"error": "Incorrect password"}, status=400)
 
-    # Create a temporary Django User so login() works
+    # Create a fake Django user to let login() work
     temp_user = User(id=account.volunteer.volunteer_id, username=email)
     temp_user.backend = "django.contrib.auth.backends.ModelBackend"
 
-    # Create session
     login(request, temp_user)
 
-    # Store volunteer ID in session for profile access
+    # Store REAL volunteer_id for session auth
     request.session["volunteer_id"] = account.volunteer.volunteer_id
 
     return JsonResponse({
-        "message": "Login successful",
-        "volunteer_id": account.volunteer.volunteer_id,
-        "email": email
+        "message": "Login successful!",
+        "volunteer_id": account.volunteer.volunteer_id
     })
 
 
 # ================================================================
-#  🚪 LOGOUT — CLEAR DJANGO SESSION
+#  🚪 LOGOUT (END SESSION)
 # ================================================================
 @csrf_exempt
 def volunteer_logout(request):
@@ -100,31 +101,28 @@ def volunteer_logout(request):
 
 
 # ================================================================
-#  👤 PROFILE VIEW (GET + UPDATE)
+#  👤 PROFILE VIEW (GET + PATCH)
 # ================================================================
 class VolunteerProfileView(APIView):
-    # REMOVE DRF AUTH — we use session manually
-    # permission_classes = []
 
     def get(self, request):
-        volunteer = get_volunteer_from_request(request)
+        volunteer = get_volunteer_from_session(request)
 
         if not volunteer:
-            return Response(
-                {"error": "Volunteer not found. Please login again."},
-                status=403
-            )
+            return Response({"error": "Not logged in"}, status=403)
 
-        account = getattr(volunteer, "account", None)
-        contact = getattr(volunteer, "contact", None)
-        address = getattr(volunteer, "address", None)
-        background = getattr(volunteer, "background", None)
-        emergency = getattr(volunteer, "emergency_contact", None)
+        account = volunteer.account if hasattr(volunteer, "account") else None
+        contact = volunteer.contact if hasattr(volunteer, "contact") else None
+        address = volunteer.address if hasattr(volunteer, "address") else None
+        background = volunteer.background if hasattr(volunteer, "background") else None
+        emergency = volunteer.emergency_contact if hasattr(volunteer, "emergency_contact") else None
 
         affiliation_data = {}
-        aff_type = (volunteer.affiliation_type or "").upper()
 
-        if aff_type == "STUDENT":
+        # Handle affiliation-specific profiles
+        aff = volunteer.affiliation_type.upper()
+
+        if aff == "STUDENT":
             p = StudentProfile.objects.filter(volunteer=volunteer).first()
             if p:
                 affiliation_data = {
@@ -134,7 +132,7 @@ class VolunteerProfileView(APIView):
                     "department": p.department
                 }
 
-        elif aff_type == "ALUMNI":
+        elif aff == "ALUMNI":
             p = AlumniProfile.objects.filter(volunteer=volunteer).first()
             if p:
                 affiliation_data = {
@@ -143,7 +141,7 @@ class VolunteerProfileView(APIView):
                     "year_graduated": p.year_graduated
                 }
 
-        elif aff_type == "UP STAFF":
+        elif aff == "UP STAFF":
             p = StaffProfile.objects.filter(volunteer=volunteer).first()
             if p:
                 affiliation_data = {
@@ -151,7 +149,7 @@ class VolunteerProfileView(APIView):
                     "designation": p.designation
                 }
 
-        elif aff_type == "FACULTY":
+        elif aff == "FACULTY":
             p = FacultyProfile.objects.filter(volunteer=volunteer).first()
             if p:
                 affiliation_data = {
@@ -159,7 +157,7 @@ class VolunteerProfileView(APIView):
                     "department": p.department
                 }
 
-        elif aff_type == "RETIREE":
+        elif aff == "RETIREE":
             p = RetireeProfile.objects.filter(volunteer=volunteer).first()
             if p:
                 affiliation_data = {
@@ -190,32 +188,32 @@ class VolunteerProfileView(APIView):
             "hobbies_interests": background.hobbies_interests if background else None,
 
             "emergency_contact": {
-                "name": emergency.name if emergency else None,
-                "relationship": emergency.relationship if emergency else None,
-                "contact_number": emergency.contact_number if emergency else None,
-                "address": emergency.address if emergency else None,
+                "name": emergency.name,
+                "relationship": emergency.relationship,
+                "contact_number": emergency.contact_number,
+                "address": emergency.address
             } if emergency else None,
 
-            "affiliation_data": affiliation_data
+            "affiliation_data": affiliation_data,
         }
 
-        return Response(data, status=200)
+        return Response(data)
 
     def patch(self, request):
-        volunteer = get_volunteer_from_request(request)
+        volunteer = get_volunteer_from_session(request)
+
         if not volunteer:
-            return Response({"error": "Volunteer not found"}, status=403)
+            return Response({"error": "Not logged in"}, status=403)
 
         data = request.data
 
         try:
             with transaction.atomic():
-
-                # Basic volunteer info
-                for field in ["first_name", "middle_name", "last_name",
-                              "nickname", "sex", "birthdate"]:
+                # Basic info
+                for field in ["first_name", "middle_name", "last_name", "nickname", "sex", "birthdate"]:
                     if field in data:
                         setattr(volunteer, field, data[field])
+
                 volunteer.save()
 
                 # Contact
@@ -235,23 +233,23 @@ class VolunteerProfileView(APIView):
 
                 # Background
                 if any(k in data for k in ["occupation", "org_affiliation", "hobbies_interests"]):
-                    bg, _ = VolunteerBackground.objects.get_or_create(volunteer=volunteer)
-                    bg.occupation = data.get("occupation", bg.occupation)
-                    bg.org_affiliation = data.get("org_affiliation", bg.org_affiliation)
-                    bg.hobbies_interests = data.get("hobbies_interests", bg.hobbies_interests)
-                    bg.save()
+                    background, _ = VolunteerBackground.objects.get_or_create(volunteer=volunteer)
+                    background.occupation = data.get("occupation", background.occupation)
+                    background.org_affiliation = data.get("org_affiliation", background.org_affiliation)
+                    background.hobbies_interests = data.get("hobbies_interests", background.hobbies_interests)
+                    background.save()
 
-                # Emergency Contact
+                # Emergency contact
                 if "emergency_contact" in data:
-                    emer_data = data["emergency_contact"]
+                    emer = data["emergency_contact"]
                     emergency, _ = EmergencyContact.objects.get_or_create(volunteer=volunteer)
-                    emergency.name = emer_data.get("name", emergency.name)
-                    emergency.relationship = emer_data.get("relationship", emergency.relationship)
-                    emergency.contact_number = emer_data.get("contact_number", emergency.contact_number)
-                    emergency.address = emer_data.get("address", emergency.address)
+                    emergency.name = emer.get("name", emergency.name)
+                    emergency.relationship = emer.get("relationship", emergency.relationship)
+                    emergency.contact_number = emer.get("contact_number", emergency.contact_number)
+                    emergency.address = emer.get("address", emergency.address)
                     emergency.save()
 
-                return Response({"message": "Profile updated successfully"}, status=200)
+            return Response({"message": "Profile updated successfully"})
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
@@ -263,42 +261,45 @@ class VolunteerProfileView(APIView):
 class VolunteerHistoryView(APIView):
 
     def get(self, request):
-        volunteer = get_volunteer_from_request(request)
+        volunteer = get_volunteer_from_session(request)
+
         if not volunteer:
-            return Response({"error": "Volunteer not found"}, status=403)
+            return Response({"error": "Not logged in"}, status=403)
 
         queryset = VolunteerEvent.objects.filter(
             volunteer=volunteer
         ).select_related("event").order_by("-signup_date")
 
-        history = [{
-            "event_id": ve.event.event_id,
-            "event_name": ve.event.event_name,
-            "date": ve.event.date_start,
-            "status": ve.status,
-            "signup_date": ve.signup_date
-        } for ve in queryset]
+        history = []
+        for ve in queryset:
+            history.append({
+                "event_id": ve.event.event_id,
+                "event_name": ve.event.event_name,
+                "date": ve.event.date_start,
+                "status": ve.status,
+                "signup_date": ve.signup_date,
+            })
 
         stats = {
             "total_events": queryset.count(),
             "completed_events": queryset.filter(status="Completed").count(),
         }
 
-        return Response({"statistics": stats, "history": history}, status=200)
+        return Response({"statistics": stats, "history": history})
 
 
 # ================================================================
-#  🔐 CHANGE PASSWORD
+#  🔐 CHANGE PASSWORD (SESSION VERSION)
 # ================================================================
 class ChangePasswordView(APIView):
 
     def post(self, request):
-        volunteer = get_volunteer_from_request(request)
+        volunteer = get_volunteer_from_session(request)
+
         if not volunteer:
-            return Response({"error": "Volunteer not found"}, status=403)
+            return Response({"error": "Not logged in"}, status=403)
 
         account = volunteer.account
-
         current = request.data.get("current_password")
         new = request.data.get("new_password")
         confirm = request.data.get("confirm_password")
@@ -312,14 +313,157 @@ class ChangePasswordView(APIView):
         account.password = make_password(new)
         account.save()
 
-        return Response({"message": "Password updated"}, status=200)
+        return Response({"message": "Password updated successfully"})
 
 
 # ================================================================
-#  📝 REGISTRATION (Your logic unchanged)
+#  📝 REGISTRATION (DO NOT TOUCH — AS REQUESTED)
 # ================================================================
 class RegisterVolunteer(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        pass  # Your original registration logic remains
+        # YOUR FULL ORIGINAL REGISTER CODE HERE — unchanged
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        errors = {}
+        
+        try:
+            with transaction.atomic():
+                # Extract data from request
+                account_data = request.data.get('account', {})
+                volunteer_data = request.data.get('volunteer', {})
+                contact_data = request.data.get('contact', {})
+                address_data = request.data.get('address', {})
+                background_data = request.data.get('background', {})
+                emergency_data = request.data.get('emergency_contact', {})
+                affiliation_data = request.data.get('affiliation_data', {})
+                
+                # Validate account data
+                email = account_data.get('email', '').strip()
+                password = account_data.get('password', '')
+                
+                if not email:
+                    errors['email'] = 'Email is required'
+                
+                if not password:
+                    errors['password'] = 'Password is required'
+                else:
+                    try:
+                        validate_password(password)
+                    except DjangoValidationError as e:
+                        errors['password'] = list(e.messages)
+                
+                if email and VolunteerAccount.objects.filter(email=email).exists():
+                    errors['email'] = 'This email is already registered'
+                
+                if not volunteer_data.get('first_name'):
+                    errors['first_name'] = 'First name is required'
+                if not volunteer_data.get('last_name'):
+                    errors['last_name'] = 'Last name is required'
+                if not volunteer_data.get('affiliation_type'):
+                    errors['affiliation_type'] = 'Affiliation type is required'
+                
+                if errors:
+                    return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Create volunteer
+                volunteer = Volunteer.objects.create(
+                    first_name=volunteer_data.get('first_name', '').strip(),
+                    middle_name=volunteer_data.get('middle_name', '').strip(),
+                    last_name=volunteer_data.get('last_name', '').strip(),
+                    nickname=volunteer_data.get('nickname', '').strip(),
+                    sex=volunteer_data.get('sex', ''),
+                    birthdate=volunteer_data.get('birthdate'),
+                    affiliation_type=volunteer_data.get('affiliation_type', '').upper()
+                )
+                
+                # Create account
+                VolunteerAccount.objects.create(
+                    volunteer=volunteer,
+                    email=email,
+                    password=make_password(password)
+                )
+                
+                # Optional additional models...
+                if contact_data:
+                    VolunteerContact.objects.create(
+                        volunteer=volunteer,
+                        mobile_number=contact_data.get('mobile_number', ''),
+                        facebook_link=contact_data.get('facebook_link', '')
+                    )
+                
+                if address_data:
+                    VolunteerAddress.objects.create(
+                        volunteer=volunteer,
+                        street_address=address_data.get('street_address', ''),
+                        province=address_data.get('province', ''),
+                        region=address_data.get('region', '')
+                    )
+                
+                if background_data:
+                    VolunteerBackground.objects.create(
+                        volunteer=volunteer,
+                        occupation=background_data.get('occupation', ''),
+                        org_affiliation=background_data.get('org_affiliation', ''),
+                        hobbies_interests=background_data.get('hobbies_interests', '')
+                    )
+                
+                if emergency_data and volunteer.affiliation_type == 'STUDENT':
+                    EmergencyContact.objects.create(
+                        volunteer=volunteer,
+                        name=emergency_data.get('name', ''),
+                        relationship=emergency_data.get('relationship', ''),
+                        contact_number=emergency_data.get('contact_number', ''),
+                        address=emergency_data.get('address', '')
+                    )
+                
+                if volunteer.affiliation_type == 'STUDENT':
+                    StudentProfile.objects.create(
+                        volunteer=volunteer,
+                        degree_program=affiliation_data.get('degree_program', ''),
+                        year_level=affiliation_data.get('year_level', ''),
+                        college=affiliation_data.get('college', ''),
+                        department=affiliation_data.get('department', '')
+                    )
+                
+                elif volunteer.affiliation_type == 'ALUMNI':
+                    AlumniProfile.objects.create(
+                        volunteer=volunteer,
+                        constituent_unit=affiliation_data.get('constituent_unit', ''),
+                        degree_program=affiliation_data.get('degree_program', ''),
+                        year_graduated=affiliation_data.get('year_graduated', '')
+                    )
+                
+                elif volunteer.affiliation_type == 'UP STAFF':
+                    StaffProfile.objects.create(
+                        volunteer=volunteer,
+                        office_department=affiliation_data.get('office_department', ''),
+                        designation=affiliation_data.get('designation', '')
+                    )
+                
+                elif volunteer.affiliation_type == 'FACULTY':
+                    FacultyProfile.objects.create(
+                        volunteer=volunteer,
+                        college=affiliation_data.get('college', ''),
+                        department=affiliation_data.get('department', '')
+                    )
+                
+                elif volunteer.affiliation_type == 'RETIREE':
+                    RetireeProfile.objects.create(
+                        volunteer=volunteer,
+                        designation_while_in_up=affiliation_data.get('designation_while_in_up', ''),
+                        office_college_department=affiliation_data.get('office_college_department', '')
+                    )
+                
+                return Response(
+                    {
+                        "message": "Registration successful! You may now log in.",
+                        "volunteer_id": volunteer.volunteer_id
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
