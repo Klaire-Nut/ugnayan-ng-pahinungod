@@ -7,5 +7,12 @@
     "python.autoComplete.extraPaths": [
         "${workspaceFolder}/backend",
         "${workspaceFolder}/.venv/Lib/site-packages"
+    ],
+ // Exclude the virtual environment folder from analysis
+    "python.analysis.exclude": [
+        "**/venv/**",
+        "**/site-packages/**",
     ]
+
+
 }

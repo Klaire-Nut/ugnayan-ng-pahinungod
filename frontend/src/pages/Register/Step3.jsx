@@ -68,7 +68,6 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
     otherOrganization: "",
     organizationName: "",
     howDidYouHear: "",
-    password: "",
     ...formData,
   };
 
@@ -109,24 +108,18 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
     if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear)
       newErrors.howDidYouHear = "This field is required for first-time volunteers.";
 
-    if (!safeFormData.password)
-      newErrors.password = "Please provide a password.";
-
-    if (!safeFormData.email)
-      newErrors.email = "Email is required (from Step 1).";
-
-    // Emergency contact required only for students
-    if (safeFormData.affiliation?.toLowerCase() === "student") {
-      if (!safeFormData.emerName) newErrors.emerName = "Emergency contact name is required.";
-      if (!safeFormData.emerRelation) newErrors.emerRelation = "Relationship is required.";
-      if (!safeFormData.emerContact) newErrors.emerContact = "Contact number is required.";
-      if (!safeFormData.emerAddress) newErrors.emerAddress = "Address is required.";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [safeFormData]);
 
+  // ----------------- Navigation -----------------
+  const handleNextClick = () => {
+    if (validate()) {
+      onNext(); // Move to Step 4
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   // ----------------- Render -----------------
   const volunteerProgramOptions = [
@@ -198,9 +191,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Kindly choose the status of your volunteer application *
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Kindly choose the status of your volunteer application *</Typography>
         <FormSelect
           label="Volunteer Status"
           value={safeFormData.volunteerStatus}
@@ -216,9 +207,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Tagapag-Ugnay Group */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>
-          Would you like to be part of the TAGAPAG-UGNAY Group?
-        </Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Would you like to be part of the TAGAPAG-UGNAY Group?</Typography>
         <FormSelect
           label="Join Tagapag-Ugnay Group"
           value={safeFormData.tagapagUgnay}
@@ -230,7 +219,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Other Organization */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>Are you a part of any other volunteer organization? *</Typography>
         <FormSelect
           label="Part of Other Organization"
           value={safeFormData.otherOrganization}
@@ -243,7 +232,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
       {/* Organization Name */}
       {safeFormData.otherOrganization === "YES" && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>WHAT IS THE NAME OF THE ORGANIZATION?</Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>What is the name of the organization?</Typography>
           <FormTextField
             label="Organization Name"
             value={safeFormData.organizationName}
@@ -279,7 +268,6 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
           Next
         </Button>
       </Box>
-
     </Box>
   );
 }

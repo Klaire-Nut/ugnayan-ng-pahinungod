@@ -1,16 +1,16 @@
-import React from "react";
-import DefaultPage from "../layout/default_page.jsx";
+import React, { useState } from "react";
+import LoginPopup from "../components/LoginPopup";
 
-function Login() {
+export default function Login() {
+  const [open, setOpen] = useState(true); // popup shows immediately
+
   return (
     <>
-      <Header />
-      <main style={{ padding: "2rem" }}>
-        <h1>Login</h1>
-        <p>Please log in to your account.</p>
-      </main>
+      <LoginPopup
+        open={open}
+        onClose={() => setOpen(false)}
+        role="Volunteer"
+      />
     </>
   );
 }
-
-export default Login;

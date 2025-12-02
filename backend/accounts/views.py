@@ -1,15 +1,15 @@
 from django.shortcuts import render
-
-# Create your views here.
 import json
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import AnonymousUser
-from core.models import VolunteerAccount 
+from core.models import VolunteerAccount, Admin
 from django.contrib.auth.hashers import check_password
 
+# -------------------------
 # Admin Account
+# -------------------------
 @csrf_exempt
 def login_view(request):
     if request.method != "POST":
@@ -43,17 +43,18 @@ def logout_view(request):
 
 
 def user_view(request):
-    # GET only
     if request.method != "GET":
         return JsonResponse({"error": "GET required"}, status=400)
 
     user = getattr(request, "user", None)
     if not user or isinstance(user, AnonymousUser) or not user.is_authenticated:
         return JsonResponse({"user": None})
-    return JsonResponse({"user": {"username": user.username, "id": user.id, "email": user.email}})
+    return JsonResponse({"user": {"username": user.username, "id": user.id, "email": getattr(user, 'email', '')}})
 
 
+# -------------------------
 # Volunteer Account
+# -------------------------
 @csrf_exempt
 def volunteer_login(request):
     if request.method != "POST":
@@ -76,14 +77,11 @@ def volunteer_login(request):
             request.session['volunteer_id'] = account.volunteer.volunteer_id
             return JsonResponse({"message": "Login successful!"})
         else:
-            # Debugging output
             return JsonResponse({
                 "error": "Password mismatch.",
                 "email_received": email,
-                "stored_password_hash": account.password
             }, status=400)
     except VolunteerAccount.DoesNotExist:
-        # Debugging output
         return JsonResponse({
             "error": "Account not found.",
             "email_received": email

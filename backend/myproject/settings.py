@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "rest_framework",
     'rest_framework.authtoken',
     "accounts",
-    'volunteers',
     'events',
     'corsheaders',
     'rest_framework_simplejwt',
@@ -145,12 +144,20 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # your frontend dev server
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",      # ← YOUR FRONTEND
+    "http://127.0.0.1:5174",      # ← Add this too
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = ['*']
+CORS_ALLOW_METHODS = ['*']
 
 # OTP Sending
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
