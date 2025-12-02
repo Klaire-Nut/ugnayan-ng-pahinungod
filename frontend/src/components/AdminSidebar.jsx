@@ -3,6 +3,7 @@ import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle } fr
 import { MdEvent } from "react-icons/md";
 import { NavLink, useNavigate } from "react-router-dom"; 
 import logo from "../assets/UNP Logo.png";
+import "../styles/VolunteerSidebar.css";
 import "../styles/Sidebar.css";
 import { logout } from "../services/auth";
 

@@ -1,33 +1,92 @@
-import React from "react";
-import Header1 from "../components/Header1";
+import React, { useState, useEffect } from "react";
+import VolunteerHeader from "../components/VolunteerHeader";
+import VolunteerSidebar from "../components/VolunteerSidebar";
 import Footer from "../components/Footer";
-import { Box } from "@mui/material";
 import { Outlet } from "react-router-dom";
+import "../styles/admin-shared.css";
 
 export default function DefaultPageVolunteer() {
-  // Example auth logic; replace with your real auth state
-  const isLoggedIn = Boolean(localStorage.getItem("token"));
+  const [events, setEvents] = useState([]);
+  const [joinedEvents, setJoinedEvents] = useState([]);
+
+  const token = localStorage.getItem("token");
+  const isLoggedIn = Boolean(token);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
-    window.location.href = "/login"; // or use navigate
+    window.location.href = "/login";
   };
 
+  // 🔥 Fetch all events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/events");
+        const data = await res.json();
+        setEvents(data);
+      } catch (err) {
+        console.error("Failed to load events:", err);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  // 🔥 Fetch volunteer's joined events (if logged in)
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchJoined = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/volunteers/joined-events/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+        setJoinedEvents(data);
+      } catch (err) {
+        console.error("Failed to load joined events:", err);
+      }
+    };
+
+    fetchJoined();
+  }, [token]);
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Header1 instead of Header */}
-      <Header1 isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+    <div className="admin-layout">
+      {/* Header */}
+      <div className="admin-header">
+        <VolunteerHeader isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      </div>
 
-      <Box component="main" sx={{ flexGrow: 1 }}>
-        <Outlet /> {/* render nested routes */}
-      </Box>
+      <div className="admin-main">
+        
+        {/* Sidebar */}
+        <aside className="admin-sidebar vol-sidebar">
+          <VolunteerSidebar />
+        </aside>
 
-      <Footer />
-    </Box>
+        {/* Main content */}
+        <section className="admin-content">
+          <div className="admin-content-inner">
+            <Outlet
+              context={{
+                events,
+                setEvents,
+                joinedEvents,
+                setJoinedEvents,
+              }}
+            />
+          </div>
+        </section>
+
+      </div>
+
+      <footer className="admin-footer">
+        <Footer />
+      </footer>
+    </div>
   );
 }

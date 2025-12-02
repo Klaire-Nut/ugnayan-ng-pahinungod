@@ -13,17 +13,22 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-export default function Step4({ formData = {}, setFormData, onBack, onSubmit }) {
+export default function Step4({
+  formData = {},
+  setFormData,
+  onBack,
+  onSubmit,
+  onOpenLogin,   // ⭐⭐⭐ ADDED — REQUIRED
+}) {
   const [errors, setErrors] = useState({});
   const [password, setPassword] = useState(formData.password || "");
-  const [confirmPassword, setConfirmPassword] = useState(formData.confirmPassword || "");
+  const [confirmPassword, setConfirmPassword] = useState(
+    formData.confirmPassword || ""
+  );
   const [confirmDialog, setConfirmDialog] = useState(false);
-  //const [otpDialog, setOtpDialog] = useState(false);
   const [successDialog, setSuccessDialog] = useState(false);
-  //const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ----------------- Handlers -----------------
   const handleChange = useCallback((setter) => (e) => {
     setter(e.target.value);
   }, []);
@@ -31,7 +36,8 @@ export default function Step4({ formData = {}, setFormData, onBack, onSubmit }) 
   const validate = useCallback(() => {
     const newErrors = {};
     if (!password) newErrors.password = "Password is required.";
-    if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password.";
+    if (!confirmPassword)
+      newErrors.confirmPassword = "Please confirm your password.";
     if (password && confirmPassword && password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
     }
@@ -184,7 +190,7 @@ const handleConfirmSubmit = async () => {
 
 const handleSuccessClose = () => {
   setSuccessDialog(false);
-  window.location.href = "/";
+  onOpenLogin("Volunteer");
 };
 
   /* ---------------------------------------------------------
@@ -192,46 +198,24 @@ const handleSuccessClose = () => {
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
     setLoading(true);
-    // Update formData with password
     setFormData((prev) => ({ ...prev, password }));
 
     try {
-      // Simulate sending OTP
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await onSubmit?.({ ...formData, password });
       setLoading(false);
-      setOtpDialog(true);
-    } catch (error) {
-      setLoading(false);
-      alert("Failed to send OTP. Please try again.");
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length < 4) {
-      alert("Please enter a valid OTP");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Call parent's onSubmit with formData and OTP
-      await onSubmit?.({ ...formData, password }, otp);
-      setLoading(false);
-      setOtpDialog(false);
       setSuccessDialog(true);
     } catch (error) {
       setLoading(false);
-      alert("OTP verification failed. Please try again.");
+      alert("Submission failed. Please try again.");
     }
-  };
-
-  const handleSuccessClose = () => {
-    setSuccessDialog(false);
-    // Optionally redirect after success
-    window.location.href = "/";
   };*/
+  
+  // ⭐⭐⭐ FIXED — this now works because Step4 receives onOpenLogin
+  //const handleSuccessClose = () => {
+    //setSuccessDialog(false);
+    //onOpenLogin("Volunteer");
+  //};
 
-  // ----------------- Render -----------------
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -260,7 +244,6 @@ const handleSuccessClose = () => {
         sx={{ mb: 2 }}
       />
 
-      {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
         <Button variant="outlined" onClick={onBack}>
           Back
@@ -268,14 +251,16 @@ const handleSuccessClose = () => {
         <Button
           variant="contained"
           onClick={handleSubmitClick}
-          sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
+          sx={{
+            backgroundColor: "#FF7F00",
+            "&:hover": { backgroundColor: "#e66e00" },
+          }}
           disabled={loading}
         >
           {loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
 
-      {/* Confirmation Dialog */}
       <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
@@ -285,13 +270,16 @@ const handleSuccessClose = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
-          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">
-            Yes, Submit
+          <Button
+            onClick={handleConfirmSubmit}
+            variant="contained"
+            color="primary"
+          >
+            Yes, Continue
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Success Dialog */}
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
@@ -366,9 +354,9 @@ const handleSuccessClose = () => {
             {loading ? <CircularProgress size={24} /> : "Verify"}
           </Button>
         </DialogActions>
-      </Dialog> 
+      </Dialog> */}
 
-      {/* Success Dialog 
+      {/* Success Dialog
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
