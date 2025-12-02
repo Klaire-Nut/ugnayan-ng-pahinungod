@@ -1,8 +1,9 @@
-export const fakeUser = {
+export const fakeStudent = {
   id: 1,
   volunteerID: "VOL-2025-0001",
+  affiliation: "Student",
 
-  // STEP 1 — PERSONAL INFORMATION
+  // PERSONAL INFORMATION
   firstName: "Klaire",
   middleName: "Santos",
   lastName: "Napolitano",
@@ -12,48 +13,39 @@ export const fakeUser = {
   birthdate: "2003-05-17",
   indigenousAffiliation: "None",
   mobileNumber: "09171234567",
-  email: "klaire.napolitano@example.com",
+  email: "klaire.napolitano@student.up.edu",
   facebookLink: "https://facebook.com/klaire.napolitano",
   hobbies: "Reading, Hiking",
   organizations: "CS Society",
-  streetBarangay: "GRG Subdiv. Phase 2",
+
+  // ADDRESS
+  streetBarangay: "GRG Subdivision Phase 2",
   cityMunicipality: "Davao City",
   province: "Davao del Sur",
   region: "Region XI",
+
+  // PERMANENT ADDRESS (same here, but still shown separately)
   sameAsPermanent: true,
-  upStreetBarangay: "GRG Subdiv. Phase 2",
+  upStreetBarangay: "GRG Subdivision Phase 2",
   upCityMunicipality: "Davao City",
   upProvince: "Davao del Sur",
   upRegion: "Region XI",
 
-  // STEP 2 — AFFILIATION / EDUCATION
-  affiliation: "Undergraduate",
+  // EDUCATION / AFFILIATION
   degreeProgram: "BS Computer Science",
   yearLevel: "3rd Year",
   college: "School of Computing",
   shsType: "Academic",
-  gradBachelors: "None",
   firstCollege: "UP Mindanao",
-  firstGrad: "N/A",
-  firstUP: "Yes",
+
+  // EMERGENCY CONTACT
   emerName: "Juan Napolitano",
   emerRelation: "Father",
   emerContact: "09171234568",
-  emerAddress: "GRG Subdiv. Phase 2, Davao City",
-  facultyDept: "School of Computing",
-  constituentUnit: "UP Mindanao",
-  alumniDegree: "None",
-  yearGrad: "N/A",
-  firstGradCollege: "N/A",
-  firstGradUP: "N/A",
-  occupation: "Student",
-  retireDesignation: "N/A",
-  retireOffice: "N/A",
-  staffOffice: "N/A",
-  staffPosition: "N/A",
+  emerAddress: "GRG Subdivision Phase 2, Davao City",
 
-  // STEP 3 — VOLUNTEER PROGRAMS / STATUS
-  volunteerPrograms: ["Tree Planting Activity", "Blood Donation Drive"],
+  // VOLUNTEER INFO
+  volunteerPrograms: ["Tree Planting", "Blood Donation Drive"],
   affirmativeActionSubjects: ["Community Service"],
   volunteerStatus: "Active",
   tagapagUgnay: "Juan Dela Cruz",
@@ -61,12 +53,5 @@ export const fakeUser = {
   organizationName: "CS Society",
   howDidYouHear: "Friend Referral",
 
-  // STEP 4 — ACCOUNT DETAILS (won't be displayed)
-  username: "klaireVol",
-  password: "hashedpassword123",
-  securityQuestion: "What is your favorite color?",
-  securityAnswer: "Blue",
-
-  // PROFILE PHOTO
   profilePhoto: "https://via.placeholder.com/150"
 };
