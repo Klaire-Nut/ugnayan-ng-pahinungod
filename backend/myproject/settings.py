@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    "core.middleware.auth.VolunteerAuthMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -148,19 +149,25 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "content-type",
 ]
 
-CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
-
-
-# CORS Settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # your frontend dev server
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",      # ← YOUR FRONTEND
-    "http://127.0.0.1:5174",      # ← Add this too
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
 ]
 
+# Allow frontend to send/receive Django session cookies
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = False  # only True in HTTPS
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = False
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ['*']
 

@@ -9,10 +9,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+
+// Use one login function for both admin + volunteer
 import { login } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
-  const [email, setEmail] = React.useState("");
+
+  const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
 
@@ -20,25 +23,23 @@ export default function LoginPopup({ open, onClose, role }) {
 
   const handleLogin = async () => {
     try {
-      const res = await login({ email, password, role });
-      console.log(res.data);
+      let res;
 
-      if (res.data.message === "Login successful!" || res.data.message === "Login successful") {
-        setErrorMessage("");
-        onClose();
-
-        // 🔥 FINAL FIX
-        if (role === "Admin") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/volunteer/dashboard");
-        }
+      if (role === "Admin") {
+        res = await login({ username, password, role: "Admin" });
+        navigate("/admin/dashboard");
+      } else {
+        res = await login({ email: username, password, role: "Volunteer" });
+        navigate("/volunteer/dashboard");
       }
+
+      console.log(res.data);
+      setErrorMessage("");
+      onClose();
+
     } catch (err) {
       console.error(err.response?.data);
-      setErrorMessage(
-        err.response?.data?.message || "Login failed. Check credentials."
-      );
+      setErrorMessage("Login failed. Check your username/email and password.");
     }
   };
 
@@ -48,43 +49,99 @@ export default function LoginPopup({ open, onClose, role }) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          borderRadius: "16px",
+          padding: 2,
+          width: "350px",
+          bgcolor: "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          textAlign: "center",
+          color: "#7B1113",
+          fontWeight: 600,
+        }}
+      >
         {role === "Admin" ? "Admin Login" : "Volunteer Login"}
       </DialogTitle>
 
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            label={role === "Admin" ? "Username" : "Email"}
+            type="text"
+            fullWidth
+            size="small"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
 
           <TextField
             label="Password"
             type="password"
+            fullWidth
+            size="small"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
           {errorMessage && (
-            <Typography color="error" textAlign="center">
+            <Typography color="error" textAlign="center" sx={{ mt: 1 }}>
               {errorMessage}
             </Typography>
           )}
 
-          <Box display="flex" gap={1}>
-            <Button onClick={handleLogin}>Log In</Button>
-            <Button onClick={onClose}>Cancel</Button>
+          <Box display="flex" justifyContent="space-between" gap={1}>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#7B1113",
+                color: "white",
+                borderRadius: "8px",
+                textTransform: "none",
+                "&:hover": { bgcolor: "#8C1B1F" },
+                flex: 1,
+              }}
+              onClick={handleLogin}
+            >
+              Log In
+            </Button>
+
+            <Button
+              variant="outlined"
+              sx={{
+                borderColor: "#7B1113",
+                color: "#7B1113",
+                borderRadius: "8px",
+                textTransform: "none",
+                flex: 1,
+                "&:hover": { bgcolor: "#fbeaea", borderColor: "#8C1B1F" },
+              }}
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
           </Box>
 
           {role === "Volunteer" && (
-            <Typography textAlign="center">
-              Don't have an account?{" "}
+            <Typography textAlign="center" sx={{ mt: 1, color: "#555" }}>
+              Don’t have an account?{" "}
               <span
-                style={{ color: "blue", cursor: "pointer" }}
                 onClick={handleRegister}
+                style={{
+                  color: "#7B1113",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
               >
                 Register now.
               </span>

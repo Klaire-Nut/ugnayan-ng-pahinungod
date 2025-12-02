@@ -1,28 +1,29 @@
 // src/services/volunteerApi.js
-import api from './api';
+import axios from "axios";
 
-const authAPI = {
+const API_BASE_URL = "http://127.0.0.1:8000/api";
+
+// Axios instance for volunteer endpoints
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const volunteerAPI = {
   // Register new volunteer
   register: async (data) => {
     try {
-      const response = await api.post('/volunteers/register/', data);
+      const response = await api.post("/volunteers/register/", data);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error('Registration error:', error.response?.data || error.message);
-      
-      // Return detailed error information
-      if (error.response?.data) {
-        return {
-          success: false,
-          error: error.response.data.error || 'Registration failed',
-          errors: error.response.data.errors || null,
-          response: error.response
-        };
-      }
-      
+      console.error("Registration error:", error.response?.data || error.message);
       return {
         success: false,
-        error: error.message || 'Registration failed',
+        error: error.response?.data?.error || "Registration failed",
+        errors: error.response?.data?.errors || null,
       };
     }
   },
@@ -30,18 +31,18 @@ const authAPI = {
   // Login
   login: async (email, password) => {
     try {
-      const response = await api.post('/auth/login/', { email, password });
-      
+      const response = await api.post("/auth/login/", { email, password });
+
       if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('volunteer', JSON.stringify(response.data.volunteer));
+        localStorage.setItem("authToken", response.data.token);
+        localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
       }
-      
+
       return { success: true, data: response.data };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Login failed',
+        error: error.response?.data?.error || "Login failed",
       };
     }
   },
@@ -49,28 +50,24 @@ const authAPI = {
   // Logout
   logout: async () => {
     try {
-      const refresh = localStorage.getItem('refresh');
-      if (refresh) {
-        await api.post('/auth/logout/', { refresh });
-      }
+      await api.post("/auth/logout/");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('refresh');
-      localStorage.removeItem('volunteer');
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("volunteer");
     }
   },
 
   // Get volunteer profile
   getProfile: async () => {
     try {
-      const response = await api.get('/volunteers/profile/');
+      const response = await api.get("/volunteers/profile/");
       return { success: true, data: response.data };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to fetch profile',
+        error: error.response?.data?.error || "Failed to fetch profile",
       };
     }
   },
@@ -78,25 +75,25 @@ const authAPI = {
   // Update volunteer profile
   updateProfile: async (data) => {
     try {
-      const response = await api.patch('/volunteers/profile/', data);
+      const response = await api.patch("/volunteers/profile/", data);
       return { success: true, data: response.data };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to update profile',
+        error: error.response?.data?.error || "Failed to update profile",
       };
     }
   },
 
-  // Get volunteer history
+  // Event history
   getHistory: async (params = {}) => {
     try {
-      const response = await api.get('/volunteers/history/', { params });
+      const response = await api.get("/volunteers/history/", { params });
       return { success: true, data: response.data };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to fetch history',
+        error: error.response?.data?.error || "Failed to fetch history",
       };
     }
   },
@@ -104,7 +101,7 @@ const authAPI = {
   // Change password
   changePassword: async (currentPassword, newPassword, confirmPassword) => {
     try {
-      const response = await api.post('/volunteers/change-password/', {
+      const response = await api.post("/volunteers/change-password/", {
         current_password: currentPassword,
         new_password: newPassword,
         confirm_password: confirmPassword,
@@ -113,7 +110,7 @@ const authAPI = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to change password',
+        error: error.response?.data?.error || "Failed to change password",
       };
     }
   },
@@ -126,7 +123,8 @@ const authAPI = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to register for event',
+        error:
+          error.response?.data?.error || "Failed to register for event",
       };
     }
   },
@@ -139,10 +137,8 @@ const authAPI = {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to fetch events',
+        error: error.response?.data?.error || "Failed to fetch events",
       };
     }
   },
 };
-
-export default authAPI;
