@@ -27,7 +27,7 @@ export default function LoginPopup({ open, onClose, role }) {
         setErrorMessage("");
         onClose();
 
-        // 🔥 FIXED REDIRECTS
+        // 🔥 FINAL FIX
         if (role === "Admin") {
           navigate("/admin/dashboard");
         } else {
@@ -48,23 +48,8 @@ export default function LoginPopup({ open, onClose, role }) {
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        sx: {
-          borderRadius: "16px",
-          padding: 2,
-          width: "350px",
-          bgcolor: "rgba(255,255,255,0.95)",
-          backdropFilter: "blur(10px)",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{ textAlign: "center", color: "#7B1113", fontWeight: 600 }}
-      >
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>
         {role === "Admin" ? "Admin Login" : "Volunteer Login"}
       </DialogTitle>
 
@@ -72,9 +57,6 @@ export default function LoginPopup({ open, onClose, role }) {
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
             label="Email"
-            type="email"
-            fullWidth
-            size="small"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -82,79 +64,32 @@ export default function LoginPopup({ open, onClose, role }) {
           <TextField
             label="Password"
             type="password"
-            fullWidth
-            size="small"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
           {errorMessage && (
-            <Typography
-              variant="body2"
-              color="error"
-              textAlign="center"
-              sx={{ mt: 1 }}
-            >
+            <Typography color="error" textAlign="center">
               {errorMessage}
             </Typography>
           )}
 
-          <Box display="flex" justifyContent="space-between" gap={1}>
-            <Button
-              variant="contained"
-              sx={{
-                bgcolor: "#7B1113",
-                color: "white",
-                borderRadius: "8px",
-                textTransform: "none",
-                "&:hover": { bgcolor: "#8C1B1F" },
-                flex: 1,
-              }}
-              onClick={handleLogin}
-            >
-              Log In
-            </Button>
-
-            <Button
-              variant="outlined"
-              sx={{
-                borderColor: "#7B1113",
-                color: "#7B1113",
-                borderRadius: "8px",
-                textTransform: "none",
-                flex: 1,
-                "&:hover": { bgcolor: "#fbeaea", borderColor: "#8C1B1F" },
-              }}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
+          <Box display="flex" gap={1}>
+            <Button onClick={handleLogin}>Log In</Button>
+            <Button onClick={onClose}>Cancel</Button>
           </Box>
 
-          <Typography
-            variant="body2"
-            textAlign="center"
-            sx={{ mt: 1, color: "#555" }}
-          >
-            {role === "Volunteer" ? (
-              <>
-                Don&apos;t have an account?{" "}
-                <span
-                  onClick={handleRegister}
-                  style={{
-                    color: "#7B1113",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
-                >
-                  Register now.
-                </span>
-              </>
-            ) : (
-              "For authorized admins only."
-            )}
-          </Typography>
+          {role === "Volunteer" && (
+            <Typography textAlign="center">
+              Don't have an account?{" "}
+              <span
+                style={{ color: "blue", cursor: "pointer" }}
+                onClick={handleRegister}
+              >
+                Register now.
+              </span>
+            </Typography>
+          )}
         </Box>
       </DialogContent>
     </Dialog>
