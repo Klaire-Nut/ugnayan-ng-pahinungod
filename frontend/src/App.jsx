@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // adjust path
+import { AuthProvider } from "./context/AuthContext";
+
 import DefaultPage from "./layout/default_page";
 import DefaultPageVolunteer from "./layout/default_page_volunteers";
 import DefaultPageAdmin from "./layout/default_page_admin";
@@ -9,13 +10,18 @@ import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
 import Login from "./pages/Login";
+
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V.jsx";
+import VolunteerProfile from "./pages/Volunteers/VolunteerProfile.jsx";
+import VolunteerPrivacy from "./pages/Volunteers/PrivacySettings.jsx";
+import VolunteerHistory from "./pages/Volunteers/VolunteeringHistory.jsx";
+
+import AdminDashboard from "./pages/Admin/Dashboard_A";
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
 import AdminVolunteers from "./pages/Admin/AdminVolunteers";
 import DataStatistics from "./pages/Admin/DataStatistics";
-import PrivacySettings from "./pages/Admin/PrivacySettings";
-import AdminDashboard from "./pages/Admin/Dashboard_A";
+import PrivacySettings from "./pages/Admin/AdminSettings";
 
 function App() {
   return (
@@ -23,7 +29,7 @@ function App() {
       <Router>
         <Routes>
 
-          {/* PUBLIC PAGES */}
+          {/* Public */}
           <Route element={<DefaultPage />}>
             <Route index element={<Home />} />
             <Route path="about" element={<AboutUs />} />
@@ -32,12 +38,15 @@ function App() {
             <Route path="login" element={<Login />} />
           </Route>
 
-          {/* VOLUNTEER DASHBOARD */}
-          <Route element={<DefaultPageVolunteer />}>
+          {/* Volunteer */}
+          <Route path="/volunteer" element={<DefaultPageVolunteer />}>
             <Route path="dashboard" element={<VolunteerDashboard />} />
+            <Route path="profile" element={<VolunteerProfile />} />
+            <Route path="history" element={<VolunteerHistory />} />
+            <Route path="privacy" element={<VolunteerPrivacy />} />
           </Route>
 
-          {/* ADMIN DASHBOARD */}
+          {/* Admin */}
           <Route path="/admin" element={<DefaultPageAdmin />}>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
