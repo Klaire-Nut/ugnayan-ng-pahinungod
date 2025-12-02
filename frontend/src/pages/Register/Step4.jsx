@@ -1,4 +1,3 @@
-// src/pages/Register/Step4.jsx
 import React, { useState, useCallback } from "react";
 import {
   Box,
@@ -12,22 +11,16 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useNavigate } from "react-router-dom";
 
-export default function Step4({
-  formData = {},
-  setFormData,
-  onBack,
-  onSubmit,
-  onOpenLogin,   // ⭐⭐⭐ ADDED — REQUIRED
-}) {
+export default function Step4({ formData = {}, setFormData, onBack, onSubmit, loading }) {
+  const navigate = useNavigate();
   const [errors, setErrors] = useState({});
   const [password, setPassword] = useState(formData.password || "");
-  const [confirmPassword, setConfirmPassword] = useState(
-    formData.confirmPassword || ""
-  );
+  const [confirmPassword, setConfirmPassword] = useState(formData.confirmPassword || "");
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [successDialog, setSuccessDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = useCallback((setter) => (e) => {
     setter(e.target.value);
@@ -35,9 +28,14 @@ export default function Step4({
 
   const validate = useCallback(() => {
     const newErrors = {};
-    if (!password) newErrors.password = "Password is required.";
-    if (!confirmPassword)
+    if (!password) {
+      newErrors.password = "Password is required.";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    }
+    if (!confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password.";
+    }
     if (password && confirmPassword && password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
     }
@@ -55,30 +53,41 @@ export default function Step4({
 
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
-    setLoading(true);
-    setFormData((prev) => ({ ...prev, password }));
-
+    setSubmitting(true);
+    
+    // Update formData with password
+    const finalData = { ...formData, password, confirmPassword };
+    
     try {
-      await onSubmit?.({ ...formData, password });
-      setLoading(false);
-      setSuccessDialog(true);
+      const result = await onSubmit(finalData);
+      
+      setSubmitting(false);
+      
+      if (result && result.success) {
+        setSuccessDialog(true);
+      } else {
+        // Error is handled in parent component
+        console.error("Registration failed:", result?.error);
+      }
     } catch (error) {
-      setLoading(false);
-      alert("Submission failed. Please try again.");
+      setSubmitting(false);
+      console.error("Registration error:", error);
     }
   };
 
   const handleSuccessClose = () => {
     setSuccessDialog(false);
-
-    // ⭐⭐⭐ FIXED — this now works because Step4 receives onOpenLogin
-    onOpenLogin("Volunteer");
+    navigate("/login");
   };
 
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         Set Your Password
+      </Typography>
+
+      <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
+        Create a secure password for your account. Your password must be at least 8 characters long.
       </Typography>
 
       <TextField
@@ -103,50 +112,53 @@ export default function Step4({
         sx={{ mb: 2 }}
       />
 
+      {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-        <Button variant="outlined" onClick={onBack}>
+        <Button variant="outlined" onClick={onBack} disabled={submitting || loading}>
           Back
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmitClick}
-          sx={{
-            backgroundColor: "#FF7F00",
-            "&:hover": { backgroundColor: "#e66e00" },
-          }}
-          disabled={loading}
+          sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
+          disabled={submitting || loading}
         >
-          {loading ? <CircularProgress size={24} /> : "Submit"}
+          {submitting || loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
 
-      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialog} onClose={() => !submitting && setConfirmDialog(false)}>
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to submit your registration?
+            Are you sure you want to submit your registration? Please review all information before confirming.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmDialog(false)} disabled={submitting}>
+            Cancel
+          </Button>
           <Button
             onClick={handleConfirmSubmit}
             variant="contained"
             color="primary"
+            disabled={submitting}
           >
-            Yes, Continue
+            {submitting ? <CircularProgress size={24} /> : "Yes, Submit"}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Success Dialog */}
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
-            SUBMITTED
+            REGISTRATION SUCCESSFUL!
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
+            THANK YOU FOR SIGNING UP!
           </Typography>
           <Typography sx={{ fontStyle: "italic", mb: 2 }}>
             Makibahagi. Maglingkod. MagPahinungód.
@@ -170,7 +182,7 @@ export default function Step4({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleSuccessClose} variant="contained" fullWidth>
-            Close
+            Go to Login
           </Button>
         </DialogActions>
       </Dialog>

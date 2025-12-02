@@ -1,17 +1,35 @@
+// src/pages/Home.jsx
 import React from "react";
-import { Box, Container, Typography, Grid, CardMedia } from "@mui/material";
-import { useNavigate } from "react-router-dom";  // ✅ import useNavigate
-import Button from "../components/Button"; 
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  CardMedia,
+} from "@mui/material";
+import Button from "../components/Button";
 import heroLogo from "../assets/UNP Logo.png";
 import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
 import "../styles/Home.css";
 
 export default function Home() {
-  const navigate = useNavigate();  // ✅ initialize navigate
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleVolunteerClick = () => {
-    navigate("/register"); // ✅ path to your Register.jsx page
+    if (user) {
+      navigate("/events"); // Go to events if logged in
+    } else {
+      navigate("/register"); // Go to registration if not logged in
+    }
+  };
+
+  const handleKnowMoreClick = () => {
+    // Navigate to about page or scroll to info section
+    navigate("/about");
   };
 
   return (
@@ -35,13 +53,14 @@ export default function Home() {
               UGNAYAN NG PAHINUNGOD
             </Typography>
             <Typography variant="body2" className="hero-subtext">
-              The Ugnayan ng Pahinungód/Oblation Corps (UP/OC), also
-              known as Pahinungód, was established in 1994.
+              Join us in making a difference in our community through volunteerism. 
+              Together, we can create positive change and build a better tomorrow.
             </Typography>
             <Button 
               text="KNOW MORE" 
               variant="primary" 
               className="hero-button"
+              onClick={handleKnowMoreClick}
             />
           </Box>
         </Box>
@@ -65,9 +84,13 @@ export default function Home() {
               >
                 Help shape tomorrow — <br /> volunteer today.
               </Typography>
-              {/* ✅ Button navigates to /register */}
+              <Typography variant="body1" className="volunteer-description">
+                {user 
+                  ? "Browse available volunteer opportunities and make an impact."
+                  : "Join our community of volunteers and start making a difference."}
+              </Typography>
               <Button 
-                text="Volunteer" 
+                text={user ? "View Events" : "Get Started"}
                 variant="primary"
                 className="volunteer-button"
                 onClick={handleVolunteerClick}

@@ -1,25 +1,50 @@
-# Frontend
+# Node modules
 node_modules/
 frontend/node_modules/
 backend/node_modules/
 
 # Build output
 dist/
-.env
+build/
+frontend/dist/
+frontend/.vite/
+
 .vite/
+*.log
 
-# Environment
+# Environment files
 .env
+*.env
 
-# Python
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Python / Backend ---
+venv/
 backend/venv/
-**/__pycache__/
+__pycache__/
 *.pyc
 
-# Accidental library commit
-backend/libs/
-
-# System files
+# --- OS-generated files ---
 .DS_Store
+Thumbs.db
 
-frontend/package-lock.json
+# --- Editor junk ---
+.vscode/
+.idea/
+
+# --- Build output ---
+build/
+coverage/
+
+# Generated lockfiles (optional)
+# You may keep these if you want, but if not used, ignore them:
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+.vite/
+**/__pycache__/
+*.pyc
