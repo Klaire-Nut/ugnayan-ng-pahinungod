@@ -42,7 +42,7 @@ function Footer() {
       gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
       gap: "2rem",
       width: "100%",
-      maxWidth: "900px",
+      maxWidth: "1000px",
       marginBottom: "2.5rem",
       textAlign: "center",
     },
@@ -70,8 +70,14 @@ function Footer() {
     },
   };
 
+  // Updated footerLinks with Contact Details column
   const footerLinks = {
-    "ABOUT US": ["COLLEGES AND SCHOOLS", "VISIT OUR CAMPUS", "CONTACT US"],
+    "CONTACT US": [
+      "MR. MICHAEL A. GATELA",
+      "Director | Ugnayan ng Pahinungod Mindanao",
+      "pahinungod.upmin@up.edu.ph",
+      "0919-0068-979",
+    ],
     "FOR CURRENT STUDENTS": [
       "ACADEMIC PROGRAMS",
       "CSRS FOR STUDENTS",
@@ -87,12 +93,12 @@ function Footer() {
     ],
     "UGNAYAN NG PAHINUNGOD CAMPUSES": [
       { name: "DILIMAN", url: "https://pahinungod.upd.edu.ph" },
-      { name: "LOS BAÑOS", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwiW1NqK5JuRAxXBkq8BHRdyDj4QFnoECDcQAQ&url=https%3A%2F%2Finternational.uplb.edu.ph%2Fpublic-service%2F&usg=AOvVaw3WHa3spZ_HN0Nb2UTmwFTW&opi=89978449" },
-      { name: "MANILA", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjwxdfQ5JuRAxUej68BHeSNABQQFnoECDsQAQ&url=https%3A%2F%2Fwww.facebook.com%2Fpahinungod.manila%2F&usg=AOvVaw3iklf61OS0Sje3cqAA9Lum&opi=89978449" },
-      { name: "VISAYAS", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_wI3d5JuRAxXoi68BHRpnMY0QFnoECCMQAQ&url=https%3A%2F%2Fwww.facebook.com%2FPahinungodSaVisayas%2F&usg=AOvVaw0nkjYh8pgcR8dUDNUQsdG2&opi=89978449" },
-      { name: "OPEN UNIVERSITY", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjImMPx5JuRAxWFaPUHHSM8DG0QFnoECBoQAQ&url=https%3A%2F%2Fpahinungod.upou.edu.ph%2F&usg=AOvVaw04fMffvfzrSYO1Ovaoa7S4&opi=89978449" },
-      { name: "BAGUIO", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwiEpsz85JuRAxVBUfUHHfB2KwgQFnoECBAQAQ&url=https%3A%2F%2Fwww.facebook.com%2Fpahinungod.upbaguio%2F&usg=AOvVaw1OqQ1DoLKkYN8ddAgMEH_x&opi=89978449" },
-      { name: "CEBU", url: "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwiDuOWI5ZuRAxWQavUHHQW3E4kQFnoECCIQAQ&url=https%3A%2F%2Fwww.upcebu.edu.ph%2Fugnayan-ng-pahinungod%2F&usg=AOvVaw0ExLEWjUWHACdk-5GuWG10&opi=89978449" },
+      { name: "LOS BAÑOS", url: "https://international.uplb.edu.ph/public-service/" },
+      { name: "MANILA", url: "https://www.facebook.com/pahinungod.manila/" },
+      { name: "VISAYAS", url: "https://www.facebook.com/PahinungodSaVisayas/" },
+      { name: "OPEN UNIVERSITY", url: "https://pahinungod.upou.edu.ph/" },
+      { name: "BAGUIO", url: "https://www.facebook.com/pahinungod.upbaguio/" },
+      { name: "CEBU", url: "https://www.upcebu.edu.ph/ugnayan-ng-pahinungod/" },
     ],
   };
 
@@ -113,7 +119,7 @@ function Footer() {
           <div key={section} style={styles.column}>
             <div style={styles.heading}>{section}</div>
             {links.map((link, index) => {
-              if (typeof link === "string") {
+              if (typeof link === "string" && section !== "CONTACT DETAILS") {
                 return (
                   <a
                     key={index}
@@ -125,7 +131,7 @@ function Footer() {
                     {link}
                   </a>
                 );
-              } else {
+              } else if (typeof link === "object") {
                 return (
                   <a
                     key={index}
@@ -139,7 +145,14 @@ function Footer() {
                     {link.name}
                   </a>
                 );
+              } else if (section === "CONTACT DETAILS") {
+                return (
+                  <div key={index} style={{ fontSize: "0.85rem", lineHeight: "1.2rem" }}>
+                    {link}
+                  </div>
+                );
               }
+              return null;
             })}
           </div>
         ))}
