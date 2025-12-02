@@ -75,29 +75,20 @@ export default function Register() {
   });
   
   const handleSubmit = async (data) => {
-    try {
-      console.log("Submitting registration...");
-      const response = await registerVolunteer(data);
-      console.log("Registration successful:", response);
-      alert("Registration successful!");
-      setStep(1);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      if (error.error) {
-        alert(error.error);
-      } else if (typeof error === "object") {
-        const errorMessages = Object.entries(error)
-          .map(
-            ([field, messages]) =>
-              `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`
-          )
-          .join("\n");
-        alert(`Registration failed:\n${errorMessages}`);
-      } else {
-        alert("Registration failed. Please try again.");
-      }
-    }
-  };
+  try {
+    console.log("Submitting registration...");
+    const response = await registerVolunteer(data);
+    console.log("Registration successful:", response);
+    // Important: return the response so Step4 can show successDialog
+    return response;
+  } catch (error) {
+    console.error("Registration failed:", error);
+
+    // Re-throw the error so Step4's catch(...) can show user-friendly messages
+    throw error;
+  }
+};
+
 
   const progress = (step / 4) * 100;
 
@@ -181,13 +172,13 @@ export default function Register() {
                   formData={formData}
                   setFormData={setFormData}
                   onBack={() => setStep(3)}
+                  onSubmit={handleSubmit}   // ⭐ REQUIRED
                   onOpenLogin={(role) => {
                     setShowLogin(true);
                     setLoginRole(role);
                   }}
                 />
-              )}
-              
+              )}             
           </Box>
 
         </div>
