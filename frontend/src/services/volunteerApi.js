@@ -1,25 +1,52 @@
 // src/services/volunteerApi.js
+
 import axios from "axios";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-// Axios instance for volunteer endpoints
+// Create a single axios instance for ALL volunteer requests
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  withCredentials: true,  // CRITICAL: Must be true for cookies
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// 🔥 DEBUGGING: Log all requests to see what's happening
+api.interceptors.request.use(
+  (config) => {
+    console.log("🚀 REQUEST:", config.method.toUpperCase(), config.url);
+    console.log("📦 Cookies being sent:", document.cookie);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 🔥 DEBUGGING: Log all responses
+api.interceptors.response.use(
+  (response) => {
+    console.log("✅ RESPONSE:", response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.log("❌ ERROR:", error.response?.status, error.config?.url);
+    console.log("❌ ERROR DATA:", error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
 export const volunteerAPI = {
-  // Register new volunteer
+  // -----------------------------
+  // REGISTER VOLUNTEER
+  // -----------------------------
   register: async (data) => {
     try {
       const response = await api.post("/volunteers/register/", data);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Registration error:", error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.error || "Registration failed",
@@ -28,18 +55,24 @@ export const volunteerAPI = {
     }
   },
 
-  // Login
+  // -----------------------------
+  // LOGIN (SESSION LOGIN)
+  // -----------------------------
   login: async (email, password) => {
     try {
-      const response = await api.post("/auth/login/", { email, password });
+      console.log("🔐 Attempting login with:", email);
+      
+      const response = await api.post(
+        "/volunteers/login/",
+        { email, password }
+      );
 
-      if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
-        localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
-      }
+      console.log("✅ LOGIN SUCCESS:", response.data);
+      console.log("🍪 Cookies after login:", document.cookie);
 
       return { success: true, data: response.data };
     } catch (error) {
+      console.error("❌ LOGIN ERROR:", error.response?.data);
       return {
         success: false,
         error: error.response?.data?.error || "Login failed",
@@ -47,24 +80,32 @@ export const volunteerAPI = {
     }
   },
 
-  // Logout
+  // -----------------------------
+  // LOGOUT
+  // -----------------------------
   logout: async () => {
     try {
-      await api.post("/auth/logout/");
+      await api.post("/volunteers/logout/");
+      console.log("✅ Logout successful");
     } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("volunteer");
+      console.error("❌ Logout error:", error);
     }
   },
 
-  // Get volunteer profile
+  // -----------------------------
+  // GET PROFILE (SESSION REQUIRED)
+  // -----------------------------
   getProfile: async () => {
     try {
+      console.log("👤 Fetching profile...");
+      console.log("🍪 Cookies before profile fetch:", document.cookie);
+      
       const response = await api.get("/volunteers/profile/");
+
+      console.log("✅ PROFILE GET SUCCESS:", response.data);
       return { success: true, data: response.data };
     } catch (error) {
+      console.error("❌ PROFILE GET ERROR:", error.response?.data);
       return {
         success: false,
         error: error.response?.data?.error || "Failed to fetch profile",
@@ -72,20 +113,32 @@ export const volunteerAPI = {
     }
   },
 
-  // Update volunteer profile
-  updateProfile: async (data) => {
-    try {
-      const response = await api.patch("/volunteers/profile/", data);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || "Failed to update profile",
-      };
-    }
-  },
+  // -----------------------------
+// UPDATE PROFILE (PATCH)
+// -----------------------------
+updateProfile: async (data) => {
+  console.log("📝 PATCH DATA SENT:", data);
 
-  // Event history
+  try {
+    const response = await api.patch("/volunteers/profile/", data, {
+      withCredentials: true,  // ⭐ REQUIRED for PATCH
+    });
+
+    console.log("✅ PATCH RESPONSE:", response.data);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("❌ PROFILE UPDATE ERROR:", error.response?.data);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to update profile",
+    };
+  }
+},
+
+
+  // -----------------------------
+  // EVENT HISTORY
+  // -----------------------------
   getHistory: async (params = {}) => {
     try {
       const response = await api.get("/volunteers/history/", { params });
@@ -98,7 +151,9 @@ export const volunteerAPI = {
     }
   },
 
-  // Change password
+  // -----------------------------
+  // CHANGE PASSWORD
+  // -----------------------------
   changePassword: async (currentPassword, newPassword, confirmPassword) => {
     try {
       const response = await api.post("/volunteers/change-password/", {
@@ -106,6 +161,7 @@ export const volunteerAPI = {
         new_password: newPassword,
         confirm_password: confirmPassword,
       });
+
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -115,7 +171,9 @@ export const volunteerAPI = {
     }
   },
 
-  // Register for event
+  // -----------------------------
+  // REGISTER FOR EVENT
+  // -----------------------------
   registerForEvent: async (eventId, data) => {
     try {
       const response = await api.post(`/events/${eventId}/register/`, data);
@@ -123,13 +181,14 @@ export const volunteerAPI = {
     } catch (error) {
       return {
         success: false,
-        error:
-          error.response?.data?.error || "Failed to register for event",
+        error: error.response?.data?.error || "Failed to register for event",
       };
     }
   },
 
-  // Get joined events
+  // -----------------------------
+  // GET JOINED EVENTS
+  // -----------------------------
   getJoinedEvents: async (volunteerId) => {
     try {
       const response = await api.get(`/volunteers/${volunteerId}/events/`);

@@ -1,32 +1,65 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/VolunteerSidebar";
 import "../../styles/Dashboard.css";
-import { getCurrentUser } from "../../services/auth"; // import your auth service
+import { getCurrentUser } from "../../services/auth";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getCurrentUser("Volunteer")  // or role dynamically
+    getCurrentUser()
       .then((res) => {
-        setUser(res.data.user);   // make sure backend returns { user: {...} }
+        if (res.role === "Volunteer") {
+          setUser(res.data);   // allow volunteer
+        } else if (res.role === "Admin") {
+          navigate("/admin");  // redirect admins away
+        }
       })
-      .catch((err) => {
-        console.error("Failed to fetch user:", err);
+      .catch(() => {
+        navigate("/login");    // not logged in
+      })
+      .finally(() => {
+        setLoading(false);
       });
-  }, []);
+  }, [navigate]);
 
-  if (!user) return <div>Loading...</div>; // show loading until user is fetched
+  if (loading) return <div>Loading...</div>;
+
+  if (!user) return null; // nothing to show during redirects
 
   return (
     <div className="dashboard-page">
       <Sidebar />
+
       <main className="dashboard-content">
         <div className="welcome-section">
-          <h1>Welcome back, {user.first_name || user.username}!</h1>
+          <h1>
+            Welcome back,{" "}
+            {user.first_name || user.email || "Volunteer"}!
+          </h1>
         </div>
 
-        {/* Your events and volunteers sections remain the same */}
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <h2>Your Profile Details</h2>
+            <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Affiliation:</strong> {user.affiliation_type}</p>
+          </div>
+
+          <div className="dashboard-card">
+            <h2>Your Next Events</h2>
+            <p>Coming soon…</p>
+          </div>
+
+          <div className="dashboard-card">
+            <h2>Statistics</h2>
+            <p>History, completed events, etc — integrate later.</p>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -1,62 +1,76 @@
+// src/services/auth.js
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:8000/api/auth/";
+axios.defaults.withCredentials = true;
 
-// -----------------------------
-// Register (volunteer)
-// -----------------------------
-export const register = (data) =>
-  axios.post(`${API_URL}register/`, data, {
-    withCredentials: true,
-    headers: { "Content-Type": "application/json" },
-  });
+const BASE = "http://127.0.0.1:8000/api";
 
-// -----------------------------
-// Login
-// -----------------------------
-export const login = ({ email, password, role }) => {
-  // Use correct Django endpoint for each role
-  const url =
-    role === "Admin"
-      ? `${API_URL}login/`               // admin login
-      : `${API_URL}volunteer/login/`;    // volunteer login
+// ==========================
+// LOGIN (Admin or Volunteer)
+// ==========================
+export const login = async ({ role, username, email, password }) => {
+  if (role === "Admin") {
+    return axios.post(
+      `${BASE}/auth/login/`,
+      { username, password },
+      { withCredentials: true }
+    );
+  }
 
-  // Body differs for Admin (username) vs Volunteer (email)
-  const body =
-    role === "Admin"
-      ? { username: email, password }
-      : { email, password };
+  const res = await axios.post(
+    `${BASE}/volunteers/login/`,
+    { email, password },
+    { withCredentials: true }
+  );
 
-  return axios.post(url, body, {
-    withCredentials: true,
-    headers: { "Content-Type": "application/json" },
-  });
+  return {
+    role: "Volunteer",
+    data: res.data.volunteer,
+  };
 };
 
-// -----------------------------
-// Logout
-// -----------------------------
-export const logout = (role) => {
-  const url =
-    role === "Admin"
-      ? `${API_URL}logout/`               // admin logout
-      : `${API_URL}volunteer/logout/`;    // volunteer logout
+// ==========================
+// LOGOUT
+// ==========================
+export const logout = async (role) => {
+  if (role === "Admin") {
+    return axios.post(
+      `${BASE}/auth/logout/`,
+      {},
+      { withCredentials: true }
+    );
+  }
 
-  return axios.post(url, {}, {
-    withCredentials: true,
-    headers: { "Content-Type": "application/json" },
-  });
+  return axios.post(
+    `${BASE}/volunteers/logout/`,
+    {},
+    { withCredentials: true }
+  );
 };
 
-// -----------------------------
-// Get Current User / Session Check
-// -----------------------------
-export const getCurrentUser = (role) => {
-  // Both roles can use the same endpoint for now
-  const url = `${API_URL}user/`;
+// ==========================
+// GET CURRENT LOGGED-IN USER
+// ==========================
+export const getCurrentUser = async () => {
+  try {
+    const v = await axios.get(`${BASE}/volunteers/profile/`, {
+      withCredentials: true,
+    });
 
-  return axios.get(url, {
-    withCredentials: true,
-    headers: { "Content-Type": "application/json" },
-  });
+    if (v.data?.volunteer_id) {
+      return { role: "Volunteer", data: v.data };
+    }
+
+    const a = await axios.get(`${BASE}/auth/user/`, {
+      withCredentials: true,
+    });
+
+    if (a.data?.user) {
+      return { role: "Admin", data: a.data.user };
+    }
+
+    return { role: null, data: null };
+  } catch {
+    return { role: null, data: null };
+  }
 };

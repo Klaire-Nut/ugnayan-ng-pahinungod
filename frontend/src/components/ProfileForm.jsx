@@ -1,86 +1,114 @@
 import React from "react";
 
-const ProfileForm = ({ data, editable = false, onChange }) => {
-  const capitalizeLabel = (str) =>
-    str.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+export default function ProfileForm({ data, editable = false, onChange }) {
+  if (!data) return null;
 
-  // Define fields per affiliation
+  // Capitalize field labels
+  const label = (str) =>
+    str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  // Affiliation-based fields (based on your Django `affiliation_data`)
   const affiliationFields = {
-    Student: ["degreeProgram", "yearLevel", "college", "shsType", "firstCollege"],
-    Faculty: ["facultyDept", "staffOffice", "staffPosition", "constituentUnit"],
-    Graduate: ["gradBachelors", "yearGrad", "alumniDegree", "firstGrad", "firstGradCollege", "firstGradUP"],
-    Retiree: ["retireDesignation", "retireOffice"],
-    Staff: ["staffOffice", "staffPosition", "constituentUnit"]
+    STUDENT: ["degree_program", "year_level", "college", "department"],
+    ALUMNI: ["constituent_unit", "degree_program", "year_graduated"],
+    "UP STAFF": ["office_department", "designation"],
+    FACULTY: ["college", "department"],
+    RETIREE: ["designation_while_in_up", "office_college_department"],
   };
 
-  // Common sections
   const sections = {
     "Personal Information": [
-      "firstName","middleName","lastName","nickname","age","sex","birthdate",
-      "indigenousAffiliation","facebookLink","hobbies","organizations"
+      "first_name",
+      "middle_name",
+      "last_name",
+      "nickname",
+      "sex",
+      "birthdate",
     ],
-    "Current Address": [
-      "streetBarangay","cityMunicipality","province","region"
+
+    "Contact Information": ["email", "mobile_number", "facebook_link"],
+
+    "Current Address": ["street_address", "province", "region"],
+
+    "Background Information": [
+      "occupation",
+      "org_affiliation",
+      "hobbies_interests",
     ],
-    "Permanent Address": [
-      // if sameAsPermanent = true, we will show current address instead
-      "upStreetBarangay","upCityMunicipality","upProvince","upRegion"
-    ],
-    "Affiliation / Education": affiliationFields[data.affiliation] || [],
-    "Volunteer Programs / Status": [
-      "volunteerPrograms","affirmativeActionSubjects","volunteerStatus",
-      "tagapagUgnay","otherOrganization","organizationName","howDidYouHear"
-    ]
+
+    "Emergency Contact": data.emergency_contact
+      ? ["name", "relationship", "contact_number", "address"]
+      : [],
+
+    "Affiliation Information":
+      affiliationFields[data.affiliation_type] || [],
+  };
+
+  // Helper to read nested emergency_contact & affiliation_data
+  const getValue = (field) => {
+    if (!data) return "";
+
+    if (sections["Emergency Contact"].includes(field)) {
+      return data.emergency_contact?.[field] ?? "";
+    }
+
+    if (sections["Affiliation Information"].includes(field)) {
+      return data.affiliation_data?.[field] ?? "";
+    }
+
+    return data[field] ?? "";
+  };
+
+  // Helper for saving nested values
+  const saveValue = (field, value) => {
+    if (sections["Emergency Contact"].includes(field)) {
+      onChange("emergency_contact", {
+        ...data.emergency_contact,
+        [field]: value,
+      });
+      return;
+    }
+
+    if (sections["Affiliation Information"].includes(field)) {
+      onChange("affiliation_data", {
+        ...data.affiliation_data,
+        [field]: value,
+      });
+      return;
+    }
+
+    onChange(field, value);
   };
 
   return (
     <div>
-      {Object.entries(sections).map(([sectionTitle, fields]) => {
-        // Skip empty sections
-        if (fields.length === 0) return null;
+      {Object.entries(sections).map(([title, fields]) => {
+        if (!fields.length) return null;
 
         return (
-          <div key={sectionTitle} className="profile-section-container">
-            <div className="profile-section">{sectionTitle}</div>
+          <div key={title} className="profile-section-container">
+            <div className="profile-section">{title}</div>
+
             <div className="modal-grid">
-              {fields.map(field => {
-                // Handle Permanent Address display if sameAsPermanent = true
-                let valueToShow = data[field];
-                if (sectionTitle === "Permanent Address" && data.sameAsPermanent) {
-                  // map from current address
-                  const map = {
-                    upStreetBarangay: "streetBarangay",
-                    upCityMunicipality: "cityMunicipality",
-                    upProvince: "province",
-                    upRegion: "region"
-                  };
-                  valueToShow = data[map[field]];
-                }
+              {fields.map((field) => (
+                <div className="profile-row" key={field}>
+                  <label className="label">{label(field)}</label>
 
-                // Skip displaying sameAsPermanent boolean field
-                if (field === "sameAsPermanent") return null;
-
-                return (
-                  <div className="profile-row" key={field}>
-                    <label className="label">{capitalizeLabel(field)}</label>
-                    {editable ? (
-                      <input
-                        type="text"
-                        value={Array.isArray(valueToShow) ? valueToShow.join(", ") : valueToShow || ""}
-                        onChange={e => onChange(field, e.target.value)}
-                      />
-                    ) : (
-                      <div className="value">{Array.isArray(valueToShow) ? valueToShow.join(", ") : valueToShow || ""}</div>
-                    )}
-                  </div>
-                );
-              })}
+                  {editable ? (
+                    <input
+                      type="text"
+                      value={getValue(field)}
+                      onChange={(e) => saveValue(field, e.target.value)}
+                    />
+                  ) : (
+                    <div className="value">{getValue(field) || ""}</div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         );
       })}
     </div>
   );
-};
-
-export default ProfileForm;
+}

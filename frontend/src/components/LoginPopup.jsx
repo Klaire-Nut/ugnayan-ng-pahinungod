@@ -1,3 +1,4 @@
+// src/components/LoginPopup.jsx
 import React from "react";
 import {
   Dialog,
@@ -10,42 +11,76 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-// Use one login function for both admin + volunteer
-import { login } from "../services/auth";
+import { volunteerAPI } from "../services/volunteerApi";  // ⭐ FIX: Use volunteerAPI
+import { login as adminLogin } from "../services/auth";    // Keep admin login separate
 
 export default function LoginPopup({ open, onClose, role }) {
-
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    try {
-      let res;
+    setLoading(true);
+    setErrorMessage("");
 
+    try {
       if (role === "Admin") {
-        res = await login({ username, password, role: "Admin" });
+        // ⭐ Admin login uses auth.js (separate system)
+        const res = await adminLogin({
+          role: "Admin",
+          username,
+          password,
+        });
+
+        console.log("✅ ADMIN LOGIN SUCCESS:", res.data);
         navigate("/admin/dashboard");
+
       } else {
-        res = await login({ email: username, password, role: "Volunteer" });
+        // ⭐ Volunteer login uses volunteerAPI (session-based)
+        const response = await volunteerAPI.login(username, password);
+
+        if (!response.success) {
+          setErrorMessage(response.error || "Login failed");
+          setLoading(false);
+          return;
+        }
+
+        console.log("✅ VOLUNTEER LOGIN SUCCESS:", response.data);
+        
+        // Optional: Store volunteer data in localStorage
+        if (response.data.volunteer) {
+          localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
+        }
+
         navigate("/volunteer/dashboard");
       }
 
-      console.log(res.data);
-      setErrorMessage("");
       onClose();
 
     } catch (err) {
-      console.error(err.response?.data);
-      setErrorMessage("Login failed. Check your username/email and password.");
+      console.error("❌ LOGIN ERROR:", err);
+      setErrorMessage(
+        err.response?.data?.error || 
+        "Login failed. Check your credentials."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRegister = () => {
     onClose();
     navigate("/register");
+  };
+
+  // Allow Enter key to submit
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !loading) {
+      handleLogin();
+    }
   };
 
   return (
@@ -82,6 +117,9 @@ export default function LoginPopup({ open, onClose, role }) {
             size="small"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+            autoFocus
           />
 
           <TextField
@@ -91,6 +129,8 @@ export default function LoginPopup({ open, onClose, role }) {
             size="small"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
           />
 
           {errorMessage && (
@@ -111,8 +151,9 @@ export default function LoginPopup({ open, onClose, role }) {
                 flex: 1,
               }}
               onClick={handleLogin}
+              disabled={loading}
             >
-              Log In
+              {loading ? "Logging in..." : "Log In"}
             </Button>
 
             <Button
@@ -126,6 +167,7 @@ export default function LoginPopup({ open, onClose, role }) {
                 "&:hover": { bgcolor: "#fbeaea", borderColor: "#8C1B1F" },
               }}
               onClick={onClose}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -133,7 +175,7 @@ export default function LoginPopup({ open, onClose, role }) {
 
           {role === "Volunteer" && (
             <Typography textAlign="center" sx={{ mt: 1, color: "#555" }}>
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <span
                 onClick={handleRegister}
                 style={{

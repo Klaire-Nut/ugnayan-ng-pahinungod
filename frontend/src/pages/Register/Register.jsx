@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, LinearProgress, Alert, Snackbar } from "@mui/material";
 
-import { volunteerAPI } from "../../services/volunteerApi";   // ✅ FIXED IMPORT
+import { volunteerAPI } from "../../services/volunteerApi";
 
 import Step1 from "./Step1";
 import Step2 from "./Step2";
@@ -15,18 +15,21 @@ import oblation from "../../assets/oblation.png";
 
 export default function Register() {
   const navigate = useNavigate();
-  
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ---------------------------
-  // Main registration state
-  // ---------------------------
+  // -----------------------------------------
+  // MAIN STATE (FULL REGISTRATION DATA)
+  // -----------------------------------------
   const [formData, setFormData] = useState({
     // Step 1 – Basic
     email: "",
+    password: "",
+    confirmPassword: "",
     dataConsent: false,
+
     lastName: "",
     firstName: "",
     middleName: "",
@@ -40,13 +43,13 @@ export default function Register() {
     hobbies: "",
     organizations: "",
 
-    // Permanent address
+    // Permanent address (main)
     streetBarangay: "",
     cityMunicipality: "",
     province: "",
     region: "",
 
-    // UP Address
+    // UP Address (secondary)
     sameAsPermanent: false,
     upStreetBarangay: "",
     upCityMunicipality: "",
@@ -58,15 +61,19 @@ export default function Register() {
     degreeProgram: "",
     yearLevel: "",
     college: "",
+    department: "",
+
     shsType: "",
     gradBachelors: "",
     firstCollege: "",
     firstGrad: "",
     firstUP: "",
+
     emerName: "",
     emerRelation: "",
     emerContact: "",
     emerAddress: "",
+
     facultyDept: "",
     constituentUnit: "",
     alumniDegree: "",
@@ -87,25 +94,24 @@ export default function Register() {
     otherOrganization: "",
     organizationName: "",
     howDidYouHear: "",
-
-    // Step 4 – Account
-    password: "",
-    confirmPassword: "",
   });
 
-  // ---------------------------
-  // Submit Handler
-  // ---------------------------
+  // -----------------------------------------
+  // SUBMIT HANDLER (FINAL STEP 4)
+  // -----------------------------------------
   const handleSubmit = async (finalData) => {
     setLoading(true);
     setError(null);
 
-    // Build API payload
+    // -----------------------------------------
+    // BUILD PAYLOAD EXACTLY HOW BACKEND EXPECTS
+    // -----------------------------------------
     const registrationData = {
       account: {
         email: finalData.email,
         password: finalData.password,
       },
+
       volunteer: {
         first_name: finalData.firstName,
         middle_name: finalData.middleName,
@@ -115,25 +121,28 @@ export default function Register() {
         birthdate: finalData.birthdate
           ? new Date(finalData.birthdate).toISOString().split("T")[0]
           : null,
-        affiliation_type: finalData.affiliation,
+        affiliation_type: finalData.affiliation.toUpperCase(),
       },
+
       contact: {
         mobile_number: finalData.mobileNumber,
         facebook_link: finalData.facebookLink,
       },
+
       address: {
         street_address: finalData.streetBarangay,
         province: finalData.province,
         region: finalData.region,
       },
+
       background: {
-        occupation: finalData.occupation || "",
-        org_affiliation: finalData.organizations || "",
-        hobbies_interests: finalData.hobbies || "",
+        occupation: finalData.occupation,
+        org_affiliation: finalData.organizations,
+        hobbies_interests: finalData.hobbies,
       },
     };
 
-    // Add emergency info for STUDENTS
+    // Emergency Contact (students only)
     if (finalData.affiliation === "STUDENT") {
       registrationData.emergency_contact = {
         name: finalData.emerName,
@@ -143,44 +152,56 @@ export default function Register() {
       };
     }
 
-    // Affiliation-specific
+    // -----------------------------------------
+    // AFFILIATION DATA (PROFILE TABLES)
+    // -----------------------------------------
     if (finalData.affiliation === "STUDENT") {
       registrationData.affiliation_data = {
         degree_program: finalData.degreeProgram,
         year_level: finalData.yearLevel,
         college: finalData.college,
+        department: finalData.department || "",
       };
-    } else if (finalData.affiliation === "ALUMNI") {
+    }
+
+    if (finalData.affiliation === "ALUMNI") {
       registrationData.affiliation_data = {
         constituent_unit: finalData.constituentUnit,
         degree_program: finalData.alumniDegree,
         year_graduated: finalData.yearGrad,
       };
-    } else if (finalData.affiliation === "UP STAFF") {
+    }
+
+    if (finalData.affiliation === "UP STAFF") {
       registrationData.affiliation_data = {
         office_department: finalData.staffOffice,
         designation: finalData.staffPosition,
       };
-    } else if (finalData.affiliation === "FACULTY") {
-      const [college = "", dept = ""] = finalData.facultyDept.split("-");
+    }
+
+    if (finalData.affiliation === "FACULTY") {
       registrationData.affiliation_data = {
-        college: college.trim(),
-        department: dept.trim(),
+        college: finalData.facultyDept,
+        department: finalData.staffPosition,
       };
-    } else if (finalData.affiliation === "RETIREE") {
+    }
+
+    if (finalData.affiliation === "RETIREE") {
       registrationData.affiliation_data = {
         designation_while_in_up: finalData.retireDesignation,
         office_college_department: finalData.retireOffice,
       };
     }
 
-    // Submit
+    // -----------------------------------------
+    // SEND DATA TO BACKEND
+    // -----------------------------------------
     try {
-      const result = await volunteerAPI.register(registrationData); // ✅ FIXED CALL
-
+      const result = await volunteerAPI.register(registrationData);
       setLoading(false);
 
       if (result.success) {
+        navigate("/login");
         return { success: true };
       } else {
         throw new Error(result.error || "Registration failed");
@@ -190,7 +211,6 @@ export default function Register() {
 
       let errorMessage = "Registration failed. Please try again.";
 
-      // Extract backend error details
       if (err.response?.data) {
         const data = err.response.data;
 
@@ -199,8 +219,6 @@ export default function Register() {
           errorMessage = Object.entries(data.errors)
             .map(([field, msg]) => `${field}: ${Array.isArray(msg) ? msg.join(", ") : msg}`)
             .join("\n");
-        } else if (data.account?.email) {
-          errorMessage = `Email: ${data.account.email[0]}`;
         }
       } else if (err.message) {
         errorMessage = err.message;
@@ -213,9 +231,9 @@ export default function Register() {
     }
   };
 
-  // ---------------------------
+  // -----------------------------------------
   // UI
-  // ---------------------------
+  // -----------------------------------------
   const progress = (step / 4) * 100;
 
   return (
@@ -241,48 +259,79 @@ export default function Register() {
       <div className="right-side">
         <div className="register-container">
           <Box sx={{ width: "100%", maxWidth: "700px", py: 4 }}>
-            {/* Header */}
+
             <Box sx={{ mb: 4, textAlign: "center" }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: "#FF7F00", mb: 1 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "#FF7F00" }}>
                 Ugnayan ng Pahinungód Mindanao
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Volunteer Sign-up Form
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
                 (New registration and updating of information)
               </Typography>
             </Box>
 
-            {/* Errors */}
+            {/* Error Box */}
             {error && (
               <Alert severity="error" sx={{ mb: 3, whiteSpace: "pre-line" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  Registration Error
-                </Typography>
                 {error}
               </Alert>
             )}
 
-            {/* Progress */}
+            {/* Progress Bar */}
             <Box sx={{ mb: 4 }}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Step {step} of 4
-              </Typography>
-              <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+              <Typography variant="body2">Step {step} of 4</Typography>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{ height: 8, borderRadius: 4 }}
+              />
             </Box>
 
-            {/* Step Content */}
-            {step === 1 && <Step1 formData={formData} setFormData={setFormData} onNext={() => setStep(2)} />}
-            {step === 2 && <Step2 formData={formData} setFormData={setFormData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-            {step === 3 && <Step3 formData={formData} setFormData={setFormData} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
-            {step === 4 && <Step4 formData={formData} setFormData={setFormData} onSubmit={handleSubmit} onBack={() => setStep(3)} loading={loading} />}
+            {/* Step Pages */}
+            {step === 1 && (
+              <Step1
+                formData={formData}
+                setFormData={setFormData}
+                onNext={() => setStep(2)}
+              />
+            )}
+            {step === 2 && (
+              <Step2
+                formData={formData}
+                setFormData={setFormData}
+                onNext={() => setStep(3)}
+                onBack={() => setStep(1)}
+              />
+            )}
+            {step === 3 && (
+              <Step3
+                formData={formData}
+                setFormData={setFormData}
+                onNext={() => setStep(4)}
+                onBack={() => setStep(2)}
+              />
+            )}
+            {step === 4 && (
+              <Step4
+                formData={formData}
+                setFormData={setFormData}
+                loading={loading}
+                onSubmit={handleSubmit}
+                onBack={() => setStep(3)}
+              />
+            )}
           </Box>
         </div>
       </div>
 
-      {/* Loading Snackbar */}
-      <Snackbar open={loading} message="Submitting registration..." anchorOrigin={{ vertical: "bottom", horizontal: "center" }} />
+      {/* Snackbar */}
+      <Snackbar
+        open={loading}
+        message="Submitting registration..."
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </div>
   );
 }
