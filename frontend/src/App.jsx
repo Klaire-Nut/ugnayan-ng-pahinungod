@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 
 // Volunteer Pages
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
+import VolunteerEvents from "./pages/Volunteers/VolunteerEvents";
 import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
 import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
 import PrivacySettings from "./pages/Volunteers/PrivacySettings";
@@ -47,7 +48,7 @@ function App() {
           <Route path="/volunteer" element={<DefaultPageVolunteer />}>
             <Route index element={<VolunteerDashboard />} />
             <Route path="dashboard" element={<VolunteerDashboard />} />
-            <Route path="events" element={<Events />} />
+            <Route path="/volunteer/events" element={<VolunteerEvents />} />
             <Route path="profile" element={<VolunteerProfile />} />
             <Route path="history" element={<VolunteeringHistory />} />
             <Route path="privacy" element={<PrivacySettings />} />

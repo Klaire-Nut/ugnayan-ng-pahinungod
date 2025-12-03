@@ -86,10 +86,20 @@ export const volunteerGetEventDetail = async (eventId) => {
 };
 
 // Volunteer joins an event
-export const volunteerJoinEvent = async (eventData) => {
-  const response = await api.post('/volunteer/events/join/', eventData); // Corrected path
+export const volunteerJoinEvent = async (eventId) => {
+  const response = await api.post(
+    "/volunteer/events/join/",
+    {
+      event: eventId,                   // 🔥 correct field name for Django serializer
+      availability_time: "",            // optional
+      availability_orientation: false   // optional
+    },
+    { withCredentials: true }
+  );
+
   return response.data;
 };
+
 
 // Get all events that the volunteer has joined
 export const volunteerGetMyEvents = async (params = {}) => {
