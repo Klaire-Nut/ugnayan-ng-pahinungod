@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 from rest_framework import serializers
+from datetime import timedelta
 from core.models import Event, VolunteerEvent, Admin, Volunteer
 # Try to import rest_framework.serializers at runtime only if it's available
 if importlib.util.find_spec('rest_framework.serializers') is not None:
@@ -122,56 +123,69 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
         return data
 
 
-class VolunteerEventSerializer(serializers.ModelSerializer):
-    """Serializer for volunteer-event relationship"""
-    volunteer_name = serializers.SerializerMethodField()
-    event_name = serializers.StringRelatedField(source='event')
-    
-    class Meta:
-        model = VolunteerEvent
-        fields = [
-            'volunteer', 'event', 'volunteer_name', 'event_name',
-            'hours_rendered', 'status', 'availability_time',
-            'availability_orientation', 'signup_date'
-        ]
-        read_only_fields = ['signup_date']
-    
-    def get_volunteer_name(self, obj):
-        return f"{obj.volunteer.first_name} {obj.volunteer.last_name}"
-
-
 class VolunteerEventJoinSerializer(serializers.ModelSerializer):
     """Serializer for volunteers joining events"""
-    
+
     class Meta:
         model = VolunteerEvent
         fields = [
-            'event', 'availability_time', 'availability_orientation'
+            'event',
+            'availability_time',          # kept but ignored as requested
+            'availability_orientation',   # kept but ignored as requested
         ]
-    
+
     def validate(self, data):
         volunteer = self.context['volunteer']
         event = data['event']
-        
-        # Check if already joined
+
+        # Already joined
         if VolunteerEvent.objects.filter(volunteer=volunteer, event=event).exists():
             raise serializers.ValidationError("You have already joined this event")
-        
-        # Check if event is full
+
+        # Event FULL
         joined_count = VolunteerEvent.objects.filter(
-            event=event,
-            status__in=['Joined', 'Completed']
+            event=event, status__in=['Joined', 'Completed']
         ).count()
-        
+
         if joined_count >= event.max_participants:
             raise serializers.ValidationError("This event is already full")
-        
+
         return data
-    
+
     def create(self, validated_data):
-        validated_data['volunteer'] = self.context['volunteer']
-        validated_data['status'] = 'Joined'
+        """Automatically calculate hours rendered based on event duration."""
+
+        volunteer = self.context["volunteer"]
+        event = validated_data["event"]
+
+        # ----------------------------
+        # 1. Number of days (inclusive)
+        # ----------------------------
+        start_date = event.date_start.date()
+        end_date = event.date_end.date()
+        num_days = (end_date - start_date).days + 1
+
+        # ----------------------------
+        # 2. Hours per day
+        # compare time components ONLY
+        # ----------------------------
+        dt_start = event.date_start.replace(year=2000, month=1, day=1)
+        dt_end = event.date_end.replace(year=2000, month=1, day=1)
+
+        daily_duration = dt_end - dt_start
+        hours_per_day = daily_duration.total_seconds() / 3600
+
+        # ----------------------------
+        # 3. Total hours rendered
+        # ----------------------------
+        total_hours = int(hours_per_day * num_days)
+
+        validated_data["volunteer"] = volunteer
+        validated_data["status"] = "Joined"
+        validated_data["hours_rendered"] = total_hours
+
         return super().create(validated_data)
+
 
 
 class EventVolunteersSerializer(serializers.ModelSerializer):

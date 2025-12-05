@@ -28,7 +28,6 @@ const VolunteerHistory = () => {
   const calculateTimeOut = (signupDate, hours) => {
     const dateObj = new Date(signupDate);
     dateObj.setHours(dateObj.getHours() + hours);
-
     return formatTime(dateObj);
   };
 
@@ -44,13 +43,24 @@ const VolunteerHistory = () => {
         return;
       }
 
-      // Format data for frontend table
+      // ===============================
+      // ⭐ FIXED: Show 0h instead of blank
+      // ===============================
       const formatted = response.data.history.map((item) => ({
         event: item.event_name,
-        date: item.date?.split("T")[0] || "",  
-        timeIn: formatTime(item.time_in),      
-        timeOut: formatTime(item.time_out),   
-        timeAllotted: item.hours_rendered ? item.hours_rendered + "h" : "",
+        date: item.date?.split("T")[0] || "",
+        timeIn: formatTime(item.time_in),
+        timeOut: formatTime(item.time_out),
+
+        // ❗ OLD (incorrect):
+        // timeAllotted: item.hours_rendered ? item.hours_rendered + "h" : "",
+
+        // ✅ NEW (correct):
+        // This now displays 0h instead of hiding it.
+        timeAllotted:
+          item.hours_rendered !== null && item.hours_rendered !== undefined
+            ? item.hours_rendered + "h"
+            : "",
       }));
 
       setHistory(formatted);

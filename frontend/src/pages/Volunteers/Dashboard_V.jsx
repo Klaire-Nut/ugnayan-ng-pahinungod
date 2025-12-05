@@ -8,6 +8,7 @@ import { getCurrentUser } from "../../services/auth";
 import {
   volunteerGetEvents,
   volunteerJoinEvent,
+  volunteerGetMyEvents,
 } from "../../services/eventApi";
 
 import { useNavigate } from "react-router-dom";
@@ -16,31 +17,28 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
   const navigate = useNavigate();
 
-  // ==========================================================
-  // FETCH CURRENT USER
-  // ==========================================================
+  // Load user + events
   useEffect(() => {
     getCurrentUser()
       .then((res) => {
         if (res.role === "Volunteer") {
           setUser(res.data);
           loadEvents();
-        } else if (res.role === "Admin") {
+          loadMyEvents();
+        } else {
           navigate("/admin");
         }
       })
       .catch(() => navigate("/login"));
   }, []);
 
-  // ==========================================================
-  // FETCH EVENTS
-  // ==========================================================
   const loadEvents = async () => {
     try {
       const res = await volunteerGetEvents();
-      setEvents(res); // API already returns the array
+      setEvents(res);
     } catch (err) {
       console.log("Error loading events:", err);
     } finally {
@@ -48,26 +46,55 @@ const Dashboard = () => {
     }
   };
 
-  // ==========================================================
-  // JOIN EVENT HANDLER (CORRECT PAYLOAD)
-  // ==========================================================
+  const loadMyEvents = async () => {
+    try {
+      const res = await volunteerGetMyEvents();
+      setMyEvents(res);
+    } catch (err) {
+      console.log("Error loading my events:", err);
+    }
+  };
+
+  const isJoined = (eventId) => {
+    return myEvents.some((ve) => ve.event === eventId);
+  };
+
   const handleJoin = async (eventId) => {
     try {
-      // Django expects: { event: <ID>, availability_time, availability_orientation }
+      // ====== IMPORTANT FIXED CALL ======
+      // volunteerJoinEvent expects eventId (not an object). See eventApi.js
       await volunteerJoinEvent(eventId);
 
       alert("Successfully joined the event!");
-      loadEvents(); // Refresh event list
+      // refresh both lists so UI updates
+      await loadEvents();
+      await loadMyEvents();
     } catch (err) {
-      console.log("Join error:", err.response?.data);
       alert(err.response?.data?.error || "Failed to join event");
     }
   };
 
-  // Format time HH:MM AM/PM
   const formatTime = (timestamp) => {
     const d = new Date(timestamp);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Determine status (UPCOMING, ONGOING, DONE)
+  const computeStatus = (start, end) => {
+    const now = new Date();
+    const s = new Date(start);
+    const e = new Date(end);
+
+    if (now < s) return "UPCOMING";
+    if (now > e) return "DONE";
+    return "ONGOING";
+  };
+
+  // Map statuses → CSS class
+  const getStatusClass = (status) => {
+    if (status === "ONGOING") return "status ongoing";
+    if (status === "DONE") return "status done";
+    return "status upcoming"; // UPCOMING badge (maroon)
   };
 
   if (loading) return <div>Loading...</div>;
@@ -85,52 +112,53 @@ const Dashboard = () => {
             {events.length === 0 && <p>No events available right now.</p>}
 
             {events.map((event) => {
-              const start = new Date(event.date_start);
-              const end = new Date(event.date_end);
-              const now = new Date();
-
-              const isFull =
-                event.available_slots !== undefined
-                  ? event.available_slots <= 0
-                  : false;
-
-              const started = start < now;
+              const status = computeStatus(event.date_start, event.date_end);
+              const joined = isJoined(event.event_id);
+              const isFull = event.available_slots <= 0;
 
               return (
-                <div key={event.event_id} className="event-card upcoming">
+                <div key={event.event_id} className="event-card">
+
+                  {/* EVENT TITLE */}
                   <div className="event-header">
                     <h3>{event.event_name}</h3>
-                    <span>Details ▾</span>
                   </div>
 
+                  {/* STATUS BADGE */}
+                  <div className={getStatusClass(status)}>
+                    {status}
+                  </div>
+
+                  {/* LOCATION */}
                   <p>📍 {event.location}</p>
 
+                  {/* EVENT TIME */}
                   <p>
-                    🕐 {formatTime(event.date_start)} -{" "}
-                    {formatTime(event.date_end)}
+                    🕐 {formatTime(event.date_start)} — {formatTime(event.date_end)}
                   </p>
 
+                  {/* VOLUNTEER COUNT */}
                   <p>
-                    👥{" "}
-                    {event.max_participants - event.available_slots}/
-                    {event.max_participants}
+                    👥 {event.max_participants - event.available_slots}/
+                    {event.max_participants} Volunteers
                   </p>
 
-                  {/* ===================================
-                      JOIN BUTTON
-                  =================================== */}
-                  <Button
-                    text={
-                      started
-                        ? "Event Started"
-                        : isFull
-                        ? "Full"
-                        : "Join Event"
-                    }
-                    onClick={() => handleJoin(event.event_id)}
-                    disabled={started || isFull}
-                    className="join-btn"
-                  />
+                  {/* BUTTON */}
+                  <div className="event-button">
+                    <Button
+                      text={
+                        joined
+                          ? "Joined ✔"
+                          : status !== "UPCOMING"
+                          ? "Event Started"
+                          : isFull
+                          ? "Full"
+                          : "Register"
+                      }
+                      onClick={() => handleJoin(event.event_id)}
+                      disabled={joined || status !== "UPCOMING" || isFull}
+                    />
+                  </div>
                 </div>
               );
             })}
