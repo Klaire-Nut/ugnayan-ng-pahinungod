@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import {
   Card,
@@ -21,21 +21,42 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import { cancelAdminEvent, restoreAdminEvent, deleteAdminEvent } from "../../services/adminApi";
+
 
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, setEvents } = useOutletContext();
+  const { events, setEvents, showNotif } = useOutletContext();
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreSuccessOpen, setRestoreSuccessOpen] = useState(false);
 
-  const event = events.find((ev) => String(ev.id) === String(id));
-  if (!event) return <p>Event not found.</p>;
+  // Local state for the current event
+  const [eventData, setEventData] = useState(null);
 
+  // Update eventData whenever events change
+  useEffect(() => {
+    const ev = events.find((ev) => String(ev.id) === String(id));
+    setEventData(ev || null);
+  }, [events, id]);
+
+  // Early return if eventData is not loaded
+  if (!eventData) return <p>Loading event...</p>;
+
+  // Now it's safe to access eventData
+  const status =
+    eventData.is_canceled || eventData.status === "CANCELLED"
+      ? "CANCELLED"
+      : getStatus(eventData);
+
+  const volunteers = eventData.volunteers || [];
+
+  
   /** STATUS */
   function getStatus(e) {
-    if (e.status === "CANCELLED") return "CANCELLED";
+    if (e.is_canceled) return "CANCELLED"; 
     if (!e.schedules || e.schedules.length === 0) return "UPCOMING";
 
     const now = new Date();
@@ -49,7 +70,6 @@ export default function EventDetails() {
     return "UPCOMING";
   }
 
-  const status = getStatus(event);
 
   const getStatusColor = (s) => {
     switch (s) {
@@ -76,43 +96,62 @@ export default function EventDetails() {
   /** CANCEL EVENT */
   const handleCancel = () => setCancelOpen(true);
 
-  const confirmCancel = () => {
-    const updated = { ...event, status: "CANCELLED" };
-
-    setEvents((prev) =>
-      prev.map((ev) => (ev.id === event.id ? updated : ev))
+  const confirmCancel = async () => {
+    await cancelAdminEvent(eventData.id);
+    setEvents(prev =>
+      prev.map(ev => ev.id === eventData.id ? { ...ev, is_canceled: true } : ev)
     );
-
     setCancelOpen(false);
   };
+
 
   /** RESTORE EVENT */
   const handleRestore = () => setRestoreOpen(true);
 
-  const confirmRestore = () => {
-    const originalStatus = getStatus({ ...event, status: null });
+  const confirmRestore = async () => {
+    try {
+      await restoreAdminEvent(eventData.id);
 
-    const updated = {
-      ...event,
-      status: originalStatus,
-    };
+      setEvents(prev =>
+        prev.map(ev =>
+          ev.id === eventData.id ? { ...ev, is_canceled: false } : ev
+        )
+      );
 
-    setEvents((prev) =>
-      prev.map((ev) => (ev.id === event.id ? updated : ev))
-    );
+      setEventData(prev => ({
+        ...prev,
+        is_canceled: false
+      }));
 
-    setRestoreOpen(false);
-  };
+      setRestoreOpen(false);
 
-  /** DELETE EVENT */
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this event?")) {
-      setEvents(events.filter((ev) => ev.id !== event.id));
-      navigate("/admin/events");
+      // Open modal
+      setRestoreSuccessOpen(true);
+    } catch (err) {
+      console.error(err);
+      showNotif("error", "Failed to restore event.");
     }
   };
 
-  const volunteers = event.volunteers || [];
+
+
+
+  /** DELETE EVENT */
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this event?")) return;
+
+    try {
+      await deleteAdminEvent(eventData.id); // <-- backend call
+      setEvents(events.filter((ev) => ev.id !== eventData.id));
+      navigate("/admin/events");
+    } catch (err) {
+      console.error("Failed to delete event:", err);
+      alert("Failed to delete event. Please try again.");
+    }
+  };
+
+
+
 
   return (
     <div className="event-details-wrapper">
@@ -121,58 +160,52 @@ export default function EventDetails() {
       </Button>
 
       <Card sx={{ borderRadius: 3, boxShadow: 5 }}>
-        <CardHeader
-          title={<Typography variant="h4">{event.event_name}</Typography>}
-          subheader={
-            <Chip
-              label={status}
-              color={getStatusColor(status)}
-              size="medium"
-              sx={{ fontWeight: 600 }}
-            />
-          }
-          action={
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
-                variant="contained"
-                startIcon={<EditIcon />}
-                onClick={() =>
-                  navigate(`/admin/events/${event.id}/edit`, { state: event })
-                }
-                disabled={status === "CANCELLED"}
-              >
-                Edit
-              </Button>
-
-              {status !== "CANCELLED" ? (
+      <CardHeader
+        title={<Typography variant="h4">{eventData?.event_name}</Typography>}
+        subheader={
+          <Chip
+            label={status}
+            color={getStatusColor(status)}
+            size="medium"
+            sx={{ fontWeight: 600 }}
+          />
+        }
+        action={
+          <Box sx={{ display: "flex", gap: 1 }}>
+              {/* Only show Edit if not cancelled */}
+              {status !== "CANCELLED" && (
                 <Button
                   variant="contained"
-                  color="warning"
-                  onClick={handleCancel}
+                  startIcon={<EditIcon />}
+                  onClick={() => navigate(`/admin/events/${eventData.id}/edit`, { state: eventData })}
                 >
+                  Edit
+                </Button>
+              )}
+
+            {/* Cancel / Restore */}
+            {status !== "CANCELLED" ? (
+                <Button variant="contained" color="warning" onClick={handleCancel}>
                   Cancel
                 </Button>
               ) : (
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleRestore}
-                >
+                <Button variant="contained" color="success" onClick={handleRestore}>
                   Restore
                 </Button>
               )}
 
-              <Button
-                variant="contained"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={handleDelete}
-              >
-                Delete
-              </Button>
-            </Box>
-          }
-        />
+            {/* Always show Delete */}
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+          </Box>
+        }
+      />
 
         <CardContent>
           {status === "CANCELLED" && (
@@ -186,11 +219,11 @@ export default function EventDetails() {
           
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <PlaceIcon sx={{ mr: 1, color: "maroon" }} />
-            <Typography variant="body1">{event.location}</Typography>
+            <Typography variant="body1">{eventData.location}</Typography>
           </Box>
 
           <Typography variant="body2" sx={{ mb: 2 }}>
-            {event.description || "No description provided."}
+            {eventData.description || "No description provided."}
           </Typography>
 
           <Divider sx={{ my: 2 }} />
@@ -199,8 +232,8 @@ export default function EventDetails() {
             Event Schedule
           </Typography>
 
-          {event.schedules?.length > 0 ? (
-            event.schedules.map((day, i) => (
+          {eventData.schedules?.length > 0 ? (
+            eventData.schedules.map((day, i) => (
               <Box key={i} sx={{ mb: 2, pl: 1 }}>
                 <Typography variant="body1" fontWeight={600}>
                   Day {i + 1}
@@ -280,6 +313,20 @@ export default function EventDetails() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={restoreSuccessOpen}
+        onClose={() => setRestoreSuccessOpen(false)}
+      >
+        <DialogTitle>Event Restored</DialogTitle>
+        <DialogContent>
+          The event has been successfully restored.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRestoreSuccessOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+
     </div>
   );
 }

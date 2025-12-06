@@ -1,20 +1,13 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Grid,
   Card,
   CardContent,
-  Chip,
   Divider,
+  Chip,
 } from "@mui/material";
-
-import {
-  FaCalendarCheck,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaFire,
-} from "react-icons/fa";
 
 import {
   PieChart,
@@ -29,59 +22,71 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { useOutletContext } from "react-router-dom";
+import {
+  FaCalendarCheck,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaFire,
+} from "react-icons/fa";
+
+import { getAdminDataStatistics } from "../../services/adminApi";
+
 
 export default function DataStatistics() {
-  const { events = [], volunteers = [] } = useOutletContext();
+  const [stats, setStats] = useState(null);
 
-  const normalizeStatus = (status) => {
-    if (!status) return "unknown";
-    const s = status.toLowerCase();
-    if (s.includes("done") || s.includes("completed")) return "completed";
-    if (s.includes("upcoming")) return "upcoming";
-    if (s.includes("cancel")) return "cancelled";
-    if (s.includes("ongoing") || s.includes("happening")) return "ongoing";
-    return s;
-  };
+  useEffect(() => {
+    getAdminDataStatistics()
+      .then((res) => {
+        setStats(res.data);
+      })
+      .catch((err) => console.error("Error loading statistics:", err));
+  }, []);
 
-  const normalizedEvents = events.map((e) => ({
-    ...e,
-    normalizedStatus: normalizeStatus(e.status),
-  }));
+  if (!stats) return <Typography>Loading...</Typography>;
 
-  const totalEvents = normalizedEvents.length;
-  const upcoming = normalizedEvents.filter((e) => e.normalizedStatus === "upcoming").length;
-  const completed = normalizedEvents.filter((e) => e.normalizedStatus === "completed").length;
-  const cancelled = normalizedEvents.filter((e) => e.normalizedStatus === "cancelled").length;
-  const ongoing = normalizedEvents.filter((e) => e.normalizedStatus === "ongoing").length;
+  const {
+    total_volunteers,
+    total_events,
+    total_active_volunteers,
+    volunteer_growth_percentage,
+    volunteers_by_affiliation,
+  } = stats;
+  
+  /** PIE CHART DATA */
+  const pieData = Object.values(
+    volunteers_by_affiliation.reduce((acc, item) => {
+      const normalized = (item.affiliation_type || "Unknown")
+        .trim()
+        .toLowerCase();
 
-  const totalVolunteers = volunteers.length;
+      const finalName = normalized
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
-  const affiliationCounts = useMemo(() => {
-    const map = {};
-    volunteers.forEach((v) => {
-      map[v.affiliation] = (map[v.affiliation] || 0) + 1;
-    });
-    return map;
-  }, [volunteers]);
+      if (!acc[finalName]) {
+        acc[finalName] = { name: finalName, value: 0 };
+      }
 
-  const pieData = Object.keys(affiliationCounts).map((key) => ({
-    name: key,
-    value: affiliationCounts[key],
-  }));
+      acc[finalName].value += item.count;
 
+      return acc;
+    }, {})
+  );
+
+
+  /** BAR CHART DATA */
   const barData = [
-    { name: "Upcoming", value: upcoming },
-    { name: "Ongoing", value: ongoing },
-    { name: "Completed", value: completed },
-    { name: "Cancelled", value: cancelled },
+    { name: "Total Events", value: total_events },
+    { name: "Active Volunteers", value: total_active_volunteers },
   ];
 
-  const COLORS = ["#7b1d1d", "#a43f3f", "#d88383"];
+  /** CUSTOM COLORS */
+  const COLORS = ["#7b1d1d", "#a43f3f", "#d88383", "#e1aaaa"];
 
   return (
     <Box sx={{ paddingRight: "20px" }}>
-      
       {/* HEADER */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: "#7b1d1d" }}>
@@ -97,7 +102,7 @@ export default function DataStatistics() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card sx={{ p: 2, borderRadius: "12px", textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#7b1d1d" }}>
-              {totalEvents}
+              {total_events}
             </Typography>
             <Typography variant="body2">Total Events</Typography>
           </Card>
@@ -106,35 +111,34 @@ export default function DataStatistics() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card sx={{ p: 2, borderRadius: "12px", textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#ff9800" }}>
-              {ongoing}
+              {total_active_volunteers}
             </Typography>
-            <Typography variant="body2">Ongoing Events</Typography>
+            <Typography variant="body2">Active Volunteers</Typography>
           </Card>
         </Grid>
 
         <Grid size={{ xs: 6, md: 3 }}>
           <Card sx={{ p: 2, borderRadius: "12px", textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#2e7d32" }}>
-              {upcoming}
+              {volunteer_growth_percentage}%
             </Typography>
-            <Typography variant="body2">Upcoming Events</Typography>
+            <Typography variant="body2">Volunteer Growth</Typography>
           </Card>
         </Grid>
 
         <Grid size={{ xs: 6, md: 3 }}>
           <Card sx={{ p: 2, borderRadius: "12px", textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#7b1d1d" }}>
-              {totalVolunteers}
+              {total_volunteers}
             </Typography>
-            <Typography variant="body2">Volunteers</Typography>
+            <Typography variant="body2">Total Volunteers</Typography>
           </Card>
         </Grid>
       </Grid>
 
-      {/* MAIN CARDS */}
+      {/* MAIN CHARTS */}
       <Grid container spacing={2}>
-
-        {/* EVENT SUMMARY */}
+        {/* BAR CHART */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Card
             sx={{
@@ -145,22 +149,13 @@ export default function DataStatistics() {
           >
             <CardContent sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Event Summary
+                Event & Volunteer Summary
               </Typography>
               <Typography sx={{ color: "#777", mb: 2 }}>
-                Breakdown of all events by status.
+                Overview of event counts and volunteer participation.
               </Typography>
 
-              <Box sx={{ mb: 2 }}>
-                <Chip label={`Upcoming: ${upcoming}`} icon={<FaCalendarCheck />} sx={{ mr: 1 }} />
-                <Chip label={`Ongoing: ${ongoing}`} icon={<FaFire />} sx={{ mr: 1 }} />
-                <Chip label={`Completed: ${completed}`} icon={<FaCheckCircle />} sx={{ mr: 1 }} />
-                <Chip label={`Cancelled: ${cancelled}`} icon={<FaTimesCircle />} />
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ width: "100%", height: 200, minWidth: 0 }}>
+              <Box sx={{ width: "100%", height: 428 }}>
                 <ResponsiveContainer>
                   <BarChart data={barData}>
                     <XAxis dataKey="name" />
@@ -174,7 +169,7 @@ export default function DataStatistics() {
           </Card>
         </Grid>
 
-        {/* VOLUNTEER PIE CHART */}
+        {/* PIE CHART */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Card
             sx={{
@@ -192,7 +187,7 @@ export default function DataStatistics() {
               </Typography>
 
               <Typography variant="h4" sx={{ fontWeight: 700, color: "#7b1d1d" }}>
-                {totalVolunteers}
+                {total_volunteers}
               </Typography>
 
               <Typography variant="body2">Registered Volunteers</Typography>

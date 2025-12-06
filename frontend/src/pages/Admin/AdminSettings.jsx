@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import NotificationModal from "../../components/NotificationModal";
+import { updateAdminProfile } from "../../services/adminApi";
 
 export default function AdminSettings() {
   const [oldPass, setOldPass] = useState("");
@@ -32,20 +33,62 @@ export default function AdminSettings() {
     setNotif({ open: true, type, message });
   };
 
-  const handleChangePassword = () => {
-    if (!oldPass || !newPass || !confirmPass) {
-      showNotif("error", "Please fill in all fields.");
-      return;
-    }
-    if (newPass !== confirmPass) {
-      showNotif("error", "New passwords do not match.");
-      return;
-    }
+  const handleChangePassword = async () => {
+  console.log("🚀 Change password triggered!");
+  console.log("➡️ Old:", oldPass);
+  console.log("➡️ New:", newPass);
+  console.log("➡️ Confirm:", confirmPass);
+
+  // VALIDATION
+  if (!oldPass || !newPass || !confirmPass) {
+    console.log("❌ Error: Missing fields.");
+    showNotif("error", "Please fill in all fields.");
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    console.log("❌ Error: New passwords do not match.");
+    showNotif("error", "New passwords do not match.");
+    return;
+  }
+
+  try {
+    console.log("📡 Sending request to update password...");
+
+    const payload = {
+      old_password: oldPass,
+      new_password: newPass,
+    };
+
+    console.log("➡️ Payload being sent:", payload);
+
+    const response = await updateAdminProfile(payload);
+
+    console.log("✅ Backend response:", response);
+
     showNotif("success", "Password successfully changed!");
+
+    // CLEAR INPUTS
     setOldPass("");
     setNewPass("");
     setConfirmPass("");
-  };
+  } catch (err) {
+    console.log("❌ ERROR changing password:", err);
+
+    // FULL error details
+    console.log("❌ err.response:", err.response);
+    console.log("❌ err.response.data:", err.response?.data);
+    console.log("❌ err.message:", err.message);
+
+    const backendMsg =
+      err.response?.data?.error ||
+      err.response?.data?.detail ||
+      "Failed to change password.";
+
+    showNotif("error", backendMsg);
+  }
+};
+
 
   return (
     <Box sx={{ width: "100%", p: 4 }}>

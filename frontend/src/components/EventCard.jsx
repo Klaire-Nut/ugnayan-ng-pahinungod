@@ -17,6 +17,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PlaceIcon from "@mui/icons-material/Place";
 
 export default function EventCard({ event, onEdit, onDelete, onOpen }) {
+
   const schedules = event.schedules || [];
 
   const getStatus = () => {
@@ -58,7 +59,10 @@ export default function EventCard({ event, onEdit, onDelete, onOpen }) {
       year: "numeric",
     });
 
-  const status = getStatus();
+  const status =
+    event.is_canceled || event.status === "CANCELLED"
+      ? "CANCELLED"
+      : getStatus();
 
   const volunteered = event.volunteered || 0;
   const needed = event.volunteers_needed || 0;
@@ -74,6 +78,8 @@ export default function EventCard({ event, onEdit, onDelete, onOpen }) {
             ? "#0277bd"
             : status === "HAPPENING"
             ? "#2e7d32"
+            : status === "CANCELLED"
+            ? "#d32f2f"
             : "#6a1b9a",
         borderRadius: 3,
         boxShadow: 4,
@@ -88,16 +94,16 @@ export default function EventCard({ event, onEdit, onDelete, onOpen }) {
               onClick={(e) => {
                 e.stopPropagation();
                 // prevent editing cancelled events (still block here)
-                if (event.status !== "CANCELLED") onEdit(event);
+                if (status !== "CANCELLED") onEdit(event);
               }}
-              disabled={event.status === "CANCELLED"}
+              disabled={status === "CANCELLED"}
             >
               <EditIcon />
             </IconButton>
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(event.id);
+                onDelete(event); 
               }}
               color="error"
             >
@@ -136,8 +142,8 @@ export default function EventCard({ event, onEdit, onDelete, onOpen }) {
         <Divider sx={{ mb: 1 }} />
 
         {/* Day by day display */}
-        {schedules.map((d, i) => (
-          <Box key={i} sx={{ mb: 1 }}>
+        { schedules.map((d, i) => (
+          <Box key={`${d.date}-${d.start_time}-${i}`} sx={{ mb: 1 }}>
             <Typography variant="body2" fontWeight="600">
               Day {i + 1}
             </Typography>

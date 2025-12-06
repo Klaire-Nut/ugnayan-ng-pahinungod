@@ -8,9 +8,11 @@ from django.shortcuts import get_object_or_404
 from .pagination import VolunteerListPagination
 from django.db.models import Count
 from datetime import date
+from datetime import datetime
 from django.utils import timezone
-#Implement this during production
-# from rest_framework.permissions import IsAdminUser
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 # Models
 from core.models import (
     Volunteer,
@@ -25,13 +27,15 @@ from core.models import (
     StaffProfile,
     FacultyProfile,
     RetireeProfile,
-    Event
+    Event,
+    Admin
 )
 
 # Serializers
 from admin_api.serializers import (
     AdminVolunteerDetailSerializer,
-    AdminVolunteerListSerializer
+    AdminVolunteerListSerializer,
+    AdminProfileSerializer
 )
 from volunteers.serializers import VolunteerAccountSerializer
 from events.serializers import VolunteerEventSerializer
@@ -46,7 +50,7 @@ class AdminDashboardAPI(APIView):
       - recent events
     """
     permission_classes = []
-    # replace with [IsAdminUser] in production
+    
 
     def get(self, request):
     # Recent volunteers
@@ -79,23 +83,32 @@ class AdminDashboardAPI(APIView):
                 event=event, status="Joined"
             ).count()
 
-            schedules = [
-                {
-                    "date": s.day,
-                    "start_time": s.start_time,
-                    "end_time": s.end_time,
-                }
-                for s in event.schedules.all().order_by("day")
-            ]
-
+            # Get schedules from EventSchedule if exists
+            schedule_qs = event.schedules.all().order_by("day")
+            if schedule_qs.exists():
+                schedules = [
+                    {
+                        "date": s.day.strftime("%Y-%m-%d"),
+                        "start_time": s.start_time.strftime("%I:%M %p"),
+                        "end_time": s.end_time.strftime("%I:%M %p"),
+                    }
+                    for s in schedule_qs
+                ]
+            else:
+                schedules = [
+                    {
+                        "date": event.date_start.strftime("%Y-%m-%d"),
+                        "start_time": event.date_start.strftime("%I:%M %p"),
+                        "end_time": event.date_end.strftime("%I:%M %p"),
+                    }
+                ]
             # Determine status
             if event.is_canceled:
                 status = "CANCELLED"
-            elif not schedules:
-                status = "UPCOMING"
             else:
-                first = schedules[0]["date"]
-                last = schedules[-1]["date"]
+                first = datetime.strptime(schedules[0]["date"], "%Y-%m-%d").date()
+                last = datetime.strptime(schedules[-1]["date"], "%Y-%m-%d").date()
+
                 if now < first:
                     status = "UPCOMING"
                 elif first <= now <= last:
@@ -182,38 +195,51 @@ class AdminVolunteerListView(ListAPIView):
 # Mananging Volunteers - Admin for Managing Volunteers for Viewing and Editing of the Volunteers Data 
 class AdminVolunteerFullView(RetrieveUpdateDestroyAPIView):
     """
-    GET: Fetch full volunteer details
-    PUT/PATCH: Update all details including nested data
+    GET: Fetch full volunteer details including all nested data
+    PUT/PATCH: Update all details
     DELETE: Delete volunteer
     """
     serializer_class = AdminVolunteerDetailSerializer
-    queryset = Volunteer.objects.all()
     lookup_field = 'volunteer_id'
-    permission_classes = []  # Replace with [IsAdminUser] when ready
+    permission_classes = []  
+
+    def get_queryset(self):
+        # Prefetch related objects to reduce DB queries
+        return Volunteer.objects.all().select_related(
+            'student_profile', 'alumni_profile', 'staff_profile', 
+            'faculty_profile', 'retiree_profile'
+        ).prefetch_related(
+            'contacts', 'addresses', 'backgrounds', 'emergency_contacts', 'accounts'
+        )
 
     def get_serializer_context(self):
+        # Keep context if needed for serializer
         context = super().get_serializer_context()
-        context['volunteer_id'] = self.get_object().volunteer_id  
+        context['volunteer_id'] = self.kwargs.get('volunteer_id')
         return context
-    
-from .serializers import AdminProfileSerializer
-class AdminProfileView(APIView):
-    """
-    GET: Fetch admin info
-    PUT: Update email/password
-    """
-    permission_classes = []  # Replace with IsAdminUser if ready
 
-    def get(self, request):
-        serializer = AdminProfileSerializer(request.user)
-        return Response(serializer.data)
+# Fetch all the Volunteers who Registered for that Event 
+class EventVolunteersView(APIView):
 
-    def put(self, request):
-        serializer = AdminProfileSerializer(instance=request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request, event_id):
+        volunteers = (
+            VolunteerEvent.objects
+            .filter(event_id=event_id)
+            .select_related('volunteer', 'schedule')
+        )
+
+        data = [
+            {
+                "volunteer_id": ve.volunteer.volunteer_id,
+                "name": f"{ve.volunteer.first_name} {ve.volunteer.last_name}",
+                "hours_rendered": ve.hours_rendered,
+                "status": ve.status,
+                "schedule_day": ve.schedule.day if ve.schedule else None,
+            }
+            for ve in volunteers
+        ]
+
+        return Response(data)
 
 # Event - Admin View for the list of Registrations for an Event
 class EventRegistrationsView(APIView):
@@ -221,13 +247,14 @@ class EventRegistrationsView(APIView):
     GET /api/admin/events/<event_id>/registrations/
     Admin-only: list of registrations for a given event.
     """
-    permission_classes = []  # replace with [IsAdminUser] in production
+    permission_classes = []  
 
     def get(self, request, event_id):
         event = get_object_or_404(Event, event_id=event_id)
         regs = VolunteerEvent.objects.filter(event=event).select_related('volunteer').order_by('-signup_date')
         serializer = VolunteerEventSerializer(regs, many=True)
         return Response(serializer.data)
+
 
 # Admin Data Statistics 
 class AdminDataStatisticsAPI(APIView):
@@ -241,7 +268,6 @@ class AdminDataStatisticsAPI(APIView):
       - volunteers_by_affiliation
     """
     permission_classes = []
-    # replace with [IsAdminUser] in production
 
     def get(self, request):
         # Total volunteers
@@ -273,3 +299,36 @@ class AdminDataStatisticsAPI(APIView):
         }
 
         return Response(data)
+    
+
+# Admin - Privacy Settings  
+class AdminProfileView(APIView):
+    """
+    PUT: Update password for custom Admin model (plain text)
+    """
+
+    permission_classes = []
+
+    def put(self, request):
+        try:
+            # Get your ONLY admin account (username = upmin_pahinungod_admin)
+            admin = Admin.objects.get(username="upmin_pahinungod_admin")
+        except Admin.DoesNotExist:
+            return Response({"error": "Admin account not found."}, status=404)
+
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
+
+        if not old_password or not new_password:
+            return Response({"error": "Both old and new password are required."}, status=400)
+
+        # Compare plain text password
+        if admin.password != old_password:
+            return Response({"error": "Old password is incorrect."}, status=400)
+
+        # Update to new plain text password
+        admin.password = new_password
+        admin.save()
+
+        return Response({"success": "Password updated successfully!"})
+

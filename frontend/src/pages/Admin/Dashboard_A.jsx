@@ -1,8 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import EventCard from "../../components/EventCard";
 import AdminTable from "../../components/AdminTable";
 import { getAdminDashboard } from "../../services/adminApi";
+
+// Normalize volunteer affiliation to a consistent format
+const normalizeAffiliation = (affiliation) => {
+  if (!affiliation) return "—"; // If empty or null
+  const lower = affiliation.toLowerCase();
+
+  // Rules for common types
+  if (["student", "stud", "undergrad"].includes(lower)) return "Student";
+  if (["faculty", "teacher", "professor"].includes(lower)) return "Faculty";
+  if (["alumni", "grad"].includes(lower)) return "Alumni";
+  if (["up staff", "staff", "employee"].includes(lower)) return "UP Staff";
+
+  // Default: capitalize first letter of each word
+  return affiliation
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+
 
 
 export default function AdminDashboard() {
@@ -11,7 +31,16 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data from backend
+  // Format a date string "2025-12-05" → "Dec 05, 2025"
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    }).format(date);
+  };
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -38,7 +67,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard-wrapper">
-
       {/* EVENTS SECTION */}
       <section className="events-section fade-in">
         <div
@@ -49,7 +77,6 @@ export default function AdminDashboard() {
           }}
         >
           <h2 style={{ margin: 0 }}>CURRENT EVENTS</h2>
-
           <button
             onClick={() => navigate("/admin/events")}
             className="link-button"
@@ -67,25 +94,19 @@ export default function AdminDashboard() {
                 key={ev.id}
                 event={{
                   id: ev.id,
-                  event_name: ev.title,                 
+                  event_name: ev.event_name,
                   location: ev.location || "No location provided",
-
-                  // schedules: convert start & end into a single-day schedule array
-                  schedules: [
-                    {
-                      date: ev.start_date,
-                      start_time: "08:00 AM",
-                      end_time: "05:00 PM",
-                    },
-                  ],
-
+                  schedules: ev.schedules.map((s) => ({
+                    date: formatDate(s.date),
+                    start_time: s.start_time, 
+                    end_time: s.end_time,     
+                  })),
                   volunteers_needed: ev.volunteers_needed || 0,
                   volunteered: ev.volunteered || 0,
-                  status: ev.status || "UPCOMING",
+                  status: ev.status,
                 }}
                 onOpen={() => navigate(`/admin/events/${ev.id}`)}
               />
-
             ))
           )}
         </div>
@@ -96,7 +117,6 @@ export default function AdminDashboard() {
         className="volunteers-section fade-in"
         style={{ marginTop: "40px" }}
       >
-        {/* Header */}
         <div
           style={{
             display: "flex",
@@ -105,7 +125,6 @@ export default function AdminDashboard() {
           }}
         >
           <h2 style={{ margin: 0 }}>RECENT VOLUNTEERS</h2>
-
           <button
             onClick={() => navigate("/admin/volunteers")}
             className="link-button"
@@ -114,7 +133,6 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Table */}
         <div style={{ marginTop: "10px" }}>
           <AdminTable
             columns={[
@@ -124,12 +142,16 @@ export default function AdminDashboard() {
               { field: "identifier", headerName: "ID", width: 120 },
             ]}
             rows={dashboardData.recent_volunteers.map((vol, index) => ({
-              id: index,
-              name: vol.name,
-              affiliation: vol.affiliation,
-              date_joined: vol.date_joined,
-              identifier: vol.identifier || "—",
-            }))}
+            id: index,
+            name: vol.name,
+            affiliation: normalizeAffiliation(vol.affiliation),
+            date_joined: new Date(vol.date_joined).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "2-digit",
+            }),
+            identifier: vol.identifier || "—",
+          }))}
             actions={(row) => (
               <button
                 onClick={() => navigate(`/admin/volunteers/${row.identifier}`)}

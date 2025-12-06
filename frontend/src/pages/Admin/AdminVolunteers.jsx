@@ -1,58 +1,84 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 import { Box, Button } from "@mui/material";
 import { useOutletContext } from "react-router-dom";
 import AdminTable from "../../components/AdminTable";
 import SearchFilter from "../../components/SearchFilter";
+import { useNavigate } from "react-router-dom";
+
 
 export default function AdminVolunteers() {
-  const { volunteers = [] } = useOutletContext();
-
+  const [volunteers, setVolunteers] = useState([]);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
+  const navigate = useNavigate();
 
-  // Volunteer ID generator
-  const generateVolunteerID = (v, indexOnDay) => {
-    if (!v.registeredAt) return "UNP-UNKNOWN";
-    const d = new Date(v.registeredAt);
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    const seq = String(indexOnDay + 1).padStart(2, "0");
-    return `UNP${mm}${dd}${yyyy}-${seq}`;
+  /// Normalize volunteer affiliation
+  const normalizeAffiliation = (affiliation) => {
+    if (!affiliation) return "—";
+    const lower = affiliation.toLowerCase();
+    if (["student", "stud", "undergrad"].includes(lower)) return "Student";
+    if (["faculty", "teacher", "professor"].includes(lower)) return "Faculty";
+    if (["alumni", "grad"].includes(lower)) return "Alumni";
+    if (["up staff", "staff", "employee"].includes(lower)) return "UP Staff";
+    return affiliation
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
-  // Process data
-  const processed = volunteers.map((v, _, arr) => {
-    const sameDay = arr.filter((x) => x.registeredAt === v.registeredAt);
-    const indexOnDay = sameDay.findIndex((x) => x.id === v.id);
-    return {
-      ...v,
-      volunteerID: generateVolunteerID(v, indexOnDay),
-      name: `${v.firstName} ${v.lastName}`,
+  /// Process volunteers
+  const processed = volunteers.map((v) => ({
+    ...v,
+    full_name: v.full_name || "—",
+    affiliation_type: normalizeAffiliation(v.affiliation_type),
+  }));
+
+
+ // Fetch volunteers from backend
+  useEffect(() => {
+    const fetchVolunteers = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/admin/volunteers/");
+        const data = await res.json();
+        console.log("📌 Volunteers fetched from backend:", data);
+        setVolunteers(data.results || []);
+      } catch (err) {
+        console.error("Failed to fetch volunteers:", err);
+      } finally {
+        setLoadingVolunteers(false);
+      }
     };
-  });
 
-  const uniqueAffiliations = Array.from(new Set(volunteers.map((v) => v.affiliation)));
+    fetchVolunteers();
+  }, []);
+ 
 
-  // FILTER + SEARCH
+  // Filter + search
   const filtered = useMemo(() => {
     return processed.filter((v) => {
       const matchesSearch =
-        v.name.toLowerCase().includes(search.toLowerCase()) ||
-        v.volunteerID.toLowerCase().includes(search.toLowerCase()) ||
-        v.affiliation.toLowerCase().includes(search.toLowerCase());
+        (v.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (v.volunteer_identifier || "").toLowerCase().includes(search.toLowerCase()) ||
+        (v.affiliation_type || "").toLowerCase().includes(search.toLowerCase());
 
-      const matchesFilter = filter ? v.affiliation === filter : true;
+      const matchesFilter = filter ? v.affiliation_type === filter : true;
 
       return matchesSearch && matchesFilter;
     });
   }, [processed, search, filter]);
 
+  const uniqueAffiliations = Array.from(
+    new Set(processed.map((v) => v.affiliation_type))
+  );
+
   const columns = [
-    { header: "Volunteer ID", field: "volunteerID" },
-    { header: "Name", field: "name" },
-    { header: "Affiliation", field: "affiliation" },
+    { header: "Volunteer ID", field: "volunteer_identifier" },
+    { header: "Name", field: "full_name" },
+    { header: "Affiliation", field: "affiliation_type" },
   ];
+
+  if (loadingVolunteers) return <p>Loading volunteers...</p>;
 
   return (
     <div className="admin-events-wrapper">
@@ -89,7 +115,7 @@ export default function AdminVolunteers() {
                     color: "white",
                   },
                 }}
-                onClick={() => console.log("View volunteer", row.id)}
+                onClick={() => navigate(`/admin/volunteers/${row.volunteer_id}`)}
               >
                 View
               </Button>

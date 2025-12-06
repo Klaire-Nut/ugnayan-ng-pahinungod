@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 import json
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
@@ -8,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import AnonymousUser
 from core.models import VolunteerAccount 
 from django.contrib.auth.hashers import check_password
+from core.models import Admin
 
 # Admin Account
 @csrf_exempt
@@ -17,21 +16,29 @@ def login_view(request):
 
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+        username = data.get("username")
+        password = data.get("password")
+    except:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    username = data.get("username")
-    password = data.get("password")
+    # Check admin credentials
+    try:
+        admin = Admin.objects.get(username=username, password=password)
+    except Admin.DoesNotExist:
+        return JsonResponse({"error": "Invalid username or password"}, status=400)
 
-    if not username or not password:
-        return JsonResponse({"error": "username and password required"}, status=400)
+    # Save admin ID in session
+    request.session["admin_id"] = admin.admin_id
 
-    user = authenticate(request, username=username, password=password)
-    if user is not None:
-        login(request, user)  # creates session
-        return JsonResponse({"message": "Login successful", "username": user.username})
-    else:
-        return JsonResponse({"error": "Invalid credentials"}, status=400)
+    # Return response
+    return JsonResponse({
+        "message": "Login successful",
+        "admin": {
+            "admin_id": admin.admin_id,
+            "username": admin.username,
+        }
+    })
+
 
 
 @csrf_exempt
@@ -43,14 +50,23 @@ def logout_view(request):
 
 
 def user_view(request):
-    # GET only
-    if request.method != "GET":
-        return JsonResponse({"error": "GET required"}, status=400)
+    admin_id = request.session.get("admin_id")
 
-    user = getattr(request, "user", None)
-    if not user or isinstance(user, AnonymousUser) or not user.is_authenticated:
-        return JsonResponse({"user": None})
-    return JsonResponse({"user": {"username": user.username, "id": user.id, "email": user.email}})
+    if not admin_id:
+        return JsonResponse({"admin": None})
+
+    try:
+        admin = Admin.objects.get(admin_id=admin_id)
+    except Admin.DoesNotExist:
+        return JsonResponse({"admin": None})
+
+    return JsonResponse({
+        "admin": {
+            "admin_id": admin.admin_id,
+            "username": admin.username
+        }
+    })
+
 
 
 # Volunteer Account

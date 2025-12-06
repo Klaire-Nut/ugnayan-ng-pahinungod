@@ -13,7 +13,7 @@ import Login from "./pages/Login";
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
 import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
 import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
-import PrivacySettings from "./pages/Volunteers/PrivacySettings"; // ✅ Added this import
+import PrivacySettings from "./pages/Volunteers/PrivacySettings"; 
 
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
@@ -21,6 +21,7 @@ import AdminVolunteers from "./pages/Admin/AdminVolunteers";
 import DataStatistics from "./pages/Admin/DataStatistics";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import AdminDashboard from "./pages/Admin/Dashboard_A";
+import AdminVolunteerProfile from "./pages/Admin/AdminVolunteerProfile";
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
           <Route path="events/:id/edit" element={<AdminEvents />} />
           <Route path="events/:id" element={<EventDetails />} />
           <Route path="volunteers" element={<AdminVolunteers />} />
+          <Route path="volunteers/:volunteerId" element={<AdminVolunteerProfile />} />
           <Route path="stats" element={<DataStatistics />} />
           <Route path="privacy" element={<AdminSettings />} />
         </Route>

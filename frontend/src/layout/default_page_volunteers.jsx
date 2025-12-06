@@ -8,6 +8,8 @@ import "../styles/admin-shared.css";
 export default function DefaultPageVolunteer() {
   const [events, setEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(true);
+  const [volunteers, setVolunteers] = useState([]);
 
   const token = localStorage.getItem("token");
   const isLoggedIn = Boolean(token);
@@ -17,7 +19,23 @@ export default function DefaultPageVolunteer() {
     window.location.href = "/login";
   };
 
-  // 🔥 Fetch all events
+  // Fetch volunteers
+  useEffect(() => {
+    const fetchVolunteers = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/admin/volunteers/");
+        const data = await res.json();
+        setVolunteers(data.results || []);
+      } catch (err) {
+        console.error("Failed to fetch volunteers:", err);
+      } finally {
+        setLoadingVolunteers(false);
+      }
+    };
+    fetchVolunteers();
+  }, []);
+
+  // Fetch all events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -28,47 +46,37 @@ export default function DefaultPageVolunteer() {
         console.error("Failed to load events:", err);
       }
     };
-
     fetchEvents();
   }, []);
 
-  // 🔥 Fetch volunteer's joined events (if logged in)
+  // Fetch joined events
   useEffect(() => {
     if (!token) return;
-
     const fetchJoined = async () => {
       try {
         const res = await fetch("http://localhost:8000/api/volunteers/joined-events/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-
         const data = await res.json();
         setJoinedEvents(data);
       } catch (err) {
         console.error("Failed to load joined events:", err);
       }
     };
-
     fetchJoined();
   }, [token]);
 
   return (
     <div className="admin-layout">
-      {/* Header */}
       <div className="admin-header">
         <VolunteerHeader isLoggedIn={isLoggedIn} onLogout={handleLogout} />
       </div>
 
       <div className="admin-main">
-        
-        {/* Sidebar */}
         <aside className="admin-sidebar vol-sidebar">
           <VolunteerSidebar />
         </aside>
 
-        {/* Main content */}
         <section className="admin-content">
           <div className="admin-content-inner">
             <Outlet
@@ -77,11 +85,12 @@ export default function DefaultPageVolunteer() {
                 setEvents,
                 joinedEvents,
                 setJoinedEvents,
+                volunteers,
+                loadingVolunteers, // pass loading state
               }}
             />
           </div>
         </section>
-
       </div>
 
       <footer className="admin-footer">

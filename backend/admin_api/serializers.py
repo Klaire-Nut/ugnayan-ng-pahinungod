@@ -187,7 +187,7 @@ class AdminVolunteerDetailSerializer(serializers.ModelSerializer):
         return instance
 
 # Admin Account Credentials 
-User = get_user_model()  # Typically your admin user model
+User = get_user_model()  
 
 class AdminProfileSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)

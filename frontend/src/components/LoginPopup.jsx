@@ -11,7 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 // Import admin login function
-import { login as adminLogin, volunteerLogin } from "../services/auth";
+import { login as adminLogin, volunteerLogin, getCurrentUser } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
 
@@ -22,25 +22,45 @@ export default function LoginPopup({ open, onClose, role }) {
 
   const navigate = useNavigate();
 
-    // Admin login handler
-   const handleLogin = async () => {
-    try {
-      let res;
-      if (role === "Admin") {
-        res = await adminLogin({ username, password }); // Admin uses username
-        navigate("/admin/dashboard");
-      } else {
-        res = await volunteerLogin({ email: username, password }); // Volunteer uses email
-        navigate("/dashboard"); // Volunteer dashboard route
-      }
-      console.log(res.data); // optional: backend returns user info
+// Admin login handler
+const handleLogin = async () => {
+  if (!username || !password) {
+    setErrorMessage("Please enter username and password.");
+    return;
+  }
+
+  try {
+    let res;
+
+    if (role === "Admin") {
+      // Step 1: Call login API
+      res = await adminLogin({ username, password });
+
+      // Step 2: Use the returned user directly
+      console.log("Logged in admin:", res.data.user);
+
+      // Step 3: Clear error, close popup, navigate
       setErrorMessage("");
-      onClose(); // close the popup
-    } catch (err) {
-      console.error(err.response?.data);
-      setErrorMessage("Login failed. Check your username/email and password.");
+      onClose();
+      navigate("/admin/dashboard");
+
+    } else {
+      // Volunteer login
+      res = await volunteerLogin({ email: username, password });
+      console.log("Volunteer login response:", res.data);
+
+      setErrorMessage("");
+      onClose();
+      navigate("/dashboard");
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err.response?.data || err.message);
+    setErrorMessage(
+      "Login failed. Check your username/email and password."
+    );
+  }
+};
+
 
 
 // Volunteer Registration Function
