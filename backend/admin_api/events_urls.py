@@ -6,6 +6,7 @@ from admin_api.events_views import (
     AdminCancelEventView,
     AdminDeleteEventView,
     AdminRestoreEventView,
+    AdminEventVolunteersAPI
 )
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("events/<int:event_id>/cancel/", AdminCancelEventView.as_view(), name="admin-event-cancel"),
     path("events/<int:event_id>/delete/", AdminDeleteEventView.as_view(), name="admin-event-delete"),
     path("events/<int:event_id>/restore/", AdminRestoreEventView.as_view(), name="admin-event-restore"),
+    path('events/<int:event_id>/volunteers/', AdminEventVolunteersAPI.as_view(), name='admin-event-volunteers')
+
 ]

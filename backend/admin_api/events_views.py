@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from core.models import Event, VolunteerEvent, EventSchedule
 from django.utils import timezone
 from datetime import datetime
-from .events_serializers import AdminEventSerializer
+from .events_serializers import AdminEventSerializer,  EventVolunteerSerializer
 from django.db.models import Case, When, Value, IntegerField
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 
 class AdminAllEventsAPI(APIView):
@@ -96,12 +96,6 @@ class AdminAllEventsAPI(APIView):
         return Response({"all_events": all_events})
 
 
-#class AdminEventListCreateView(generics.ListCreateAPIView):
- #   queryset = Event.objects.filter(is_deleted=False).order_by("-event_id")
- #   serializer_class = AdminEventSerializer
- #   permission_classes = []
- #   authentication_classes = []
-
 # Admin Create an Event
 class AdminCreateEventAPI(APIView):
     permission_classes = []
@@ -157,3 +151,19 @@ class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "event_id"
     permission_classes = []
     authentication_classes = []
+
+
+# Fetching Volunteers who Joined In the Event for the Event Card
+class AdminEventVolunteersAPI(APIView):
+    permission_classes = [AllowAny] 
+    authentication_classes = [] 
+
+    def get(self, request, event_id):
+        try:
+            event = Event.objects.get(event_id=event_id)
+        except Event.DoesNotExist:
+            return Response({"detail": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        volunteers = VolunteerEvent.objects.filter(event=event)
+        serializer = EventVolunteerSerializer(volunteers, many=True)
+        return Response({"volunteers": serializer.data})

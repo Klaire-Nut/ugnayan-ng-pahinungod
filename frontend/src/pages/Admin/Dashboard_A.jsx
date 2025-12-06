@@ -23,11 +23,8 @@ const normalizeAffiliation = (affiliation) => {
 };
 
 
-
-
 export default function AdminDashboard() {
   const navigate = useNavigate();
-
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,13 +94,14 @@ export default function AdminDashboard() {
                   event_name: ev.event_name,
                   location: ev.location || "No location provided",
                   schedules: ev.schedules.map((s) => ({
-                    date: formatDate(s.date),
-                    start_time: s.start_time, 
-                    end_time: s.end_time,     
+                    date: s.date, // keep original date for calculations
+                    start_time: s.start_time,
+                    end_time: s.end_time,
                   })),
                   volunteers_needed: ev.volunteers_needed || 0,
                   volunteered: ev.volunteered || 0,
                   status: ev.status,
+                  is_canceled: ev.is_canceled,
                 }}
                 onOpen={() => navigate(`/admin/events/${ev.id}`)}
               />

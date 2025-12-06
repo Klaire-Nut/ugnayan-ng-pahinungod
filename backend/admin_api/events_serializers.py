@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Event, EventSchedule
+from core.models import Event, EventSchedule, VolunteerEvent
 
 # Serializer for Event in the Admin Side
 class EventScheduleSerializer(serializers.ModelSerializer):
@@ -144,3 +144,17 @@ class AdminEventSerializer(serializers.ModelSerializer):
         instance.is_deleted = True   # or instance.delete() if you want hard delete
         instance.save()
         return instance
+
+
+# Fetching Volunteers who Joined In the Event for the Event Card
+class EventVolunteerSerializer(serializers.ModelSerializer):
+    volunteer_identifier = serializers.CharField(source='volunteer.volunteer_identifier')
+    full_name = serializers.SerializerMethodField()
+    affiliation_type = serializers.CharField(source='volunteer.affiliation_type')
+
+    class Meta:
+        model = VolunteerEvent
+        fields = ['volunteer_identifier', 'full_name', 'affiliation_type']
+
+    def get_full_name(self, obj):
+        return f"{obj.volunteer.first_name} {obj.volunteer.last_name}"

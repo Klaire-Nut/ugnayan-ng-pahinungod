@@ -142,7 +142,6 @@ class AdminVolunteerListView(ListAPIView):
     Admin-only list of volunteers with pagination, search, and filters.
     """
     permission_classes = []
-    #permission_classes = [IsAdminUser]
     serializer_class = AdminVolunteerListSerializer
     pagination_class = VolunteerListPagination
     queryset = Volunteer.objects.all().order_by('-volunteer_id')

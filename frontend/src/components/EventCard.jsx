@@ -1,4 +1,6 @@
 import React from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Card,
   CardHeader,
@@ -16,9 +18,35 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PlaceIcon from "@mui/icons-material/Place";
 
-export default function EventCard({ event, onEdit, onDelete, onOpen }) {
+export default function EventCard({ event, onEdit, onDelete, onOpen, isOpen }) {
 
   const schedules = event.schedules || [];
+  const [volunteers, setVolunteers] = useState([]);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(true);
+
+  // Fetch volunteers only when the card is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchVolunteers = async () => {
+      try {
+        const res = await axios.get(
+          `http://127.0.0.1:8000/api/admin/events/${event.id}/volunteers/`
+        );
+        console.log("Axios response:", res.data);
+        setVolunteers(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch volunteers:", err);
+        setVolunteers([]);
+      } finally {
+        setLoadingVolunteers(false);
+      }
+    };
+
+    fetchVolunteers();
+  }, [event.id, isOpen]);
+
+
 
   const getStatus = () => {
     // If event was manually cancelled
@@ -169,6 +197,24 @@ export default function EventCard({ event, onEdit, onDelete, onOpen }) {
         <Typography variant="caption" sx={{ float: "right", mt: 1 }}>
           {needed - volunteered} remaining
         </Typography>
+        
+        {/* Volunteers list, only when card is open */}
+        {isOpen && (
+        <Box sx={{ mt: 2 }}>
+            {loadingVolunteers ? (
+              <Typography variant="body2">Loading volunteers...</Typography>
+            ) : volunteers.length === 0 ? (
+              <Typography variant="body2">No volunteers yet.</Typography>
+            ) : (
+              volunteers.map((v) => (
+                <Typography key={v.volunteer_id} variant="body2">
+                  {v.name} — {v.status} ({v.hours_rendered} hrs
+                  {v.schedule_day ? ` on ${v.schedule_day}` : ""})
+                </Typography>
+              ))
+            )}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

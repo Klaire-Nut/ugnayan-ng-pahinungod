@@ -134,11 +134,25 @@ export const updateAdminProfile = async (payload) => {
   export const fetchVolunteerHistory = async (volunteerId) => {
     try {
       const res = await axios.get(`${API_URL}volunteers/${volunteerId}/history/`, {
-        withCredentials: true, // <- important to send session cookie
+        withCredentials: true, 
       });
-      return res.data; // should return array of { event, date, timeIn, timeOut, timeAllotted }
+      return res.data; 
     } catch (err) {
       console.error("Error fetching volunteer history:", err.response?.data || err);
+      return [];
+    }
+  };
+
+
+  // Fetch volunteers who joined a specific event
+  export const fetchEventVolunteers = async (eventId) => {
+    try {
+      const res = await axios.get(`${API_URL}events/${eventId}/volunteers/`, {
+        withCredentials: true,
+      });
+      return res.data; // should return array of volunteers
+    } catch (err) {
+      console.error("Error fetching event volunteers:", err.response?.data || err);
       return [];
     }
   };

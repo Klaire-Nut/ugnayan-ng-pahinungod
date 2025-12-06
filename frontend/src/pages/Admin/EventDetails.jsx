@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import {
@@ -29,31 +30,59 @@ export default function EventDetails() {
   const navigate = useNavigate();
   const { events, setEvents, showNotif } = useOutletContext();
 
+  // Local state
+  const [eventData, setEventData] = useState(null);
+  const [volunteers, setVolunteers] = useState([]);
+  const [loadingVolunteers, setLoadingVolunteers] = useState(true);
+  const [volunteerCache, setVolunteerCache] = useState({});
   const [cancelOpen, setCancelOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreSuccessOpen, setRestoreSuccessOpen] = useState(false);
 
-  // Local state for the current event
-  const [eventData, setEventData] = useState(null);
+  /** Update eventData whenever events change */
+    useEffect(() => {
+      const ev = events.find((ev) => String(ev.id) === String(id));
+      setEventData(ev || null);
+    }, [events, id]);
 
-  // Update eventData whenever events change
-  useEffect(() => {
-    const ev = events.find((ev) => String(ev.id) === String(id));
-    setEventData(ev || null);
-  }, [events, id]);
+// Fetch volunteers dynamically when eventData is ready, with caching
+useEffect(() => {
+  if (!eventData) return;
 
-  // Early return if eventData is not loaded
-  if (!eventData) return <p>Loading event...</p>;
+  // Use cached volunteers if available
+  if (volunteerCache[eventData.id]) {
+    setVolunteers(volunteerCache[eventData.id]);
+    setLoadingVolunteers(false);
+    return;
+  }
 
-  // Now it's safe to access eventData
-  const status =
-    eventData.is_canceled || eventData.status === "CANCELLED"
-      ? "CANCELLED"
-      : getStatus(eventData);
+  const fetchVolunteers = async () => {
+    setLoadingVolunteers(true);
+    try {
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/admin/events/${eventData.id}/volunteers/`
+      );
+      const data = res.data || [];
 
-  const volunteers = eventData.volunteers || [];
+      setVolunteers(data);
 
-  
+       // Save to cache
+      setVolunteerCache((prev) => ({
+        ...prev,
+        [eventData.id]: data,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch volunteers:", err);
+      setVolunteers([]);
+    } finally {
+      setLoadingVolunteers(false);
+    }
+  };
+
+  fetchVolunteers();
+}, [eventData?.id]);
+
+
   /** STATUS */
   function getStatus(e) {
     if (e.is_canceled) return "CANCELLED"; 
@@ -86,6 +115,20 @@ export default function EventDetails() {
     }
   };
 
+
+  /** Early return if eventData not loaded */
+  if (!eventData) return <p>Loading event...</p>;
+  // Now eventData exists
+  const status =
+    eventData.is_canceled || eventData.status === "CANCELLED"
+      ? "CANCELLED"
+      : getStatus(eventData);
+
+  // Normalize and get MUI color
+  const normalizedStatus = status.trim().toUpperCase();
+  const statusColor = getStatusColor(normalizedStatus);
+
+  
   const calcRenderedHours = (start, end) => {
     if (!start || !end) return 0;
     const s = new Date(`2000-01-01 ${start}`);
@@ -165,7 +208,7 @@ export default function EventDetails() {
         subheader={
           <Chip
             label={status}
-            color={getStatusColor(status)}
+            color={statusColor}
             size="medium"
             sx={{ fontWeight: 600 }}
           />
@@ -226,7 +269,7 @@ export default function EventDetails() {
             {eventData.description || "No description provided."}
           </Typography>
 
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 2 }} />h6
 
           <Typography variant="h6" sx={{ mb: 1 }}>
             Event Schedule
@@ -262,17 +305,19 @@ export default function EventDetails() {
           <Typography variant="h6" sx={{ mb: 2 }}>
             Volunteers ({volunteers.length})
           </Typography>
-
-          {volunteers.length === 0 ? (
+          
+          {loadingVolunteers ? (
+            <Typography>Loading volunteers...</Typography>
+          ) : volunteers.length === 0 ? (
             <Typography>No volunteers yet.</Typography>
           ) : (
             <Box sx={{ height: 400, width: "100%" }}>
               <DataGrid
                 rows={volunteers.map((v, index) => ({
-                  id: v.id || index,
-                  volunteer_id: v.id,
+                  id: v.volunteer_id || index,
+                  volunteer_id: v.volunteer_id,
                   name: v.name,
-                  hours: v.rendered_hours || 0,
+                  hours: v.hours_rendered || 0,
                 }))}
                 columns={[
                   { field: "volunteer_id", headerName: "Volunteer ID", width: 150 },
