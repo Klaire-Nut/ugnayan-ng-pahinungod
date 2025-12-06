@@ -28,14 +28,16 @@ from core.models import (
     FacultyProfile,
     RetireeProfile,
     Event,
-    Admin
+    Admin,
+    EventSchedule
 )
 
 # Serializers
 from admin_api.serializers import (
     AdminVolunteerDetailSerializer,
     AdminVolunteerListSerializer,
-    AdminProfileSerializer
+    AdminProfileSerializer,
+    VolunteerEventHistorySerializer
 )
 from volunteers.serializers import VolunteerAccountSerializer
 from events.serializers import VolunteerEventSerializer
@@ -254,6 +256,38 @@ class EventRegistrationsView(APIView):
         regs = VolunteerEvent.objects.filter(event=event).select_related('volunteer').order_by('-signup_date')
         serializer = VolunteerEventSerializer(regs, many=True)
         return Response(serializer.data)
+
+
+# Fecth all Volunteering History 
+class VolunteerHistoryAPIView(APIView):
+    permission_classes = []  # optional
+
+    def get(self, request, volunteer_id):
+        try:
+            history = VolunteerEvent.objects.filter(volunteer__volunteer_id=volunteer_id)
+            data = []
+
+            for ve in history:
+                data.append({
+                    "event": {
+                        "event_name": ve.event.event_name if ve.event else "Unknown Event",
+                        "date_start": ve.event.date_start if ve.event else None,
+                        "date_end": ve.event.date_end if ve.event else None
+                    },
+                    "schedule": {
+                        "day": ve.schedule.day if ve.schedule else None,
+                        "start_time": ve.schedule.start_time if ve.schedule else None,
+                        "end_time": ve.schedule.end_time if ve.schedule else None
+                    },
+                    "hours_rendered": ve.hours_rendered or 0
+                })
+
+            return Response(data)
+
+        except Exception as e:
+            print(f"Error fetching volunteer history: {e}")
+            return Response({"error": "Internal server error"}, status=500)
+
 
 
 # Admin Data Statistics 

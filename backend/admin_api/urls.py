@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AdminDashboardAPI, AdminVolunteerListView, AdminVolunteerFullView, AdminProfileView, AdminDataStatisticsAPI, EventVolunteersView
+from .views import AdminDashboardAPI, AdminVolunteerListView, AdminVolunteerFullView, AdminProfileView, AdminDataStatisticsAPI, EventVolunteersView, VolunteerHistoryAPIView
 from django.urls import path, include
 
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path('profile/', AdminProfileView.as_view(), name='profile'),
     path('data-statistics/', AdminDataStatisticsAPI.as_view(), name='data-statistics'),
     path("", include("admin_api.events_urls")),
+    path('volunteers/<int:volunteer_id>/history/', VolunteerHistoryAPIView.as_view(), name='volunteer-history'),
 ]

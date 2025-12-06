@@ -3,9 +3,9 @@ import axios from "axios";
 const API_URL = "http://127.0.0.1:8000/api/admin/";
 
 // Get dashboard summary
-export const getAdminDashboard = () => {
-  return axios.get(`${API_URL}dashboard/`, { withCredentials: true });
-};
+  export const getAdminDashboard = () => {
+    return axios.get(`${API_URL}dashboard/`, { withCredentials: true });
+  };
 
 // Events
   // Fetch all the Events 
@@ -129,3 +129,16 @@ export const updateAdminProfile = async (payload) => {
     });
   };
 
+
+  // Fetch Volunteer History
+  export const fetchVolunteerHistory = async (volunteerId) => {
+    try {
+      const res = await axios.get(`${API_URL}volunteers/${volunteerId}/history/`, {
+        withCredentials: true, // <- important to send session cookie
+      });
+      return res.data; // should return array of { event, date, timeIn, timeOut, timeAllotted }
+    } catch (err) {
+      console.error("Error fetching volunteer history:", err.response?.data || err);
+      return [];
+    }
+  };

@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import AdminProfileForm from "../../components/AdminProfileForm";
-import { fetchAdminVolunteerById, updateVolunteer } from "../../services/adminApi";
+import AdminVolunteeringHistoryTable from "../../components/AdminVolunteeringHistoryTable";
+import { fetchAdminVolunteerById, updateVolunteer, fetchVolunteerHistory } from "../../services/adminApi";
 
 const AdminVolunteerProfile = () => {
   const { volunteerId } = useParams();
@@ -11,6 +12,7 @@ const AdminVolunteerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [originalData, setOriginalData] = useState({});
   const [totalRenderedHours, setTotalRenderedHours] = useState(0);
+  const [volunteeringHistory, setVolunteeringHistory] = useState([]);
 
   // Fetch volunteer data
   const fetchVolunteer = async () => {
@@ -39,7 +41,30 @@ const AdminVolunteerProfile = () => {
 
   useEffect(() => {
     fetchVolunteer();
+    fetchHistory();
   }, [volunteerId]);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await fetchVolunteerHistory(volunteerId);
+      const data = response || [];
+
+      const mapped = data.map(item => ({
+        event: item.event?.event_name || "Unknown Event",
+        date: item.schedule?.day || item.event?.date_start?.split("T")[0] || "TBD",
+        timeIn: item.schedule?.start_time?.slice(0,5) || item.event?.date_start?.split("T")[1]?.slice(0,5) || "TBD",
+        timeOut: item.schedule?.end_time?.slice(0,5) || item.event?.date_end?.split("T")[1]?.slice(0,5) || "TBD",
+        timeAllotted: item.hours_rendered || 0,
+      }));
+
+      setVolunteeringHistory(mapped);
+      console.log("Mapped volunteering history:", mapped);
+
+    } catch (err) {
+      console.error("Error fetching volunteering history:", err);
+      setVolunteeringHistory([]);
+    }
+  };
 
 
 
@@ -55,10 +80,9 @@ const AdminVolunteerProfile = () => {
   // Save updated data to backend
   const handleSave = async () => {
   try {
-    // Use the mapping helper to generate backend payload
     const payload = mapProfileFormToBackend(volunteerData, originalData);
 
-    // Include totalRenderedHours separately
+    // Include total hours if changed
     if (totalRenderedHours !== originalData.totalRenderedHours) {
       payload.total_hours = totalRenderedHours;
     }
@@ -72,10 +96,16 @@ const AdminVolunteerProfile = () => {
 
     await updateVolunteer(volunteerId, payload);
 
-    await fetchVolunteer();   
+    // Optimistically update frontend state
+    setVolunteerData(prev => ({ ...prev, ...payload }));
+    if (payload.total_hours !== undefined) setTotalRenderedHours(payload.total_hours);
 
     setEditable(false);
     alert("Volunteer updated successfully!");
+    
+    // Optional: fetchVolunteer() if you want full backend sync
+    // await fetchVolunteer();
+
   } catch (error) {
     console.error("Error saving volunteer:", error);
   }
@@ -109,7 +139,7 @@ const AdminVolunteerProfile = () => {
           onSave={handleSave}
           onCancel={handleCancel}
         />
-
+         <AdminVolunteeringHistoryTable data={volunteeringHistory} />
       </div>
     </div>
   );
@@ -195,134 +225,115 @@ const mapBackendToProfileForm = (data) => ({
 export const mapProfileFormToBackend = (currentData, originalData) => {
   const payload = {};
 
-  // Helper for top-level fields
-  const topLevelFields = [
-    "firstName", "middleName", "lastName", "nickname",
-    "sex", "birthdate", "status", "totalRenderedHours"
-  ];
-
+  // Top-level volunteer fields
+  const topLevelFields = ["firstName", "middleName", "lastName", "nickname", "sex", "birthdate", "status", "totalRenderedHours"];
   topLevelFields.forEach(f => {
     if (currentData[f] !== originalData[f]) {
-      const backendKey = f === "totalRenderedHours" 
-        ? "total_hours" 
-        : f.replace(/([A-Z])/g, "_$1").toLowerCase();
+      const backendKey = f === "totalRenderedHours" ? "total_hours" : f.replace(/([A-Z])/g, "_$1").toLowerCase();
       payload[backendKey] = currentData[f];
     }
   });
 
-  // Contacts
+  // Contacts (single contact record)
   if (
     currentData.mobileNumber !== originalData.mobileNumber ||
     currentData.facebookLink !== originalData.facebookLink
   ) {
-    payload.contacts = [{
-      contact_id: currentData.contactId,
-      mobile_number: currentData.mobileNumber,
-      facebook_link: currentData.facebookLink
-    }];
+    payload.mobile_number = currentData.mobileNumber;
+    if (currentData.facebookLink !== undefined) {
+      payload.facebook_link = currentData.facebookLink;
+    }
   }
 
-  // Addresses
+  // Address (single address record)
   if (
     currentData.streetAddress !== originalData.streetAddress ||
     currentData.province !== originalData.province ||
     currentData.region !== originalData.region
   ) {
-    payload.addresses = [{
-      address_id: currentData.addressId,
-      street_address: currentData.streetAddress,
-      province: currentData.province,
-      region: currentData.region
-    }];
+    payload.street_address = currentData.streetAddress;
+    payload.province = currentData.province;
+    payload.region = currentData.region;
   }
 
-  // Backgrounds
+  // Background
   if (
     currentData.orgAffiliation !== originalData.orgAffiliation ||
     currentData.occupation !== originalData.occupation ||
     currentData.hobbiesInterests !== originalData.hobbiesInterests
   ) {
-    payload.backgrounds = [{
-      background_id: currentData.backgroundId,
-      org_affiliation: currentData.orgAffiliation,
-      occupation: currentData.occupation,
-      hobbies_interests: currentData.hobbiesInterests
-    }];
+    payload.org_affiliation = currentData.orgAffiliation;
+    payload.occupation = currentData.occupation;
+    payload.hobbies_interests = currentData.hobbiesInterests;
   }
 
-  // Emergency contacts
+  // Emergency contact
   if (
     currentData.emergencyName !== originalData.emergencyName ||
     currentData.emergencyRelationship !== originalData.emergencyRelationship ||
     currentData.emergencyContactNumber !== originalData.emergencyContactNumber ||
     currentData.emergencyAddress !== originalData.emergencyAddress
   ) {
-    payload.emergency_contacts = [{
-      contact_id: currentData.emergencyId,
-      name: currentData.emergencyName,
-      relationship: currentData.emergencyRelationship,
-      contact_number: currentData.emergencyContactNumber,
-      address: currentData.emergencyAddress
-    }];
+    payload.emergency_name = currentData.emergencyName;
+    payload.emergency_relationship = currentData.emergencyRelationship;
+    payload.emergency_contact_number = currentData.emergencyContactNumber;
+    payload.emergency_address = currentData.emergencyAddress;
   }
 
-  // Affiliation type
+  // Affiliation type & nested profile
   if (currentData.affiliation !== originalData.affiliation) {
-    payload.affiliation_type = currentData.affiliation;
+    payload.affiliation_type = currentData.affiliation.toLowerCase(); // match backend choices
   }
 
-  // Nested profiles for affiliation (send only changed fields)
-  const addProfile = (profileName, fieldsMap) => {
-    const changed = {};
+  // Nested profiles for affiliation
+  const addProfile = (fieldsMap) => {
     Object.entries(fieldsMap).forEach(([key, backendKey]) => {
       if (currentData[key] !== originalData[key]) {
-        changed[backendKey] = currentData[key];
+        payload[backendKey] = currentData[key];
       }
     });
-    if (Object.keys(changed).length > 0) {
-      payload[profileName] = changed;
-    }
   };
 
-  if (currentData.affiliation === "Student") {
-    addProfile("student_profile", {
-      degreeProgram: "degree_program",
-      yearLevel: "year_level",
-      college: "college",
-      department: "department"
-    });
-  }
-
-  if (currentData.affiliation === "Alumni") {
-    addProfile("alumni_profile", {
-      constituentUnit: "constituent_unit",
-      degreeProgramAlumni: "degree_program",
-      yearGraduated: "year_graduated"
-    });
-  }
-
-  if (currentData.affiliation === "Staff") {
-    addProfile("staff_profile", {
-      officeDepartment: "office_department",
-      designation: "designation"
-    });
-  }
-
-  if (currentData.affiliation === "Faculty") {
-    addProfile("faculty_profile", {
-      collegeFaculty: "college",
-      departmentFaculty: "department"
-    });
-  }
-
-  if (currentData.affiliation === "Retiree") {
-    addProfile("retiree_profile", {
-      designationWhileInUP: "designation_while_in_up",
-      officeCollegeDepartment: "office_college_department"
-    });
+  switch ((currentData.affiliation || "").toLowerCase()) {
+    case "student":
+      addProfile({
+        degreeProgram: "degree_program",
+        yearLevel: "year_level",
+        college: "college",
+        department: "department",
+      });
+      break;
+    case "alumni":
+      addProfile({
+        constituentUnit: "constituent_unit",
+        degreeProgramAlumni: "degree_program",
+        yearGraduated: "year_graduated",
+      });
+      break;
+    case "staff":
+      addProfile({
+        officeDepartment: "office_department",
+        designation: "designation",
+      });
+      break;
+    case "faculty":
+      addProfile({
+        collegeFaculty: "college",
+        departmentFaculty: "department",
+      });
+      break;
+    case "retiree":
+      addProfile({
+        designationWhileInUP: "designation_while_in_up",
+        officeCollegeDepartment: "office_college_department",
+      });
+      break;
   }
 
   return payload;
 };
+
+
+
 
 export default AdminVolunteerProfile;
