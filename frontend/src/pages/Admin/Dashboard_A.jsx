@@ -154,7 +154,7 @@ export default function AdminDashboard() {
           }))}
             actions={(row) => (
               <button
-                onClick={() => navigate(`/admin/volunteers/${row.identifier}`)}
+                onClick={() => navigate("/admin/volunteers")}
                 className="small-view-btn"
               >
                 View

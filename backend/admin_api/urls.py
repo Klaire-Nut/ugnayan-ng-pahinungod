@@ -9,9 +9,11 @@ urlpatterns = [
     path('dashboard/', AdminDashboardAPI.as_view(), name='dashboard'),
     path("events/<int:event_id>/volunteers/", EventVolunteersView.as_view(), name="event-volunteers"),
     path('volunteers/', AdminVolunteerListView.as_view(), name='volunteer-list'),
-    path('volunteers/<int:volunteer_id>/', AdminVolunteerFullView.as_view(), name='volunteer-full'),
+    path('volunteers/<str:volunteer_id>/', AdminVolunteerFullView.as_view(), name='volunteer-full'),
+    path('volunteers/<str:volunteer_id>/history/', VolunteerHistoryAPIView.as_view(), name='volunteer-history'),
+
     path('profile/', AdminProfileView.as_view(), name='profile'),
     path('data-statistics/', AdminDataStatisticsAPI.as_view(), name='data-statistics'),
     path("", include("admin_api.events_urls")),
-    path('volunteers/<int:volunteer_id>/history/', VolunteerHistoryAPIView.as_view(), name='volunteer-history'),
+   
 ]

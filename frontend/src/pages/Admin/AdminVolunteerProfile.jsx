@@ -24,9 +24,6 @@ const AdminVolunteerProfile = () => {
       const data = response.data || response; 
       const mappedData = mapBackendToProfileForm(data);
 
-      //newly added
-      setTotalRenderedHours(mappedData.totalRenderedHours);
-
       setVolunteerData(mappedData);
       setOriginalData(mappedData);
       setTotalRenderedHours(mappedData.totalRenderedHours);

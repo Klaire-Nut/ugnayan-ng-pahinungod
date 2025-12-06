@@ -42,6 +42,15 @@ class Volunteer(models.Model):
     )
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def save(self, *args, **kwargs):
+        # Regular save
+        super().save(*args, **kwargs)
+
+        # Update total hours automatically (no loop)
+        from core.utils import auto_update_total_hours
+        auto_update_total_hours(self, skip_save=True)
+
 
 # Contact, Address, Background, Emergency
 class VolunteerContact(models.Model):
