@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import VolunteerEventCard from "../../components/VolunteerEventCard";
-import { volunteerGetEvents } from "../../services/eventApi";
+import VolunteerEventCard from "../components/VolunteerEventCard";
+import { volunteerGetEvents } from "../services/eventApi";
 
 const VolunteerEvents = () => {
   const [events, setEvents] = useState([]);

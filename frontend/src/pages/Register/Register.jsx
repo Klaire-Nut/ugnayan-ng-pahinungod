@@ -2,32 +2,26 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, LinearProgress, Alert, Snackbar } from "@mui/material";
-
 import { volunteerAPI } from "../../services/volunteerApi";
-
 import Step1 from "./Step1";
 import Step2 from "./Step2";
 import Step3 from "./Step3";
 import Step4 from "./Step4";
-import LoginPopup from "../../components/LoginPopup";   // ✅ you MUST add this import
-import { registerVolunteer } from "../../services/volunteerApi.js";
+import LoginPopup from "../../components/LoginPopup";   
 
 import "../../styles/Register.css";
 import oblation from "../../assets/oblation.png";
 
 export default function Register() {
-<<<<<<<<< Temporary merge branch 1
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-=========
 
   // ✅ ADD THESE TWO STATES (required for login modal)
   const [showLogin, setShowLogin] = useState(false);
   const [loginRole, setLoginRole] = useState("");
 
->>>>>>>>> Temporary merge branch 2
   const [formData, setFormData] = useState({
     // Step 1 – Basic
     email: "",

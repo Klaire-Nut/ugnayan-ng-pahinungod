@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Box, Container, Typography, Grid, CardMedia } from "@mui/material";
-import { useNavigate } from "react-router-dom";  // ✅ import useNavigate
+import { useNavigate } from "react-router-dom"; 
 import Button from "../components/Button"; 
 import heroLogo from "../assets/UNP Logo.png";
 import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
 import "../styles/Home.css";
 import { getRole } from "../services/auth";
+import { useAuth } from "../context/AuthContext"; 
 
 export default function Home() {
-<<<<<<<<< Temporary merge branch 1
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -19,7 +19,7 @@ export default function Home() {
     if (role === "admin") {
       navigate("/admin/dashboard", { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Volunteer button click
   const handleVolunteerClick = () => {
@@ -34,8 +34,6 @@ export default function Home() {
     // Navigate to about page or scroll to info section
     navigate("/about");
 };
->>>>>>>>> Temporary merge branch 2
-  };
 
   return (
     <>

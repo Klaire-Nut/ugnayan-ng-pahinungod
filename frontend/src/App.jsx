@@ -27,6 +27,8 @@ import DataStatistics from "./pages/Admin/DataStatistics";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import AdminVolunteerProfile from "./pages/Admin/AdminVolunteerProfile";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import AdminDashboard from "./pages/Admin/Dashboard_A.jsx";
+
 
 function App() {
   return (

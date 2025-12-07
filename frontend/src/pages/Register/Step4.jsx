@@ -18,7 +18,6 @@ export default function Step4({
   setFormData,
   onBack,
   onSubmit,
-  loading,
 }) {
   const navigate = useNavigate();
 
