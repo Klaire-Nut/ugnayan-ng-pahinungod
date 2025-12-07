@@ -42,7 +42,7 @@ function Footer() {
       gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
       gap: "2rem",
       width: "100%",
-      maxWidth: "900px",
+      maxWidth: "1000px",
       marginBottom: "2.5rem",
       textAlign: "center",
     },
@@ -63,9 +63,6 @@ function Footer() {
       textDecoration: "none",
       transition: "color 0.2s ease",
     },
-    linkHover: {
-      color: "#D3D3E0",
-    },
     copyright: {
       fontSize: "0.8rem",
       color: "#D3D3E0",
@@ -73,8 +70,14 @@ function Footer() {
     },
   };
 
+  // Updated footerLinks with Contact Details column
   const footerLinks = {
-    "ABOUT US": ["COLLEGES AND SCHOOLS", "VISIT OUR CAMPUS", "CONTACT US"],
+    "CONTACT US": [
+      "MR. MICHAEL A. GATELA",
+      "Director | Ugnayan ng Pahinungod Mindanao",
+      "pahinungod.upmin@up.edu.ph",
+      "0919-0068-979",
+    ],
     "FOR CURRENT STUDENTS": [
       "ACADEMIC PROGRAMS",
       "CSRS FOR STUDENTS",
@@ -88,15 +91,14 @@ function Footer() {
       "UNIVERSITY POLICIES",
       "DOWNLOADABLE FORMS",
     ],
-    "UP WEBSITES": [
-      "SYSTEM",
-      "DILIMAN",
-      "LOS BAÑOS",
-      "MANILA",
-      "VISAYAS",
-      "OPEN UNIVERSITY",
-      "BAGUIO",
-      "CEBU",
+    "UGNAYAN NG PAHINUNGOD CAMPUSES": [
+      { name: "DILIMAN", url: "https://pahinungod.upd.edu.ph" },
+      { name: "LOS BAÑOS", url: "https://international.uplb.edu.ph/public-service/" },
+      { name: "MANILA", url: "https://www.facebook.com/pahinungod.manila/" },
+      { name: "VISAYAS", url: "https://www.facebook.com/PahinungodSaVisayas/" },
+      { name: "OPEN UNIVERSITY", url: "https://pahinungod.upou.edu.ph/" },
+      { name: "BAGUIO", url: "https://www.facebook.com/pahinungod.upbaguio/" },
+      { name: "CEBU", url: "https://www.upcebu.edu.ph/ugnayan-ng-pahinungod/" },
     ],
   };
 
@@ -116,17 +118,42 @@ function Footer() {
         {Object.entries(footerLinks).map(([section, links]) => (
           <div key={section} style={styles.column}>
             <div style={styles.heading}>{section}</div>
-            {links.map((link) => (
-              <a
-                key={link}
-                href="#"
-                style={styles.link}
-                onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
-                onMouseLeave={(e) => (e.target.style.color = "white")}
-              >
-                {link}
-              </a>
-            ))}
+            {links.map((link, index) => {
+              if (typeof link === "string" && section !== "CONTACT DETAILS") {
+                return (
+                  <a
+                    key={index}
+                    href="#"
+                    style={styles.link}
+                    onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
+                    onMouseLeave={(e) => (e.target.style.color = "white")}
+                  >
+                    {link}
+                  </a>
+                );
+              } else if (typeof link === "object") {
+                return (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.link}
+                    onMouseEnter={(e) => (e.target.style.color = "#D3D3E0")}
+                    onMouseLeave={(e) => (e.target.style.color = "white")}
+                  >
+                    {link.name}
+                  </a>
+                );
+              } else if (section === "CONTACT DETAILS") {
+                return (
+                  <div key={index} style={{ fontSize: "0.85rem", lineHeight: "1.2rem" }}>
+                    {link}
+                  </div>
+                );
+              }
+              return null;
+            })}
           </div>
         ))}
       </div>

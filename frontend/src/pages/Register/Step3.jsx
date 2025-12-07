@@ -21,8 +21,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { registerVolunteer } from "../../services/volunteerApi.js";
 
 
-//  Reusable Components 
-const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
+// ----------------- Reusable Components -----------------
+const FormSelect = memo(({ label, value, onChange, options = [], error, required = false }) => (
   <FormControl fullWidth sx={{ mb: 2 }} error={!!error}>
     <InputLabel>{label}</InputLabel>
     <Select value={value} label={label} onChange={onChange}>
@@ -32,12 +32,16 @@ const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
         </MenuItem>
       ))}
     </Select>
-    {error && <Typography color="error" variant="body2">{error}</Typography>}
+    {error && (
+      <Typography color="error" variant="body2">
+        {error}
+      </Typography>
+    )}
   </FormControl>
 ));
 FormSelect.displayName = "FormSelect";
 
-const FormTextField = memo(({ label, value, onChange, error, multiline = false, rows = 1, type }) => (
+const FormTextField = memo(({ label, value, onChange, error, multiline = false, rows = 1 }) => (
   <TextField
     fullWidth
     label={label}
@@ -48,7 +52,6 @@ const FormTextField = memo(({ label, value, onChange, error, multiline = false, 
     multiline={multiline}
     minRows={multiline ? rows : undefined}
     sx={{ mb: 2 }}
-    type={type}
   />
 ));
 FormTextField.displayName = "FormTextField";
@@ -56,10 +59,8 @@ FormTextField.displayName = "FormTextField";
 // ----------------- Main Component -----------------
 export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
   const [errors, setErrors] = useState({});
-  const [confirmDialog, setConfirmDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [successDialog, setSuccessDialog] = useState(false);
 
+  // Ensure all fields have default values
   const safeFormData = {
     volunteerPrograms: [],
     affirmativeActionSubjects: [],
@@ -90,36 +91,34 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
   const validate = useCallback(() => {
     const newErrors = {};
 
-    if (!safeFormData.volunteerPrograms || safeFormData.volunteerPrograms.length === 0)
+    if (!safeFormData.volunteerPrograms || safeFormData.volunteerPrograms.length === 0) {
       newErrors.volunteerPrograms = "Please select at least one program.";
+    }
 
-    if (!safeFormData.volunteerStatus)
+    if (!safeFormData.volunteerStatus) {
       newErrors.volunteerStatus = "This field is required.";
+    }
 
-    if (!safeFormData.tagapagUgnay)
+    if (!safeFormData.tagapagUgnay) {
       newErrors.tagapagUgnay = "This field is required.";
+    }
 
-    if (!safeFormData.otherOrganization)
+    if (!safeFormData.otherOrganization) {
       newErrors.otherOrganization = "This field is required.";
+    }
 
-    if (safeFormData.otherOrganization === "YES" && !safeFormData.organizationName)
+    if (safeFormData.otherOrganization === "YES" && !safeFormData.organizationName) {
       newErrors.organizationName = "Please provide the organization name.";
+    }
 
-    if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear)
+    if (safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)" && !safeFormData.howDidYouHear) {
       newErrors.howDidYouHear = "This field is required for first-time volunteers.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [safeFormData]);
 
-  // ----------------- Navigation -----------------
-  const handleNextClick = () => {
-    if (validate()) {
-      onNext(); // Move to Step 4
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
 
   // ----------------- Render -----------------
   const volunteerProgramOptions = [
@@ -146,7 +145,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>PROGRAMS YOU WISH TO PARTICIPATE IN</Typography>
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+        PROGRAMS YOU WISH TO PARTICIPATE IN
+      </Typography>
 
       {/* Volunteer Programs */}
       <Box sx={{ mb: 3 }}>
@@ -165,7 +166,11 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
             />
           ))}
         </FormGroup>
-        {errors.volunteerPrograms && <Typography color="error">{errors.volunteerPrograms}</Typography>}
+        {errors.volunteerPrograms && (
+          <Typography color="error" variant="body2">
+            {errors.volunteerPrograms}
+          </Typography>
+        )}
       </Box>
 
       {/* Affirmative Action Subjects */}
@@ -191,7 +196,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Kindly choose the status of your volunteer application *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>
+          Kindly choose the status of your volunteer application *
+        </Typography>
         <FormSelect
           label="Volunteer Status"
           value={safeFormData.volunteerStatus}
@@ -202,12 +209,15 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
             "Signed up in the previous sign up form and already have engagements with Pahinungod",
           ]}
           error={errors.volunteerStatus}
+          required
         />
       </Box>
 
       {/* Tagapag-Ugnay Group */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Would you like to be part of the TAGAPAG-UGNAY Group?</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>
+          Would you like to be part of the TAGAPAG-UGNAY Group?
+        </Typography>
         <FormSelect
           label="Join Tagapag-Ugnay Group"
           value={safeFormData.tagapagUgnay}
@@ -219,20 +229,21 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Other Organization */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Are you a part of any other volunteer organization? *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500 }}>ARE YOU A PART OF ANY OTHER VOLUNTEER ORGANIZATION? *</Typography>
         <FormSelect
           label="Part of Other Organization"
           value={safeFormData.otherOrganization}
           onChange={(e) => handleChange("otherOrganization", e.target.value)}
           options={["YES", "NO"]}
           error={errors.otherOrganization}
+          required
         />
       </Box>
 
       {/* Organization Name */}
       {safeFormData.otherOrganization === "YES" && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>What is the name of the organization?</Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>WHAT IS THE NAME OF THE ORGANIZATION?</Typography>
           <FormTextField
             label="Organization Name"
             value={safeFormData.organizationName}
@@ -245,7 +256,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
       {/* How Did You Hear */}
       {isFirstTimeVolunteer && (
         <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }}>Where did you hear about us?</Typography>
+          <Typography sx={{ mb: 1, fontWeight: 500 }}>
+            WHERE DID YOU HEAR ABOUT THE UGNAYAN NG PAHINUNGOD MINDANAO?
+          </Typography>
           <FormTextField
             label="How did you hear about us?"
             value={safeFormData.howDidYouHear}
@@ -259,7 +272,9 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-        <Button variant="outlined" onClick={onBack}>Back</Button>
+        <Button variant="outlined" onClick={onBack}>
+          Back
+        </Button>
         <Button
           variant="contained"
           onClick={onNext}

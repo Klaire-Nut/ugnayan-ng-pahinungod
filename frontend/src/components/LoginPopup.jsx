@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -9,33 +9,59 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { login } from "../services/auth"; // Import the login function
+
+// Import admin login function
+import { login as adminLogin, volunteerLogin } from "../services/auth";
+import { saveRole } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
-  // State variables
-  const [email, setEmail] = React.useState("");
+
+  // State variables for the username/email and password
+  const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
 
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    try {
-      // in handleLogin()
-      const res = await login({ email, password, role }); // Send credentials to backend
-      console.log(res.data); // Log the success message or user info
+  // Reset fields whenever popup is opened
+  useEffect(() => {
+    if (open) {
+      setUsername("");
+      setPassword("");
+      setErrorMessage("");
+    }
+  }, [open]);
 
-      if (res.data.message === "Login successful!") {
-        // If login is successful, handle the response
-        setErrorMessage(""); // Clear any previous error messages
-        onClose(); // Close the login popup
-        navigate("/dashboard"); // Navigate to a dashboard or home page after successful login
+  // ---------- ADMIN LOGIN ----------
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setErrorMessage("Please enter username and password.");
+      return;
+    }
+
+    try {
+      const res = await adminLogin({ username, password });
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // Django auth success → ALWAYS returns user + sets sessionid cookie
+      if (res.data?.message === "Login successful" || res.data?.user) {
+        saveRole("admin");           // Allow protected admin routes
+        onClose();                   // Close modal
+        navigate("/admin/dashboard", { replace: true }); // Prevent going back
+        return;
       }
-    } catch (err) {
-      console.error(err.response?.data);
-      setErrorMessage("Login failed. Check your email and password.");
+
+      // If no user returned = invalid credentials
+      setErrorMessage("Invalid login credentials.");
+      
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      setErrorMessage("Login failed. Please check your username and password.");
     }
   };
+
+
 
 // Volunteer Registration Function
   const handleRegister = () => {
@@ -43,7 +69,7 @@ export default function LoginPopup({ open, onClose, role }) {
     navigate("/register");
   };
 
-  return (
+   return (
     <Dialog
       open={open}
       onClose={onClose}
@@ -58,20 +84,26 @@ export default function LoginPopup({ open, onClose, role }) {
         },
       }}
     >
-      <DialogTitle sx={{ textAlign: "center", color: "#7B1113", fontWeight: 600 }}>
-        {role === "Admin" ? "Admin Login" : "Volunteer Login"}
+      <DialogTitle
+        sx={{
+          textAlign: "center",
+          color: "#7B1113",
+          fontWeight: 600,
+        }}
+      >
+        Admin Login
       </DialogTitle>
 
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Email"
-            type="email"
+            label="Username"
+            type="text"
             fullWidth
             variant="outlined"
             size="small"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             label="Password"
@@ -84,7 +116,7 @@ export default function LoginPopup({ open, onClose, role }) {
           />
 
           {errorMessage && (
-            <Typography variant="body2" color="error" textAlign="center" sx={{ mt: 1 }}>
+            <Typography color="error" variant="body2">
               {errorMessage}
             </Typography>
           )}
@@ -126,24 +158,7 @@ export default function LoginPopup({ open, onClose, role }) {
             textAlign="center"
             sx={{ mt: 1, color: "#555" }}
           >
-            {role === "Volunteer" ? (
-              <>
-                Don&apos;t have an account?{" "}
-                <span
-                  onClick={handleRegister}
-                  style={{
-                    color: "#7B1113",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
-                >
-                  Register now.
-                </span>
-              </>
-            ) : (
-              "For authorized admins only."
-            )}
+            For authorized admins only.
           </Typography>
         </Box>
       </DialogContent>

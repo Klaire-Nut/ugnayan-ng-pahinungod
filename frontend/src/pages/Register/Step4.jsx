@@ -1,3 +1,4 @@
+// src/pages/Register/Step4.jsx
 import React, { useState, useCallback } from "react";
 import {
   Box,
@@ -11,16 +12,22 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { useNavigate } from "react-router-dom";
 
-export default function Step4({ formData = {}, setFormData, onBack, onSubmit, loading }) {
-  const navigate = useNavigate();
+export default function Step4({
+  formData = {},
+  setFormData,
+  onBack,
+  onSubmit,
+  onOpenLogin,   // ⭐⭐⭐ ADDED — REQUIRED
+}) {
   const [errors, setErrors] = useState({});
   const [password, setPassword] = useState(formData.password || "");
-  const [confirmPassword, setConfirmPassword] = useState(formData.confirmPassword || "");
+  const [confirmPassword, setConfirmPassword] = useState(
+    formData.confirmPassword || ""
+  );
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [successDialog, setSuccessDialog] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = useCallback((setter) => (e) => {
     setter(e.target.value);
@@ -28,14 +35,9 @@ export default function Step4({ formData = {}, setFormData, onBack, onSubmit, lo
 
   const validate = useCallback(() => {
     const newErrors = {};
-    if (!password) {
-      newErrors.password = "Password is required.";
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
-    }
-    if (!confirmPassword) {
+    if (!password) newErrors.password = "Password is required.";
+    if (!confirmPassword)
       newErrors.confirmPassword = "Please confirm your password.";
-    }
     if (password && confirmPassword && password !== confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
     }
@@ -188,48 +190,36 @@ const handleConfirmSubmit = async () => {
 
 const handleSuccessClose = () => {
   setSuccessDialog(false);
-  window.location.href = "/";
+  onOpenLogin("Volunteer");
 };
 
   /* ---------------------------------------------------------
      OTP PROCESS (COMMENTED OUT, FOR FUTURE IMPLEMENTATION)
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
-    setSubmitting(true);
-    
-    // Update formData with password
-    const finalData = { ...formData, password, confirmPassword };
-    
-    try {
-      const result = await onSubmit(finalData);
-      
-      setSubmitting(false);
-      
-      if (result && result.success) {
-        setSuccessDialog(true);
-      } else {
-        // Error is handled in parent component
-        console.error("Registration failed:", result?.error);
-      }
-    } catch (error) {
-      setSubmitting(false);
-      console.error("Registration error:", error);
-    }
-  };
+    setLoading(true);
+    setFormData((prev) => ({ ...prev, password }));
 
-  const handleSuccessClose = () => {
-    setSuccessDialog(false);
-    navigate("/login");
-  };
+    try {
+      await onSubmit?.({ ...formData, password });
+      setLoading(false);
+      setSuccessDialog(true);
+    } catch (error) {
+      setLoading(false);
+      alert("Submission failed. Please try again.");
+    }
+  };*/
+  
+  // ⭐⭐⭐ FIXED — this now works because Step4 receives onOpenLogin
+  //const handleSuccessClose = () => {
+    //setSuccessDialog(false);
+    //onOpenLogin("Volunteer");
+  //};
 
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
         Set Your Password
-      </Typography>
-
-      <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
-        Create a secure password for your account. Your password must be at least 8 characters long.
       </Typography>
 
       <TextField
@@ -254,53 +244,50 @@ const handleSuccessClose = () => {
         sx={{ mb: 2 }}
       />
 
-      {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-        <Button variant="outlined" onClick={onBack} disabled={submitting || loading}>
+        <Button variant="outlined" onClick={onBack}>
           Back
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmitClick}
-          sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
-          disabled={submitting || loading}
+          sx={{
+            backgroundColor: "#FF7F00",
+            "&:hover": { backgroundColor: "#e66e00" },
+          }}
+          disabled={loading}
         >
-          {submitting || loading ? <CircularProgress size={24} /> : "Submit"}
+          {loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog} onClose={() => !submitting && setConfirmDialog(false)}>
+      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to submit your registration? Please review all information before confirming.
+            Are you sure you want to submit your registration?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)} disabled={submitting}>
-            Cancel
-          </Button>
+          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
           <Button
             onClick={handleConfirmSubmit}
             variant="contained"
             color="primary"
-            disabled={submitting}
           >
-            {submitting ? <CircularProgress size={24} /> : "Yes, Submit"}
+            Yes, Continue
           </Button>
         </DialogActions>
-      </Dialog> 
+      </Dialog>
 
-      {/* Success Dialog 
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
-            REGISTRATION SUCCESSFUL!
+            SUBMITTED
           </Typography>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            THANK YOU FOR SIGNING UP!
+            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
           </Typography>
           <Typography sx={{ fontStyle: "italic", mb: 2 }}>
             Makibahagi. Maglingkod. MagPahinungód.
@@ -324,7 +311,84 @@ const handleSuccessClose = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleSuccessClose} variant="contained" fullWidth>
-            Go to Login
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirmation Dialog 
+      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
+        <DialogTitle>Confirm Submission</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to submit your registration? An OTP will be sent to your email for verification.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
+          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">
+            Yes, Continue
+          </Button>
+        </DialogActions>
+      </Dialog>*/}
+
+      {/* OTP Dialog 
+      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)}>
+        <DialogTitle>Enter OTP</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            We've sent a verification code to your email. Please enter it below:
+          </Typography>
+          <TextField
+            fullWidth
+            label="OTP Code"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Enter 6-digit code"
+            inputProps={{ maxLength: 6 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOtpDialog(false)}>Cancel</Button>
+          <Button onClick={handleVerifyOTP} variant="contained" color="primary" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : "Verify"}
+          </Button>
+        </DialogActions>
+      </Dialog> */}
+
+      {/* Success Dialog
+      <Dialog open={successDialog} onClose={handleSuccessClose}>
+        <DialogContent sx={{ textAlign: "center", py: 4 }}>
+          <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
+            SUBMITTED
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
+          </Typography>
+          <Typography sx={{ fontStyle: "italic", mb: 2 }}>
+            Makibahagi. Maglingkod. MagPahinungód.
+          </Typography>
+          <Box sx={{ textAlign: "left", mx: "auto", maxWidth: 400 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              <strong>Email:</strong> pahinungod.upmin@up.edu.ph
+            </Typography>
+            <Typography variant="body2">
+              <strong>Facebook:</strong>{" "}
+              <a
+                href="https://www.facebook.com/upmin.pahinungod"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#1976d2" }}
+              >
+                facebook.com/upmin.pahinungod
+              </a>
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleSuccessClose} variant="contained" fullWidth>
+            Close
           </Button>
         </DialogActions>
       </Dialog> */}

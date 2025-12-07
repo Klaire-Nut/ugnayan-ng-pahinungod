@@ -1,0 +1,51 @@
+.vh-wrapper {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.vh-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #6e1b1b;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #6e1b1b;
+  padding-bottom: 0.5rem;
+}
+
+/* TABLE CONTAINER */
+.vh-table-container {
+  max-height: 400px; /* slightly taller */
+  overflow-y: auto;
+  overflow-x: auto; /* horizontal scroll if needed */
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* TABLE */
+.vh-table {
+  width: 100%;
+  min-width: 700px; /* ensures it stretches horizontally */
+  border-collapse: collapse;
+}
+
+.vh-table th,
+.vh-table td {
+  padding: 0.75rem 1.5rem; /* wider spacing */
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  white-space: nowrap; /* prevent wrapping */
+}
+
+.vh-table th {
+  background: #6e1b1b;
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.vh-table tr:hover {
+  background: #f7eded;
+}

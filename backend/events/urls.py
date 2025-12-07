@@ -54,14 +54,4 @@ urlpatterns = [
 
     path('volunteers/<int:volunteer_id>/events/', VolunteerJoinEventView.as_view(), name='volunteer-joined-events'),
 
-    # Admin create/list events
-    path('admin/events/', AdminEventListCreateView.as_view(), name='admin-event-list-create'),
-
-    # Admin detail / update / delete event
-    path('admin/events/<int:event_id>/', AdminEventDetailView.as_view(), name='admin-event-detail'),
-    path('admin/events/<int:event_id>/cancel/', AdminCancelEventView.as_view(), name='admin-cancel-event'),
-    path('admin/events/<int:event_id>/delete/', AdminDeleteEventView.as_view(), name='admin-delete-event'),
-    path('admin/events/<int:event_id>/restore/', AdminRestoreEventView.as_view(), name='admin-restore-event'),
-
-
 ]

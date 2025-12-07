@@ -48,3 +48,14 @@ export const volunteerLogin = (data) =>
 
 export const volunteerLogout = () =>
   axios.post(`${API_URL}volunteer/logout/`, {}, { withCredentials: true })
+
+// ---------------- Helpers (NEW) ----------------
+export function saveRole(role) {
+  localStorage.setItem("role", role);
+}
+
+export const removeRole = () => localStorage.removeItem("role");
+
+export function getRole() {
+  return localStorage.getItem("role");
+}

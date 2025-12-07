@@ -1,24 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaChartBar, FaUsers, FaCog, FaLock, FaSignOutAlt, FaQuestionCircle } from "react-icons/fa";
 import { MdEvent } from "react-icons/md";
 import { NavLink, useNavigate } from "react-router-dom"; 
 import logo from "../assets/UNP Logo.png";
+import "../styles/VolunteerSidebar.css";
 import "../styles/Sidebar.css";
-import { logout } from "../services/auth";
+import { logout, removeRole } from "../services/auth";
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
-
+  const [alertOpen, setAlertOpen] = useState(false);
+  
   const handleLogout = async () => {
     try {
-      await logout();                 // backend clears session
-      navigate("/", { replace: true }); // redirect to main page
-      window.location.reload();        // ensure cached pages cleared
+      await logout();        // backend clears session
+      removeRole();          // clear admin role from localStorage
+      setAlertOpen(true);   // Show success alert
+      // Delay redirect so user sees alert
+      setTimeout(() => {
+        navigate("/", { replace: true }); // redirect to home/login
+        window.location.reload();          // ensure cached pages cleared
+      }, 1000); // 1 second
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
-
+  
   return (
     <aside className="sidebar">
       {/* ======= Logo Section ======= */}

@@ -149,7 +149,7 @@ html, body, .default-page {
 /* The actual volunteer image */
 .volunteer-img {
     width: 100%;
-    height: 480px;
+    height: 520px;
     object-fit: cover;
     display: block;
 }

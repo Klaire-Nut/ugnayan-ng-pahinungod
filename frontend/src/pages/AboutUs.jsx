@@ -44,10 +44,13 @@ const AboutUs = () => {
         <div className="about-content slide-right">
           <h1>About Us</h1>
           <p>
-            Ugnayan ng Pahinungód is a volunteer service program dedicated to
-            serving communities through education, health, and socio-civic
-            engagement. We believe in empowering people through compassion,
-            knowledge, and collective action.
+            Ugnayan ng Pahinungód Mindanao is the volunteer service
+            program of the University of the Philippines Mindanao. It strives
+            to nurture a culture of volunteerism and foster a sense of
+            community involvement within the UP system. The program's
+            public service delivery primarily targets underserved
+            communities. It also aims to foster character development and values education among the
+            UP's students, faculty, staff, and alumni.
           </p>
         </div>
 
@@ -78,15 +81,17 @@ const AboutUs = () => {
         <div className="vision-content glass-box slide-right">
           <h2>Our Vision</h2>
           <p>
-            A nation of empowered citizens working together to uplift
-            communities in need, anchored on compassion and service.
+            UP in the service of the underserved
+            communities through volunteerism.
           </p>
 
           <h2>Our Mission</h2>
           <p>
-            To connect individuals, students, and organizations who share the
-            same commitment to service and volunteerism through sustainable
-            outreach and education programs.
+            To lead in innovative and
+            transformative engagements as the
+            public service university committed to
+            the empowerment of people and
+            selfless service to the nation. 
           </p>
         </div>
       </section>

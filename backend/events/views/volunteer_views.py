@@ -12,8 +12,8 @@ from events.serializers import (
     EventDetailSerializer,
     VolunteerEventJoinSerializer,
     VolunteerEventSerializer,
-    AdminEventSerializer
 )
+from admin_api.events_serializers import AdminEventSerializer
 
 
 class IsVolunteer(BasePermission):

@@ -20,8 +20,10 @@ export default function EventCreateModal({
   const [dayCount, setDayCount] = useState(1);
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
-  const [errors, setErrors] = useState({});
-
+  
+  const [errors, setErrors] = useState(null); 
+  const [loading, setLoading] = useState(false); 
+  
   useEffect(() => {
     if (mode === "edit" && eventData) {
       setForm({
@@ -105,28 +107,59 @@ export default function EventCreateModal({
     }
   }, [rangeStart, rangeEnd, dayInputMode]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
 
-    const schedules = form.days.map((d) => ({
-      date: d.date,
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors(null);
+    setLoading(true);
+
+    // Convert volunteers_needed to number safely
+    const maxParticipants = parseInt(form.volunteers_needed, 10);
+
+      if (isNaN(maxParticipants) || maxParticipants <= 0) {
+        setErrors({
+          max_participants: ["Please enter a positive whole number of volunteers."]
+        });
+        setLoading(false);
+        return;
+      }
+
+
+    // Prepare schedules
+    const schedules = form.days.map(d => ({
+      day: d.date,        // backend expects 'day'
       start_time: d.start_time,
       end_time: d.end_time,
     }));
 
+    // Build payload
     const payload = {
       event_name: form.event_name,
       description: form.description,
       location: form.location,
-      volunteers_needed: Number(form.volunteers_needed),
-      schedules,
+      max_participants: maxParticipants > 0 ? maxParticipants : 1,
+      schedules: schedules,
+      date_start: `${form.days[0].date}T${form.days[0].start_time}`,
+      date_end: `${form.days[form.days.length - 1].date}T${form.days[form.days.length - 1].end_time}`,
     };
 
-    if (mode === "create") onCreate(payload);
-    else onUpdate({ ...payload, id: eventData.id });
+    console.log("Sending event data to backend:", payload);
 
-    onClose();
+    try {
+      if (mode === "create") {
+        await onCreate(payload);
+      } else {
+        await onUpdate({ ...payload, id: eventData.id });
+      }
+      onClose();
+    } catch (err) {
+      console.error("DRF returned validation errors:", err?.response?.data);
+      setErrors(err?.response?.data || { detail: "Something went wrong." });
+    }
+
+    setLoading(false);
   };
+
 
   const addDay = () => {
     setForm((f) => ({

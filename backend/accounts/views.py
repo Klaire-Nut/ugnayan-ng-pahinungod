@@ -4,12 +4,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import AnonymousUser
-from core.models import VolunteerAccount, Admin
+from core.models import VolunteerAccount 
 from django.contrib.auth.hashers import check_password
+from core.models import Admin
 
-# -------------------------
 # Admin Account
-# -------------------------
 @csrf_exempt
 def login_view(request):
     if request.method != "POST":
@@ -17,21 +16,32 @@ def login_view(request):
 
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+        username = data.get("username")
+        password = data.get("password")
+    except:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    username = data.get("username")
-    password = data.get("password")
+    # Get the admin by username only
+    try:
+        admin = Admin.objects.get(username=username)
+    except Admin.DoesNotExist:
+        return JsonResponse({"error": "Invalid username or password"}, status=400)
 
-    if not username or not password:
-        return JsonResponse({"error": "username and password required"}, status=400)
+    # Check hashed password
+    if not check_password(password, admin.password):
+        return JsonResponse({"error": "Invalid username or password"}, status=400)
 
-    user = authenticate(request, username=username, password=password)
-    if user is not None:
-        login(request, user)  # creates session
-        return JsonResponse({"message": "Login successful", "username": user.username})
-    else:
-        return JsonResponse({"error": "Invalid credentials"}, status=400)
+    # Save session
+    request.session["admin_id"] = admin.admin_id
+
+    return JsonResponse({
+        "message": "Login successful",
+        "admin": {
+            "admin_id": admin.admin_id,
+            "username": admin.username,
+        }
+    })
+
 
 
 @csrf_exempt
@@ -43,18 +53,26 @@ def logout_view(request):
 
 
 def user_view(request):
-    if request.method != "GET":
-        return JsonResponse({"error": "GET required"}, status=400)
+    admin_id = request.session.get("admin_id")
 
-    user = getattr(request, "user", None)
-    if not user or isinstance(user, AnonymousUser) or not user.is_authenticated:
-        return JsonResponse({"user": None})
-    return JsonResponse({"user": {"username": user.username, "id": user.id, "email": getattr(user, 'email', '')}})
+    if not admin_id:
+        return JsonResponse({"admin": None})
+
+    try:
+        admin = Admin.objects.get(admin_id=admin_id)
+    except Admin.DoesNotExist:
+        return JsonResponse({"admin": None})
+
+    return JsonResponse({
+        "admin": {
+            "admin_id": admin.admin_id,
+            "username": admin.username
+        }
+    })
 
 
-# -------------------------
+
 # Volunteer Account
-# -------------------------
 @csrf_exempt
 def volunteer_login(request):
     if request.method != "POST":
@@ -77,11 +95,14 @@ def volunteer_login(request):
             request.session['volunteer_id'] = account.volunteer.volunteer_id
             return JsonResponse({"message": "Login successful!"})
         else:
+            # Debugging output
             return JsonResponse({
                 "error": "Password mismatch.",
                 "email_received": email,
+                "stored_password_hash": account.password
             }, status=400)
     except VolunteerAccount.DoesNotExist:
+        # Debugging output
         return JsonResponse({
             "error": "Account not found.",
             "email_received": email

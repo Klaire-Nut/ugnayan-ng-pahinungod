@@ -3,7 +3,6 @@
   display: flex;
   min-height: 100vh;
   background-color: #fdfdfd;
-  margin-left: 250px; /* sidebar width */
 }
 
 /* ---------- MAIN CONTENT ---------- */

@@ -42,6 +42,15 @@ class Volunteer(models.Model):
     )
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def save(self, *args, **kwargs):
+        # Regular save
+        super().save(*args, **kwargs)
+
+        # Update total hours automatically (no loop)
+        from core.utils import auto_update_total_hours
+        auto_update_total_hours(self, skip_save=True)
+
 
 # Contact, Address, Background, Emergency
 class VolunteerContact(models.Model):
@@ -170,16 +179,17 @@ class VolunteerEvent(models.Model):
 
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    hours_rendered = models.IntegerField(default=0)
+    schedule = models.ForeignKey(EventSchedule, on_delete=models.CASCADE, null=True, blank=True)
 
+    
+    hours_rendered = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Joined")
     availability_time = models.CharField(max_length=255, blank=True, null=True)
-
     availability_orientation = models.BooleanField(default=False)
     signup_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('volunteer', 'event')
+        unique_together = ('volunteer', 'event', 'schedule')  
 
     def __str__(self):
-        return f"{self.volunteer} - {self.event}"
+        return f"{self.volunteer} - {self.event} ({self.schedule.day})"

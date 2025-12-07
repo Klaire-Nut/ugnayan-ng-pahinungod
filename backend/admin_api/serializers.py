@@ -12,7 +12,8 @@ from core.models import (
     AlumniProfile,
     StaffProfile,
     FacultyProfile,
-    RetireeProfile
+    RetireeProfile,
+    VolunteerEvent
 )
 from django.contrib.auth import get_user_model
 
@@ -187,7 +188,7 @@ class AdminVolunteerDetailSerializer(serializers.ModelSerializer):
         return instance
 
 # Admin Account Credentials 
-User = get_user_model()  # Typically your admin user model
+User = get_user_model()  
 
 class AdminProfileSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)
@@ -210,3 +211,35 @@ class AdminProfileSerializer(serializers.ModelSerializer):
             instance.password = make_password(password)
         instance.save()
         return instance
+    
+class VolunteerEventHistorySerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(source="event.event_name")
+    date = serializers.SerializerMethodField()
+    timeIn = serializers.SerializerMethodField()
+    timeOut = serializers.SerializerMethodField()
+    timeAllotted = serializers.IntegerField(source="hours_rendered")
+
+    class Meta:
+        model = VolunteerEvent
+        fields = ["event_name", "date", "timeIn", "timeOut", "timeAllotted"]
+
+    def get_date(self, obj):
+        if obj.schedule:
+            return obj.schedule.day.strftime("%Y-%m-%d")
+        elif obj.event:
+            return obj.event.date_start.strftime("%Y-%m-%d")
+        return "TBD"
+
+    def get_timeIn(self, obj):
+        if obj.schedule:
+            return obj.schedule.start_time.strftime("%H:%M")
+        elif obj.event:
+            return obj.event.date_start.strftime("%H:%M")
+        return "TBD"
+
+    def get_timeOut(self, obj):
+        if obj.schedule:
+            return obj.schedule.end_time.strftime("%H:%M")
+        elif obj.event:
+            return obj.event.date_end.strftime("%H:%M")
+        return "TBD"

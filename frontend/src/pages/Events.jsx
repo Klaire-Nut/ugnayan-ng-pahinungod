@@ -1,6 +1,6 @@
 import React from "react";
 import DefaultPage from "../layout/default_page.jsx"; // ✅ Your layout wrapper (includes sidebar)
-import Sidebar from "../components/Sidebar.jsx";
+import Sidebar from "../components/VolunteerSidebar.jsx";
 
 const Events = () => {
   return (
