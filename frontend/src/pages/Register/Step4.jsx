@@ -121,7 +121,6 @@ const handleConfirmSubmit = async () => {
         year_graduated: emptyIfNull(formData.yearGraduated),
       }
     : undefined,
-  // ... other profiles
 
     staff_profile:
       (formData.affiliation || "").toLowerCase() === "staff"

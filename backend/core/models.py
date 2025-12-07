@@ -44,11 +44,15 @@ class Volunteer(models.Model):
         return f"{self.first_name} {self.last_name}"
     
     def save(self, *args, **kwargs):
-        # Regular save
+        from core.utils import generate_volunteer_identifier, auto_update_total_hours
+
+        # Auto-generate volunteer identifier ONLY if empty
+        if not self.volunteer_identifier:
+            self.volunteer_identifier = generate_volunteer_identifier()
+
         super().save(*args, **kwargs)
 
         # Update total hours automatically (no loop)
-        from core.utils import auto_update_total_hours
         auto_update_total_hours(self, skip_save=True)
 
 

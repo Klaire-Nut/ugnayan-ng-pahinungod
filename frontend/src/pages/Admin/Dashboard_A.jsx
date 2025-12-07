@@ -103,7 +103,7 @@ export default function AdminDashboard() {
                   status: ev.status,
                   is_canceled: ev.is_canceled,
                 }}
-                onOpen={() => navigate(`/admin/events/${ev.id}`)}
+                onOpen={() => navigate("/admin/events")}
               />
             ))
           )}
