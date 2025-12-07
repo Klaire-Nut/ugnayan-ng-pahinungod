@@ -200,9 +200,15 @@ export default function Register() {
       const result = await volunteerAPI.register(registrationData);
       setLoading(false);
 
+      // ❌ OLD BEHAVIOR (breaks Step4 success dialog)
+      // navigate("/login");
+
+      // -----------------------------------------
+      // 🔧 FIX: DO NOT REDIRECT HERE
+      // Let Step4 show success dialog and handle redirect
+      // -----------------------------------------
       if (result.success) {
-        navigate("/login");
-        return { success: true };
+        return { success: true }; // ← FIXED
       } else {
         throw new Error(result.error || "Registration failed");
       }
@@ -217,7 +223,12 @@ export default function Register() {
         if (data.error) errorMessage = data.error;
         else if (data.errors) {
           errorMessage = Object.entries(data.errors)
-            .map(([field, msg]) => `${field}: ${Array.isArray(msg) ? msg.join(", ") : msg}`)
+            .map(
+              ([field, msg]) =>
+                `${field}: ${
+                  Array.isArray(msg) ? msg.join(", ") : msg
+                }`
+            )
             .join("\n");
         }
       } else if (err.message) {
@@ -259,9 +270,11 @@ export default function Register() {
       <div className="right-side">
         <div className="register-container">
           <Box sx={{ width: "100%", maxWidth: "700px", py: 4 }}>
-
             <Box sx={{ mb: 4, textAlign: "center" }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: "#FF7F00" }}>
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, color: "#FF7F00" }}
+              >
                 Ugnayan ng Pahinungód Mindanao
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
