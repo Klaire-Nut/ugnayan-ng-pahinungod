@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,7 +11,8 @@ import {
 import { useNavigate } from "react-router-dom";
 
 // Import admin login function
-import { login as adminLogin, volunteerLogin, getCurrentUser } from "../services/auth";
+import { login as adminLogin, volunteerLogin } from "../services/auth";
+import { saveRole } from "../services/auth";
 
 export default function LoginPopup({ open, onClose, role }) {
 
@@ -22,44 +23,43 @@ export default function LoginPopup({ open, onClose, role }) {
 
   const navigate = useNavigate();
 
-// Admin login handler
-const handleLogin = async () => {
-  if (!username || !password) {
-    setErrorMessage("Please enter username and password.");
-    return;
-  }
-
-  try {
-    let res;
-
-    if (role === "Admin") {
-      // Step 1: Call login API
-      res = await adminLogin({ username, password });
-
-      // Step 2: Use the returned user directly
-      console.log("Logged in admin:", res.data.user);
-
-      // Step 3: Clear error, close popup, navigate
+  // Reset fields whenever popup is opened
+  useEffect(() => {
+    if (open) {
+      setUsername("");
+      setPassword("");
       setErrorMessage("");
-      onClose();
-      navigate("/admin/dashboard");
-
-    } else {
-      // Volunteer login
-      res = await volunteerLogin({ email: username, password });
-      console.log("Volunteer login response:", res.data);
-
-      setErrorMessage("");
-      onClose();
-      navigate("/dashboard");
     }
-  } catch (err) {
-    console.error("Login error:", err.response?.data || err.message);
-    setErrorMessage(
-      "Login failed. Check your username/email and password."
-    );
-  }
-};
+  }, [open]);
+
+  // ---------- ADMIN LOGIN ----------
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setErrorMessage("Please enter username and password.");
+      return;
+    }
+
+    try {
+      const res = await adminLogin({ username, password });
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // Django auth success → ALWAYS returns user + sets sessionid cookie
+      if (res.data?.message === "Login successful" || res.data?.user) {
+        saveRole("admin");           // Allow protected admin routes
+        onClose();                   // Close modal
+        navigate("/admin/dashboard", { replace: true }); // Prevent going back
+        return;
+      }
+
+      // If no user returned = invalid credentials
+      setErrorMessage("Invalid login credentials.");
+      
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      setErrorMessage("Login failed. Please check your username and password.");
+    }
+  };
 
 
 
@@ -69,7 +69,7 @@ const handleLogin = async () => {
     navigate("/register");
   };
 
-  return (
+   return (
     <Dialog
       open={open}
       onClose={onClose}
@@ -91,7 +91,7 @@ const handleLogin = async () => {
           fontWeight: 600,
         }}
       >
-        {role === "Admin" ? "Admin Login" : "Volunteer Login"}
+        Admin Login
       </DialogTitle>
 
       <DialogContent>
@@ -114,6 +114,12 @@ const handleLogin = async () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {errorMessage && (
+            <Typography color="error" variant="body2">
+              {errorMessage}
+            </Typography>
+          )}
 
           <Box display="flex" justifyContent="space-between" gap={1}>
             <Button
@@ -152,24 +158,7 @@ const handleLogin = async () => {
             textAlign="center"
             sx={{ mt: 1, color: "#555" }}
           >
-            {role === "Volunteer" ? (
-              <>
-                Don&apos;t have an account?{" "}
-                <span
-                  onClick={handleRegister}
-                  style={{
-                    color: "#7B1113",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
-                >
-                  Register now.
-                </span>
-              </>
-            ) : (
-              "For authorized admins only."
-            )}
+            For authorized admins only.
           </Typography>
         </Box>
       </DialogContent>

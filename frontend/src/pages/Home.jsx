@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Container, Typography, Grid, CardMedia } from "@mui/material";
 import { useNavigate } from "react-router-dom";  // ✅ import useNavigate
 import Button from "../components/Button"; 
@@ -6,9 +6,19 @@ import heroLogo from "../assets/UNP Logo.png";
 import heroBackground from "../assets/background.jpg";
 import volunteerImage from "../assets/volunteer.png";
 import "../styles/Home.css";
+import { getRole } from "../services/auth";
 
 export default function Home() {
   const navigate = useNavigate();  // ✅ initialize navigate
+
+  // AUTO-BLOCK admin from viewing homepage
+  useEffect(() => {
+    const role = getRole();
+
+    if (role === "admin") {
+      navigate("/admin/dashboard", { replace: true }); // <-- HERE is replace:true
+    }
+  }, []);
 
   const handleVolunteerClick = () => {
     navigate("/register"); // ✅ path to your Register.jsx page

@@ -31,7 +31,8 @@ export default function EventCard({ event, onEdit, onDelete, onOpen, isOpen }) {
     const fetchVolunteers = async () => {
       try {
         const res = await axios.get(
-          `http://127.0.0.1:8000/api/admin/events/${event.id}/volunteers/`
+          `http://127.0.0.1:8000/api/admin/events/${event.id}/volunteers/`,
+          { withCredentials: true } 
         );
         console.log("Axios response:", res.data);
         setVolunteers(res.data || []);

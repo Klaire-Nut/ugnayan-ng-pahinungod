@@ -3,22 +3,27 @@ import React, { useState } from "react";
 import { User } from "lucide-react";
 import { IconButton, Dialog, DialogTitle, DialogActions, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../services/auth";
+import { logout, removeRole } from "../services/auth";
 
 export default function AdminHeader() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const handleLogoutClick = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
   const handleLogout = async () => {
     try {
-      await logout(); 
+      await logout();      // API logout
+      removeRole();        // Clear admin role from localStorage
+      setSnackbarOpen(true); // Show success notification
     } catch (err) {
       console.error("Logout failed:", err);
+    } finally {
+      setOpen(false);      // Close the confirmation dialog
+      navigate("/", { replace: true }); // redirect to login/home
     }
-    navigate("/", { replace: true });
   };
 
   return (

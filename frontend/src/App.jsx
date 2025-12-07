@@ -22,6 +22,7 @@ import DataStatistics from "./pages/Admin/DataStatistics";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
 import AdminDashboard from "./pages/Admin/Dashboard_A";
 import AdminVolunteerProfile from "./pages/Admin/AdminVolunteerProfile";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
 function App() {
   return (
@@ -63,18 +64,24 @@ function App() {
         </Route>
 
         {/* ADMIN PAGES */}
-        <Route path="/admin" element={<DefaultPageAdmin />}>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <DefaultPageAdmin />
+            </ProtectedAdminRoute>
+          }
+        >
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="events" element={<AdminEvents />} />
-          <Route path="events/:id/edit" element={<AdminEvents />} />
           <Route path="events/:id" element={<EventDetails />} />
+          <Route path="events/:id/edit" element={<AdminEvents />} />
           <Route path="volunteers" element={<AdminVolunteers />} />
           <Route path="volunteers/:volunteerId" element={<AdminVolunteerProfile />} />
           <Route path="stats" element={<DataStatistics />} />
           <Route path="privacy" element={<AdminSettings />} />
         </Route>
-
       </Routes>
     </Router>
   );

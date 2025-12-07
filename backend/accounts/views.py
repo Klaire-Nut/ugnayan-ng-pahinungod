@@ -21,16 +21,19 @@ def login_view(request):
     except:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    # Check admin credentials
+    # Get the admin by username only
     try:
-        admin = Admin.objects.get(username=username, password=password)
+        admin = Admin.objects.get(username=username)
     except Admin.DoesNotExist:
         return JsonResponse({"error": "Invalid username or password"}, status=400)
 
-    # Save admin ID in session
+    # Check hashed password
+    if not check_password(password, admin.password):
+        return JsonResponse({"error": "Invalid username or password"}, status=400)
+
+    # Save session
     request.session["admin_id"] = admin.admin_id
 
-    # Return response
     return JsonResponse({
         "message": "Login successful",
         "admin": {
