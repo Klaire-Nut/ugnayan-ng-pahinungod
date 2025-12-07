@@ -18,29 +18,38 @@ export default function Step4({
   setFormData,
   onBack,
   onSubmit,
-  onOpenLogin,   // ⭐⭐⭐ ADDED — REQUIRED
+  loading,
 }) {
+  const navigate = useNavigate();
+
   const [errors, setErrors] = useState({});
   const [password, setPassword] = useState(formData.password || "");
   const [confirmPassword, setConfirmPassword] = useState(
     formData.confirmPassword || ""
   );
+
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [successDialog, setSuccessDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = useCallback((setter) => (e) => {
-    setter(e.target.value);
-  }, []);
+  const handleChange = useCallback(
+    (setter) => (e) => setter(e.target.value),
+    []
+  );
 
   const validate = useCallback(() => {
     const newErrors = {};
     if (!password) newErrors.password = "Password is required.";
+    else if (password.length < 8)
+      newErrors.password = "Password must be at least 8 characters.";
+
     if (!confirmPassword)
       newErrors.confirmPassword = "Please confirm your password.";
-    if (password && confirmPassword && password !== confirmPassword) {
+
+    if (password && confirmPassword && password !== confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
-    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [password, confirmPassword]);
@@ -222,6 +231,11 @@ const handleSuccessClose = () => {
         Set Your Password
       </Typography>
 
+      <Typography variant="body2" sx={{ mb: 3, color: "text.secondary" }}>
+        Create a secure password for your account. Your password must be at
+        least 8 characters long.
+      </Typography>
+
       <TextField
         fullWidth
         label="Password *"
@@ -244,10 +258,12 @@ const handleSuccessClose = () => {
         sx={{ mb: 2 }}
       />
 
+      {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
         <Button variant="outlined" onClick={onBack}>
           Back
         </Button>
+
         <Button
           variant="contained"
           onClick={handleSubmitClick}
@@ -255,124 +271,68 @@ const handleSuccessClose = () => {
             backgroundColor: "#FF7F00",
             "&:hover": { backgroundColor: "#e66e00" },
           }}
-          disabled={loading}
+          disabled={submitting || loading}
         >
           {loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
       </Box>
 
-      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmDialog}
+        onClose={() => !submitting && setConfirmDialog(false)}
+      >
         <DialogTitle>Confirm Submission</DialogTitle>
+
         <DialogContent>
           <Typography>
-            Are you sure you want to submit your registration?
+            Are you sure you want to submit your registration? Please review all
+            information before confirming.
           </Typography>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
+          <Button
+            onClick={() => setConfirmDialog(false)}
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
+
           <Button
             onClick={handleConfirmSubmit}
             variant="contained"
-            color="primary"
+            disabled={submitting}
           >
-            Yes, Continue
+            {submitting ? <CircularProgress size={24} /> : "Yes, Submit"}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Success Dialog */}
       <Dialog open={successDialog} onClose={handleSuccessClose}>
         <DialogContent sx={{ textAlign: "center", py: 4 }}>
-          <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
-            SUBMITTED
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-            THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
-          </Typography>
-          <Typography sx={{ fontStyle: "italic", mb: 2 }}>
-            Makibahagi. Maglingkod. MagPahinungód.
-          </Typography>
-          <Box sx={{ textAlign: "left", mx: "auto", maxWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              <strong>Email:</strong> pahinungod.upmin@up.edu.ph
-            </Typography>
-            <Typography variant="body2">
-              <strong>Facebook:</strong>{" "}
-              <a
-                href="https://www.facebook.com/upmin.pahinungod"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#1976d2" }}
-              >
-                facebook.com/upmin.pahinungod
-              </a>
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSuccessClose} variant="contained" fullWidth>
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Confirmation Dialog 
-      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
-        <DialogTitle>Confirm Submission</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to submit your registration? An OTP will be sent to your email for verification.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialog(false)}>Cancel</Button>
-          <Button onClick={handleConfirmSubmit} variant="contained" color="primary">
-            Yes, Continue
-          </Button>
-        </DialogActions>
-      </Dialog>*/}
-
-      {/* OTP Dialog 
-      <Dialog open={otpDialog} onClose={() => setOtpDialog(false)}>
-        <DialogTitle>Enter OTP</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ mb: 2 }}>
-            We've sent a verification code to your email. Please enter it below:
-          </Typography>
-          <TextField
-            fullWidth
-            label="OTP Code"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="Enter 6-digit code"
-            inputProps={{ maxLength: 6 }}
+          <CheckCircleIcon
+            sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOtpDialog(false)}>Cancel</Button>
-          <Button onClick={handleVerifyOTP} variant="contained" color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : "Verify"}
-          </Button>
-        </DialogActions>
-      </Dialog> */}
 
-      {/* Success Dialog
-      <Dialog open={successDialog} onClose={handleSuccessClose}>
-        <DialogContent sx={{ textAlign: "center", py: 4 }}>
-          <CheckCircleIcon sx={{ fontSize: 80, color: "#4CAF50", mb: 2 }} />
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: "#4CAF50" }}>
             SUBMITTED
           </Typography>
+
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
             THANK YOU FOR SIGNING-UP/UPDATING YOUR INFORMATION!
           </Typography>
+
           <Typography sx={{ fontStyle: "italic", mb: 2 }}>
             Makibahagi. Maglingkod. MagPahinungód.
           </Typography>
+
           <Box sx={{ textAlign: "left", mx: "auto", maxWidth: 400 }}>
             <Typography variant="body2" sx={{ mb: 0.5 }}>
               <strong>Email:</strong> pahinungod.upmin@up.edu.ph
             </Typography>
+
             <Typography variant="body2">
               <strong>Facebook:</strong>{" "}
               <a
@@ -386,12 +346,13 @@ const handleSuccessClose = () => {
             </Typography>
           </Box>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleSuccessClose} variant="contained" fullWidth>
             Close
           </Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog>
     </Box>
   );
 }

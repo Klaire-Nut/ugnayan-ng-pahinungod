@@ -9,19 +9,32 @@ import "../styles/Home.css";
 import { getRole } from "../services/auth";
 
 export default function Home() {
-  const navigate = useNavigate();  // ✅ initialize navigate
+<<<<<<<<< Temporary merge branch 1
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   // AUTO-BLOCK admin from viewing homepage
   useEffect(() => {
     const role = getRole();
-
     if (role === "admin") {
-      navigate("/admin/dashboard", { replace: true }); // <-- HERE is replace:true
+      navigate("/admin/dashboard", { replace: true });
     }
   }, []);
 
+  // Volunteer button click
   const handleVolunteerClick = () => {
-    navigate("/register"); // ✅ path to your Register.jsx page
+    if (user) {
+      navigate("/events"); // Go to events if logged in
+    } else {
+      navigate("/register"); // Go to registration if not logged in
+    }
+  };
+
+  const handleKnowMoreClick = () => {
+    // Navigate to about page or scroll to info section
+    navigate("/about");
+};
+>>>>>>>>> Temporary merge branch 2
   };
 
   return (
@@ -75,7 +88,11 @@ export default function Home() {
               >
                 Help shape tomorrow — <br /> volunteer today.
               </Typography>
-              {/* ✅ Button navigates to /register */}
+              <Typography variant="body1" className="volunteer-description">
+                {user 
+                  ? "Browse available volunteer opportunities and make an impact."
+                  : "Join our community of volunteers and start making a difference."}
+              </Typography>
               <Button 
                 text="Volunteer" 
                 variant="primary"

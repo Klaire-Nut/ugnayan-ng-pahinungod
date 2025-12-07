@@ -4,11 +4,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import AnonymousUser
-from core.models import VolunteerAccount 
-from django.contrib.auth.hashers import check_password
-from core.models import Admin
+from django.contrib.auth.models import User
 
-# Admin Account
+# ADMIN LOGIN
 @csrf_exempt
 def login_view(request):
     if request.method != "POST":
@@ -44,14 +42,21 @@ def login_view(request):
 
 
 
+# -------------------------
+# ADMIN LOGOUT
+# -------------------------
 @csrf_exempt
 def logout_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=400)
+
     logout(request)
-    return JsonResponse({"message": "Logged out"})
+    return JsonResponse({"message": "Admin logged out"})
 
 
+# -------------------------
+# ADMIN SESSION CHECK
+# -------------------------
 def user_view(request):
     admin_id = request.session.get("admin_id")
 

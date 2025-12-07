@@ -1,133 +1,192 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+
 from core.models import (
     Volunteer, VolunteerContact, VolunteerAddress, VolunteerBackground,
     EmergencyContact, VolunteerAccount, ProgramInterest,
     StudentProfile, AlumniProfile, StaffProfile, FacultyProfile, RetireeProfile
 )
-from .models import ( VolunteerAffiliation)
-from core.utils import generate_volunteer_identifier
 from django.db import IntegrityError
 
+# ============================================================
+# BASIC SUB-SERIALIZERS
+# ============================================================
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VolunteerContact
+        fields = ["mobile_number", "facebook_link"]
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VolunteerAddress
+        fields = ["street_address", "province", "region"]
+
+
+class BackgroundSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VolunteerBackground
+        fields = ["occupation", "org_affiliation", "hobbies_interests"]
+
+
+class EmergencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmergencyContact
+        fields = ["name", "relationship", "contact_number", "address"]
+
+
+# ============================================================
+# AFFILIATION PROFILE SERIALIZERS
+# ============================================================
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentProfile
+        fields = ["degree_program", "year_level", "college", "department"]
+
+
+class AlumniProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlumniProfile
+        fields = ["constituent_unit", "degree_program", "year_graduated"]
+
+
+class StaffProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffProfile
+        fields = ["office_department", "designation"]
+
+
+class FacultyProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FacultyProfile
+        fields = ["college", "department"]
+
+
+class RetireeProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RetireeProfile
+        fields = ["designation_while_in_up", "office_college_department"]
+
+
+# ============================================================
+# ACCOUNT SERIALIZER
+# ============================================================
+
+class AccountSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = VolunteerAccount
+        fields = ["email", "password"]
+
+
+# ============================================================
+# MAIN REGISTRATION SERIALIZER (the fixed clean version)
+# ============================================================
+
 class RegisterVolunteerSerializer(serializers.Serializer):
-    # --------------- Volunteer Basic Info ----------------
+
+    # ---------- ACCOUNT ----------
+    account = AccountSerializer()
+
+    # ---------- MAIN VOLUNTEER ----------
     first_name = serializers.CharField()
     middle_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField()
     nickname = serializers.CharField(required=False, allow_blank=True)
     sex = serializers.CharField()
     birthdate = serializers.DateField()
-    affiliation_type = serializers.CharField()  # student, alumni, etc.
+    affiliation_type = serializers.CharField()
 
-    # --------------- Nested Data ----------------
-    contact = serializers.DictField()
-    address = serializers.DictField()
-    account = serializers.DictField()
-    background = serializers.DictField(required=False)
-    emergency_contact = serializers.DictField(required=False)
+    # ---------- SUB-TABLES ----------
+    contact = ContactSerializer()
+    address = AddressSerializer()
+    background = BackgroundSerializer()
+    emergency_contact = EmergencySerializer(required=False)
 
-    # Affiliation-specific
-    student_profile = serializers.DictField(required=False)
-    alumni_profile = serializers.DictField(required=False)
-    staff_profile = serializers.DictField(required=False)
-    faculty_profile = serializers.DictField(required=False)
-    retiree_profile = serializers.DictField(required=False)
+    # ---------- AFFILIATION PROFILES ----------
+    student_profile = StudentProfileSerializer(required=False)
+    alumni_profile = AlumniProfileSerializer(required=False)
+    staff_profile = StaffProfileSerializer(required=False)
+    faculty_profile = FacultyProfileSerializer(required=False)
+    retiree_profile = RetireeProfileSerializer(required=False)
 
-    # Programs & Extra Fields
-    program_interests = serializers.ListField(child=serializers.CharField(), required=False)
-    affirmative_action_subjects = serializers.ListField(child=serializers.CharField(), required=False)
-    volunteer_status = serializers.CharField(required=False)
-    tagapagUgnay = serializers.CharField(required=False)
-    otherOrganization = serializers.CharField(required=False)
-    organizationName = serializers.CharField(required=False)
-    howDidYouHear = serializers.CharField(required=False)
+    # PROGRAM INTERESTS
+    program_interests = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
+    # ============================================================
+    # CREATE METHOD — EVERYTHING SAVED HERE
+    # ============================================================
 
     def create(self, validated_data):
-        affiliation_raw = validated_data.get("affiliation_type", "")
-        affiliation = affiliation_raw.lower().replace(" ", "")
-        print("Validated data received:", validated_data)
 
-        # ----------------- Create main volunteer -----------------
+        # Extract nested sections
+        account_data = validated_data.pop("account")
+        contact_data = validated_data.pop("contact")
+        address_data = validated_data.pop("address")
+        background_data = validated_data.pop("background")
+
+        emergency_data = validated_data.pop("emergency_contact", None)
+        student_data = validated_data.pop("student_profile", None)
+        alumni_data = validated_data.pop("alumni_profile", None)
+        staff_data = validated_data.pop("staff_profile", None)
+        faculty_data = validated_data.pop("faculty_profile", None)
+        retiree_data = validated_data.pop("retiree_profile", None)
+
+        program_interests = validated_data.pop("program_interests", [])
+
+        # Normalize affiliation
+        affiliation = validated_data.get("affiliation_type", "").lower().replace(" ", "")
+
+        # ---------- CREATE VOLUNTEER ----------
         volunteer = Volunteer.objects.create(
-            first_name=validated_data.get("first_name", ""),
-            middle_name=validated_data.get("middle_name", ""),
-            last_name=validated_data.get("last_name", ""),
-            nickname=validated_data.get("nickname", ""),
-            sex=validated_data.get("sex", ""),
-            birthdate=validated_data.get("birthdate"),
-            volunteer_identifier=generate_volunteer_identifier(),
-            affiliation_type=affiliation,
+            **validated_data,
+            affiliation_type=affiliation
         )
 
-        print("Volunteer created:", volunteer, volunteer.pk)
+        # ---------- CONTACT ----------
+        VolunteerContact.objects.create(volunteer=volunteer, **contact_data)
 
-        # ----------------- Save affiliation -----------------
-        if affiliation:
-            VolunteerAffiliation.objects.create(
-                volunteer=volunteer,
-                affiliation=affiliation
-            )
+        # ---------- ADDRESS ----------
+        VolunteerAddress.objects.create(volunteer=volunteer, **address_data)
 
-        # ----------------- Contact -----------------
-        contact_data = validated_data.get("contact", {})
-        if any(contact_data.values()):
-            VolunteerContact.objects.create(volunteer=volunteer, **contact_data)
+        # ---------- BACKGROUND ----------
+        VolunteerBackground.objects.create(volunteer=volunteer, **background_data)
 
-        # ----------------- Address -----------------
-        address_data = validated_data.get("address", {})
-        if any(address_data.values()):
-            VolunteerAddress.objects.create(volunteer=volunteer, **address_data)
+        # ---------- EMERGENCY ----------
+        if emergency_data:
+            EmergencyContact.objects.create(volunteer=volunteer, **emergency_data)
 
-        # ----------------- Background -----------------
-        bg_data = validated_data.get("background", {})
-        if any(bg_data.values()):
-            VolunteerBackground.objects.create(volunteer=volunteer, **bg_data)
+        # ---------- ACCOUNT ----------
+        VolunteerAccount.objects.create(
+            volunteer=volunteer,
+            email=account_data["email"],
+            password=make_password(account_data["password"]),
+        )
 
-        # ----------------- Emergency Contact -----------------
-        emer_data = validated_data.get("emergency_contact", {})
-        if any(emer_data.values()):
-            EmergencyContact.objects.create(volunteer=volunteer, **emer_data)
-
-        # ----------------- Account -----------------
-        account_data = validated_data.get("account", {})
-        if account_data:
-            try:
-                VolunteerAccount.objects.create(
-                    volunteer=volunteer,
-                    email=account_data.get("email", ""),
-                    password=make_password(account_data.get("password", ""))
-                )
-            except IntegrityError:
-                raise serializers.ValidationError({
-                    "account": {"email": "This email is already registered."}
-                })
-        # ----------------- Program Interests -----------------
-        for program in validated_data.get("program_interests", []):
+        # ---------- PROGRAM INTERESTS ----------
+        for program in program_interests:
             ProgramInterest.objects.create(volunteer=volunteer, program_name=program)
 
-        # ----------------- Affiliation-specific profiles -----------------
-        def create_profile_if_has_data(profile_class, profile_data):
-            if profile_data and any(profile_data.values()):
-                profile_class.objects.create(volunteer=volunteer, **profile_data)
+        # ---------- CREATE CORRECT AFFILIATION PROFILE ----------
+        if affiliation == "student" and student_data:
+            StudentProfile.objects.create(volunteer=volunteer, **student_data)
 
-        if affiliation == "student":
-            create_profile_if_has_data(StudentProfile, validated_data.get("student_profile", {}))
-        elif affiliation == "alumni":
-            create_profile_if_has_data(AlumniProfile, validated_data.get("alumni_profile", {}))
-        elif affiliation == "staff":
-            create_profile_if_has_data(StaffProfile, validated_data.get("staff_profile", {}))
-        elif affiliation == "faculty":
-            create_profile_if_has_data(FacultyProfile, validated_data.get("faculty_profile", {}))
-        elif affiliation == "retiree":
-            create_profile_if_has_data(RetireeProfile, validated_data.get("retiree_profile", {}))
+        elif affiliation == "alumni" and alumni_data:
+            AlumniProfile.objects.create(volunteer=volunteer, **alumni_data)
+
+        elif affiliation == "staff" and staff_data:
+            StaffProfile.objects.create(volunteer=volunteer, **staff_data)
+
+        elif affiliation == "faculty" and faculty_data:
+            FacultyProfile.objects.create(volunteer=volunteer, **faculty_data)
+
+        elif affiliation == "retiree" and retiree_data:
+            RetireeProfile.objects.create(volunteer=volunteer, **retiree_data)
 
         return volunteer
-
-
-
-# For Admin 
-class VolunteerAccountSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VolunteerAccount
-        fields = ['id', 'volunteer', 'email', 'password']
-        extra_kwargs = {'password': {'write_only': True}}

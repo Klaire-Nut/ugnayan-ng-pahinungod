@@ -32,10 +32,17 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   position: relative;
   transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .event-card:hover {
   transform: translateY(-4px);
+}
+
+.event-footer {
+  margin-top: auto;
 }
 
 .event-header {
@@ -54,7 +61,10 @@
   font-weight: bold;
   color: #fff;
 }
-
+.status.upcoming {
+  background-color: #7B1113; /* maroon */
+  color: #fff;
+}
 .status.ongoing { background-color: #28a745; }
 .status.done { background-color: #6c757d; }
 .status.cancel { background-color: #dc3545; }

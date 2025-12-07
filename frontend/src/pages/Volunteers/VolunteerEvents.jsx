@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Sidebar from "../../components/VolunteerSidebar";
 import VolunteerEventCard from "../../components/VolunteerEventCard";
 import { volunteerGetEvents } from "../../services/eventApi";
 

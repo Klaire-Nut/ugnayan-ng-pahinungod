@@ -9,67 +9,82 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
 // Import admin login function
-import { login as adminLogin, volunteerLogin } from "../services/auth";
 import { saveRole } from "../services/auth";
+import { volunteerAPI } from "../services/volunteerApi";  // ⭐ FIX: Use volunteerAPI
+import { login as adminLogin } from "../services/auth";    // Keep admin login separate
+
 
 export default function LoginPopup({ open, onClose, role }) {
-
-  // State variables for the username/email and password
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
   const navigate = useNavigate();
 
-  // Reset fields whenever popup is opened
-  useEffect(() => {
-    if (open) {
-      setUsername("");
-      setPassword("");
-      setErrorMessage("");
-    }
-  }, [open]);
-
-  // ---------- ADMIN LOGIN ----------
   const handleLogin = async () => {
-    if (!username || !password) {
-      setErrorMessage("Please enter username and password.");
-      return;
-    }
+    setLoading(true);
+    setErrorMessage("");
 
     try {
-      const res = await adminLogin({ username, password });
+      if (role === "Admin") {
+        // ⭐ Admin login uses auth.js (separate system)
+        const res = await adminLogin({
+          role: "Admin",
+          username,
+          password,
+        });
 
-      console.log("LOGIN RESPONSE:", res.data);
+        console.log("✅ ADMIN LOGIN SUCCESS:", res.data);
+        navigate("/admin/dashboard");
 
-      // Django auth success → ALWAYS returns user + sets sessionid cookie
-      if (res.data?.message === "Login successful" || res.data?.user) {
-        saveRole("admin");           // Allow protected admin routes
-        onClose();                   // Close modal
-        navigate("/admin/dashboard", { replace: true }); // Prevent going back
-        return;
+      } else {
+        // ⭐ Volunteer login uses volunteerAPI (session-based)
+        const response = await volunteerAPI.login(username, password);
+
+        if (!response.success) {
+          setErrorMessage(response.error || "Login failed");
+          setLoading(false);
+          return;
+        }
+
+        console.log("✅ VOLUNTEER LOGIN SUCCESS:", response.data);
+        
+        // Optional: Store volunteer data in localStorage
+        if (response.data.volunteer) {
+          localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
+        }
+
+        navigate("/volunteer/dashboard");
       }
 
-      // If no user returned = invalid credentials
-      setErrorMessage("Invalid login credentials.");
-      
-    } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-      setErrorMessage("Login failed. Please check your username and password.");
+      onClose();
+
+    } catch (err) {
+      console.error("❌ LOGIN ERROR:", err);
+      setErrorMessage(
+        err.response?.data?.error || 
+        "Login failed. Check your credentials."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-
-
-// Volunteer Registration Function
   const handleRegister = () => {
     onClose();
     navigate("/register");
   };
 
-   return (
+  // Allow Enter key to submit
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !loading) {
+      handleLogin();
+    }
+  };
+
+  return (
     <Dialog
       open={open}
       onClose={onClose}
@@ -91,32 +106,36 @@ export default function LoginPopup({ open, onClose, role }) {
           fontWeight: 600,
         }}
       >
-        Admin Login
+        {role === "Admin" ? "Admin Login" : "Volunteer Login"}
       </DialogTitle>
 
       <DialogContent>
         <Box display="flex" flexDirection="column" gap={2}>
           <TextField
-            label="Username"
+            label={role === "Admin" ? "Username" : "Email"}
             type="text"
             fullWidth
-            variant="outlined"
             size="small"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+            autoFocus
           />
+
           <TextField
             label="Password"
             type="password"
             fullWidth
-            variant="outlined"
             size="small"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
           />
 
           {errorMessage && (
-            <Typography color="error" variant="body2">
+            <Typography color="error" textAlign="center" sx={{ mt: 1 }}>
               {errorMessage}
             </Typography>
           )}
@@ -133,8 +152,9 @@ export default function LoginPopup({ open, onClose, role }) {
                 flex: 1,
               }}
               onClick={handleLogin}
+              disabled={loading}
             >
-              Log In
+              {loading ? "Logging in..." : "Log In"}
             </Button>
 
             <Button
@@ -148,6 +168,7 @@ export default function LoginPopup({ open, onClose, role }) {
                 "&:hover": { bgcolor: "#fbeaea", borderColor: "#8C1B1F" },
               }}
               onClick={onClose}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -160,6 +181,22 @@ export default function LoginPopup({ open, onClose, role }) {
           >
             For authorized admins only.
           </Typography>
+          {role === "Volunteer" && (
+            <Typography textAlign="center" sx={{ mt: 1, color: "#555" }}>
+              Don't have an account?{" "}
+              <span
+                onClick={handleRegister}
+                style={{
+                  color: "#7B1113",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Register now.
+              </span>
+            </Typography>
+          )}
         </Box>
       </DialogContent>
     </Dialog>

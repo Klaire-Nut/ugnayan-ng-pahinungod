@@ -1,107 +1,121 @@
-import React, { useState } from "react";
-import VolunteerSidebar from "../../components/VolunteerSidebar";
+import React, { useEffect, useState } from "react";
+import { volunteerAPI } from "../../services/volunteerApi";
 import "../../styles/VolunteerProfile.css";
 import ProfileForm from "../../components/ProfileForm";
+import VolunteerSidebar from "../../components/VolunteerSidebar";
 
-// Import fake affiliation datasets
-import { fakeStudent } from "../../fakeBackend/student";
-import { fakeFaculty } from "../../fakeBackend/faculty";
-import { fakeGraduate } from "../../fakeBackend/graduate";
-import { fakeRetiree } from "../../fakeBackend/retiree";
-import { fakeStaff } from "../../fakeBackend/staff";
-
-// Choose initial user
-const initialUser = fakeRetiree; 
-// fakeStudent / fakeFaculty / fakeGraduate / fakeRetiree / fakeStaff
-
-const VolunteerProfile = () => {
-  const [userData, setUserData] = useState(initialUser);
-  const [tempData, setTempData] = useState(initialUser);
+export default function VolunteerProfile() {
+  const [userData, setUserData] = useState(null);
+  const [tempData, setTempData] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // REQUIRED FIELDS (cannot be blank)
-  const requiredFields = [
-    "firstName",
-    "lastName",
-    "email",
-    "mobileNumber",
-    "sex",
-    "birthdate",
-    "affiliation",
-  ];
+  useEffect(() => {
+    const loadProfile = async () => {
+      setLoading(true);
+      try {
+        const response = await volunteerAPI.getProfile();
+        if (!response.success) throw new Error(response.error || "Failed to load profile");
 
-  const handleEditClick = () => {
-    setTempData(userData);
-    setIsEditOpen(true);
-  };
-
-  const handleClose = () => setIsEditOpen(false);
-
-  const handleSave = () => {
-    for (const key of requiredFields) {
-      if (!tempData[key] || String(tempData[key]).trim() === "") {
-        alert(`${key.replace(/([A-Z])/g, " $1")} cannot be empty.`);
-        return;
+        setUserData(response.data);
+        setTempData(response.data);
+        setError("");
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          setError("Session expired. Redirecting to login...");
+          setTimeout(() => (window.location.href = "/login"), 2000);
+        } else {
+          setError(err.message);
+        }
+      } finally {
+        setLoading(false);
       }
-    }
-    setUserData(tempData);
-    setIsEditOpen(false);
-  };
+    };
 
+    loadProfile();
+  }, []);
+
+  // SIMPLE version — because ProfileForm already returns correct nested objects
   const handleChange = (key, value) => {
-    setTempData(prev => ({
+    setTempData((prev) => ({
       ...prev,
-      [key]: Array.isArray(prev[key])
-        ? value.split(",").map(v => v.trim())
-        : value,
+      [key]: value
     }));
   };
 
-  const capitalizeLabel = (str) =>
-    str.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+  const handleSave = async () => {
+    try {
+      const response = await volunteerAPI.updateProfile(tempData);
+      if (!response.success) {
+        alert(response.error || "Failed to update profile.");
+        return;
+      }
+
+      setUserData(tempData);
+      setIsEditOpen(false);
+      alert("Profile updated successfully!");
+    } catch (err) {
+      console.error("Profile update error:", err);
+      alert(err.response?.data?.error || "Failed to update profile.");
+    }
+  };
+
+  if (loading) return <div className="vol-profile-page">Loading profile...</div>;
+  if (error) return <div className="vol-profile-page error-message">{error}</div>;
+  if (!userData) return <div className="vol-profile-page">No profile data found.</div>;
 
   return (
     <div className="vol-profile-page">
       <VolunteerSidebar />
+
       <div className="vol-profile-main">
-        {/* HEADER */}
         <div className="profile-header">
           <h1 className="profile-title">PROFILE</h1>
-          <button className="edit-btn" onClick={handleEditClick}>Edit</button>
+          <button className="edit-btn" onClick={() => setIsEditOpen(true)}>Edit</button>
         </div>
 
-        {/* PROFILE GRID */}
         <div className="profile-grid">
           <div className="profile-left">
-            <img src={userData.profilePhoto} alt="Profile" className="profile-photo"/>
-            <div className="volunteer-id">{userData.volunteerID}</div>
+            <img
+              src={userData.profile_picture || "/default-profile.png"}
+              alt="Profile"
+              className="profile-photo"
+            />
+            <div className="volunteer-id">ID: {userData.volunteer_id}</div>
           </div>
 
           <div className="profile-right">
-            <ProfileForm 
-              data={userData} 
-              editable={false} 
+            <ProfileForm
+              data={userData}
+              editable={false}
               onChange={handleChange}
             />
           </div>
         </div>
 
-        {/* EDIT MODAL */}
         {isEditOpen && (
           <div className="edit-modal">
             <div className="edit-modal-content">
-              <button className="close-btn" onClick={handleClose}>&times;</button>
+              <button className="close-btn" onClick={() => setIsEditOpen(false)}>&times;</button>
               <h2>Edit Profile</h2>
+
               <div className="modal-scroll">
-                <ProfileForm 
-                  data={tempData} 
-                  editable={true} 
+                <ProfileForm
+                  data={tempData}
+                  editable={true}
                   onChange={handleChange}
                 />
               </div>
+
               <div className="modal-buttons">
-                <button className="cancel-btn" onClick={handleClose}>Cancel</button>
-                <button className="save-btn" onClick={handleSave}>Save</button>
+                <button className="cancel-btn" onClick={() => setIsEditOpen(false)}>
+                  Cancel
+                </button>
+                <button className="save-btn" onClick={handleSave}>
+                  Save
+                </button>
               </div>
             </div>
           </div>
@@ -109,6 +123,4 @@ const VolunteerProfile = () => {
       </div>
     </div>
   );
-};
-
-export default VolunteerProfile;
+}

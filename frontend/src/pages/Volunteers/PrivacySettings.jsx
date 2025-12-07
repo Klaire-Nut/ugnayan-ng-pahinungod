@@ -12,8 +12,9 @@ import {
 } from "@mui/material";
 import { FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import NotificationModal from "../../components/NotificationModal";
+import axios from "axios";
 
-export default function AdminSettings() {
+export default function VolunteerPrivacySettings() {
   const [oldPass, setOldPass] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
@@ -32,19 +33,44 @@ export default function AdminSettings() {
     setNotif({ open: true, type, message });
   };
 
-  const handleChangePassword = () => {
+  // -----------------------------------------------------
+  // 🔐 VOLUNTEER PASSWORD CHANGE API CALL
+  // -----------------------------------------------------
+  const handleChangePassword = async () => {
     if (!oldPass || !newPass || !confirmPass) {
       showNotif("error", "Please fill in all fields.");
       return;
     }
+
     if (newPass !== confirmPass) {
       showNotif("error", "New passwords do not match.");
       return;
     }
-    showNotif("success", "Password successfully changed!");
-    setOldPass("");
-    setNewPass("");
-    setConfirmPass("");
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/volunteers/change-password/",
+        {
+          current_password: oldPass,
+          new_password: newPass,
+          confirm_password: confirmPass,
+        },
+        { withCredentials: true } // IMPORTANT
+      );
+
+      showNotif("success", response.data.message || "Password changed!");
+
+      // Reset fields
+      setOldPass("");
+      setNewPass("");
+      setConfirmPass("");
+
+    } catch (error) {
+      const errMsg =
+        error.response?.data?.error || "Failed to change password.";
+
+      showNotif("error", errMsg);
+    }
   };
 
   return (
@@ -55,18 +81,12 @@ export default function AdminSettings() {
           Privacy Settings
         </Typography>
         <Typography sx={{ color: "#555", mt: 0.5 }}>
-          Manage and update your administrator account security.
+          Manage your volunteer account security.
         </Typography>
       </Box>
 
-      {/* LEFT-ALIGNED CARD */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-start",
-          width: "100%",
-        }}
-      >
+      {/* CARD */}
+      <Box sx={{ display: "flex", justifyContent: "flex-start", width: "100%" }}>
         <Card
           sx={{
             width: "100%",
@@ -86,7 +106,7 @@ export default function AdminSettings() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* FORM FIELDS */}
+            {/* FORM */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <TextField
                 type={showOld ? "text" : "password"}

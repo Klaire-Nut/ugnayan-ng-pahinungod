@@ -1,89 +1,82 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";   // 🔥 make sure this is here
+
+// Layouts
 import DefaultPage from "./layout/default_page";
 import DefaultPageVolunteer from "./layout/default_page_volunteers";
 import DefaultPageAdmin from "./layout/default_page_admin";
 
+// Public Pages
 import Home from "./pages/Home";
 import AboutUs from "./pages/AboutUs";
 import Events from "./pages/Events";
 import Register from "./pages/Register/Register.jsx";
-import AuthTest from "./components/AuthTest";
 import Login from "./pages/Login";
 
+// Volunteer Pages
 import VolunteerDashboard from "./pages/Volunteers/Dashboard_V";
+import VolunteerEvents from "./pages/Volunteers/VolunteerEvents";
 import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
 import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
-import PrivacySettings from "./pages/Volunteers/PrivacySettings"; 
+import PrivacySettings from "./pages/Volunteers/PrivacySettings";
 
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
 import AdminVolunteers from "./pages/Admin/AdminVolunteers";
 import DataStatistics from "./pages/Admin/DataStatistics";
 import AdminSettings from "./pages/Admin/AdminSettings.jsx";
-import AdminDashboard from "./pages/Admin/Dashboard_A";
 import AdminVolunteerProfile from "./pages/Admin/AdminVolunteerProfile";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <AuthProvider>      {/* 🔥 CRITICAL: wraps everything */}
 
-        {/* PUBLIC PAGES */}
-        <Route element={<DefaultPage />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<AboutUs />} />
-          <Route path="events" element={<Events />} />
-          <Route path="register" element={<Register />} />
-          <Route path="login" element={<Login />} />
-        </Route>
+      <Router>
+        <Routes>
 
-        {/* VOLUNTEER PAGES */}
-        <Route path="/volunteer" element={<DefaultPageVolunteer />}>
-          <Route index element={<VolunteerDashboard />} />
-          <Route path="dashboard" element={<VolunteerDashboard />} />
-          <Route path="events" element={<Events />} />
+          {/* PUBLIC ROUTES */}
+          <Route element={<DefaultPage />}>
+            <Route index element={<Home />} />
+            <Route path="about" element={<AboutUs />} />
+            <Route path="events" element={<Events />} />
+            <Route path="register" element={<Register />} />
+            <Route path="login" element={<Login />} />
+          </Route>
+
+          {/* VOLUNTEER ROUTES */}
+          <Route path="/volunteer" element={<DefaultPageVolunteer />}>
+            <Route index element={<VolunteerDashboard />} />
+            <Route path="dashboard" element={<VolunteerDashboard />} />
+            <Route path="/volunteer/events" element={<VolunteerEvents />} />
+            <Route path="profile" element={<VolunteerProfile />} />
+            <Route path="history" element={<VolunteeringHistory />} />
+            <Route path="privacy" element={<PrivacySettings />} />
+          </Route>
+
+          {/* ADMIN PAGES */}
           <Route
-            path="profile"
+            path="/admin"
             element={
-              <VolunteerProfile
-                user={{
-                  firstName: "John",
-                  lastName: "Doe",
-                  email: "john@example.com",
-                  phone: "1234567890",
-                  birthday: "1990-01-01",
-                  address: "123 Street, City",
-                  profilePhoto: "/path/to/default.jpg"
-                }}
-              />
+              <ProtectedAdminRoute>
+                <DefaultPageAdmin />
+              </ProtectedAdminRoute>
             }
-          />
-          <Route path="history" element={<VolunteeringHistory />} />
-          <Route path="privacy" element={<PrivacySettings />} /> {/* ✅ Fixed */}
-        </Route>
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="events" element={<AdminEvents />} />
+            <Route path="events/:id" element={<EventDetails />} />
+            <Route path="events/:id/edit" element={<AdminEvents />} />
+            <Route path="volunteers" element={<AdminVolunteers />} />
+            <Route path="volunteers/:volunteerId" element={<AdminVolunteerProfile />} />
+            <Route path="stats" element={<DataStatistics />} />
+            <Route path="privacy" element={<AdminSettings />} />
+          </Route>
+        </Routes>
+      </Router>
 
-        {/* ADMIN PAGES */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedAdminRoute>
-              <DefaultPageAdmin />
-            </ProtectedAdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="events" element={<AdminEvents />} />
-          <Route path="events/:id" element={<EventDetails />} />
-          <Route path="events/:id/edit" element={<AdminEvents />} />
-          <Route path="volunteers" element={<AdminVolunteers />} />
-          <Route path="volunteers/:volunteerId" element={<AdminVolunteerProfile />} />
-          <Route path="stats" element={<DataStatistics />} />
-          <Route path="privacy" element={<AdminSettings />} />
-        </Route>
-      </Routes>
-    </Router>
+    </AuthProvider>
   );
 }
 
