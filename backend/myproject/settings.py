@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'events',
     'corsheaders',
     'rest_framework_simplejwt',
+    "volunteers",
 ]
 
 MIDDLEWARE = [

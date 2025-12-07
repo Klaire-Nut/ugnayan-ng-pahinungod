@@ -6,8 +6,9 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('volunteers', '0005_merge_20251127_0158'),
-    ]
+    ('volunteers', '0002_alter_volunteeraffliliation_affiliation_and_more'),
+]
+
 
     operations = [
         migrations.RemoveField(
