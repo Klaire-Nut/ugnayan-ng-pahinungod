@@ -23,6 +23,7 @@ const AdminProfileForm = ({
     "Volunteer Info": [
       "firstName", "middleName", "lastName", "nickname", "sex", "birthdate", "status"
     ],
+    /*
     "Contact Info": [
       "mobileNumber", "facebookLink"
     ],
@@ -53,6 +54,7 @@ const AdminProfileForm = ({
         }
       })()
     ]
+      */
   };
 
    // Make a nice human label from camelCase field keys

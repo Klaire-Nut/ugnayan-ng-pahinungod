@@ -26,7 +26,7 @@ const VolunteerEvents = () => {
 
   return (
     <div className="dashboard-page">
-      <Sidebar />
+     
 
       <main className="dashboard-content" style={{ padding: "2rem" }}>
         <h1 style={{ marginBottom: "1rem" }}>Events</h1>

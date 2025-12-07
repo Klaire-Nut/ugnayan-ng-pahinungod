@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-    ('volunteers', '0002_alter_volunteeraffliliation_affiliation_and_more'),
+    ('volunteers', '0002_alter_volunteeraffiliation_affiliation_and_more'),
 ]
 
 

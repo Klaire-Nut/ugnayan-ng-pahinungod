@@ -28,7 +28,6 @@ INSTALLED_APPS = [
     "rest_framework",
     'rest_framework.authtoken',
     "accounts",
-    'volunteers',  # ⭐ ADD THIS if not already there
     'events',
     'corsheaders',
     'rest_framework_simplejwt',

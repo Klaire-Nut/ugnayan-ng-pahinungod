@@ -33,12 +33,12 @@ export const login = ({ role, username, email, password }) => {
 // --------------------
 // LOGOUT
 // --------------------
+export const adminLogout = () =>
+  axios.post(`${BASE}auth/logout/`, {}, { withCredentials: true });
+
+// Generic wrapper if you still want to call logout(role)
 export const logout = (role) => {
-  if (role === "Admin") {
-    return axios.post(`${BASE}auth/logout/`, {}, { withCredentials: true });
-  } else {
-    return axios.post(`${BASE}volunteer/logout/`, {}, { withCredentials: true });
-  }
+  return role === "Admin" ? adminLogout() : volunteerLogout();
 };
 
 // --------------------

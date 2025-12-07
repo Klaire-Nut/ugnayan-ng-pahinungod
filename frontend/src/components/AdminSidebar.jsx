@@ -5,7 +5,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import logo from "../assets/UNP Logo.png";
 import "../styles/VolunteerSidebar.css";
 import "../styles/Sidebar.css";
-import { logout, removeRole } from "../services/auth";
+import { adminLogout, removeRole } from "../services/auth";
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const AdminSidebar = () => {
   
   const handleLogout = async () => {
     try {
-      await logout();        // backend clears session
+      await adminLogout();        // backend clears session
       removeRole();          // clear admin role from localStorage
       setAlertOpen(true);   // Show success alert
       // Delay redirect so user sees alert

@@ -37,7 +37,10 @@ export default function LoginPopup({ open, onClose, role }) {
         });
 
         console.log("✅ ADMIN LOGIN SUCCESS:", res.data);
+        saveRole("admin");   // ⭐ CRITICAL FIX
+
         navigate("/admin/dashboard");
+        onClose();
 
       } else {
         // ⭐ Volunteer login uses volunteerAPI (session-based)

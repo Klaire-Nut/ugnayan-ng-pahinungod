@@ -29,25 +29,6 @@ from core.models import (
     RetireeProfile
 )
 
-from .serializers import RegisterVolunteerSerializer
-from events.serializers import VolunteerEventSerializer
-
-# Your RegisterVolunteer class
-class RegisterVolunteer(APIView):
-    def post(self, request):
-        serializer = RegisterVolunteerSerializer(data=request.data)
-
-        if serializer.is_valid():
-            volunteer = serializer.save()
-            return Response({
-                "message": "Registration successful",
-                "volunteer_identifier": volunteer.volunteer_identifier
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# Volunteer - Events Setializers
 from volunteers.serializers import VolunteerSerializer
 
 
