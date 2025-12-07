@@ -12,6 +12,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Step4({
   formData = {},
@@ -92,7 +94,8 @@ const handleConfirmSubmit = async () => {
     nickname: emptyIfNull(formData.nickname),
     sex: emptyIfNull(formData.sex),
     birthdate: birthdate,
-    affiliation_type: emptyIfNull(formData.affiliation?.toLowerCase()),
+    affiliation_type: (formData.affiliation || "").toLowerCase(),
+
 
     contact: {
       mobile_number: emptyIfNull(formData.mobileNumber),
@@ -129,7 +132,7 @@ const handleConfirmSubmit = async () => {
 
     // Affiliation-specific profiles
     student_profile:
-      formData.affiliation?.toLowerCase() === "student"
+  (formData.affiliation || "").toLowerCase() === "student"
         ? {
             degree_program: emptyIfNull(formData.degreeProgram),
             year_level: emptyIfNull(formData.yearLevel),

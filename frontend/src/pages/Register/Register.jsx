@@ -120,7 +120,7 @@ export default function Register() {
         birthdate: finalData.birthdate
           ? new Date(finalData.birthdate).toISOString().split("T")[0]
           : null,
-        affiliation_type: finalData.affiliation.toUpperCase(),
+        affiliation_type: finalData.affiliation_type.toUpperCase(),
       },
 
       contact: {
