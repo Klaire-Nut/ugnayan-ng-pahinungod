@@ -22,6 +22,33 @@ export default function Register() {
   const [showLogin, setShowLogin] = useState(false);
   const [loginRole, setLoginRole] = useState("");
 
+  
+  const onSubmit = async (finalData) => {
+    try {
+      const response = await fetch(
+        "http://localhost:8000/api/volunteers/register/", // your backend endpoint
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(finalData),
+        }
+      );
+
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      if (!response.ok) throw data; // catch validation errors
+
+      return data; // Step4 will receive this
+    } catch (err) {
+      console.error("Registration error:", err);
+      throw err; // Step4 will handle the alert
+    }
+  };
+
+
   const [formData, setFormData] = useState({
     // Step 1 – Basic
     email: "",
@@ -331,7 +358,7 @@ export default function Register() {
                 formData={formData}
                 setFormData={setFormData}
                 loading={loading}
-                onSubmit={handleSubmit}
+                onSubmit={onSubmit}
                 onBack={() => setStep(3)}
               />
             )}

@@ -80,7 +80,7 @@ def user_view(request):
 
 
 # Volunteer Account
-@csrf_exempt
+"""@csrf_exempt
 def volunteer_login(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST method required."}, status=400)
@@ -119,4 +119,4 @@ def volunteer_login(request):
 @csrf_exempt
 def volunteer_logout(request):
     request.session.pop('volunteer_id', None)
-    return JsonResponse({"message": "Logout successful."})
+    return JsonResponse({"message": "Logout successful."})"""

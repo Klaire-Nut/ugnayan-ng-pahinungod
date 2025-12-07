@@ -22,6 +22,9 @@ urlpatterns = [
     # Volunteering History
     path('history/', VolunteerHistoryView.as_view(), name='volunteer-history'),
 
+    # Add this for frontend "current user" request
+    path('user/', VolunteerProfileView.as_view(), name='volunteer-current-user'),
+
     # Privacy Settings
     path('change-password/', ChangePasswordView.as_view(), name='volunteer-change-password'),
 ]

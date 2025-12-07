@@ -63,141 +63,108 @@ export default function Step4({
     setConfirmDialog(true);
   };
 
-// FINAL SUBMISSION (NO OTP)
 const handleConfirmSubmit = async () => {
   setConfirmDialog(false);
   setLoading(true);
 
-  // ---------------- Serialize the data ----------------
-  const prepareFinalData = (formData, password) => {
-  // ---------------- Validate and format birthdate ----------------
-  let birthdate = "";
-  if (formData.birthdate) {
-    const birthDateObj = new Date(formData.birthdate);
+  const emptyIfNull = (val) => val || "";
 
-    if (birthDateObj > new Date()) {
-      // Prevent future dates
-      alert("Birthdate cannot be in the future.");
-      setLoading(false);
-      throw new Error("Invalid birthdate");
-    }
-
-    birthdate = birthDateObj.toISOString().split("T")[0];
-  }
-
-  const emptyIfNull = (val) => val || ""; // helper to force empty string
-
-  return {
+  // Build payload exactly for backend serializer
+  const payload = {
+    volunteer: {
     first_name: emptyIfNull(formData.firstName),
     middle_name: emptyIfNull(formData.middleName),
     last_name: emptyIfNull(formData.lastName),
     nickname: emptyIfNull(formData.nickname),
     sex: emptyIfNull(formData.sex),
-    birthdate: birthdate,
+    birthdate: formData.birthdate
+      ? new Date(formData.birthdate).toISOString().split("T")[0]
+      : "",
     affiliation_type: (formData.affiliation || "").toLowerCase(),
-
-
-    contact: {
-      mobile_number: emptyIfNull(formData.mobileNumber),
-      facebook_link: emptyIfNull(formData.facebookLink),
-    },
-
-    address: {
-      street_address: emptyIfNull(formData.streetBarangay),
-      province: emptyIfNull(formData.province),
-      region: emptyIfNull(formData.region),
-    },
-
-    background: {
-      occupation: emptyIfNull(formData.occupation),
-      org_affiliation: emptyIfNull(formData.organizations),
-      hobbies_interests: emptyIfNull(formData.hobbies),
-    },
-
-    emergency_contact: {
-      name: emptyIfNull(formData.emerName),
-      relationship: emptyIfNull(formData.emerRelation),
-      contact_number: emptyIfNull(formData.emerContact),
-      address: emptyIfNull(formData.emerAddress),
-    },
-
-    account: {
-      email: emptyIfNull(formData.email),
-      password: emptyIfNull(password),
-    },
-
-    program_interests: formData.volunteerPrograms || [],
-    affirmative_action_subjects: formData.affirmativeActionSubjects || [],
-    volunteer_status: emptyIfNull(formData.volunteerStatus),
-
-    // Affiliation-specific profiles
-    student_profile:
-  (formData.affiliation || "").toLowerCase() === "student"
-        ? {
-            degree_program: emptyIfNull(formData.degreeProgram),
-            year_level: emptyIfNull(formData.yearLevel),
-            college: emptyIfNull(formData.college),
-            department: emptyIfNull(formData.department),
-          }
-        : {},
-
-    alumni_profile:
-      formData.affiliation?.toLowerCase() === "alumni"
-        ? {
-            constituent_unit: emptyIfNull(formData.constituentUnit),
-            degree_program: emptyIfNull(formData.degreeProgram),
-            year_graduated: emptyIfNull(formData.yearGraduated),
-          }
-        : {},
+  },
+  account: {
+    email: emptyIfNull(formData.email),
+    password: emptyIfNull(password),
+  },
+  contact: {
+    mobile_number: emptyIfNull(formData.mobileNumber),
+    facebook_link: emptyIfNull(formData.facebookLink),
+  },
+  address: {
+    street_address: emptyIfNull(formData.streetBarangay),
+    province: emptyIfNull(formData.province),
+    region: emptyIfNull(formData.region),
+  },
+  background: {
+    occupation: emptyIfNull(formData.occupation),
+    org_affiliation: emptyIfNull(formData.organizations),
+    hobbies_interests: emptyIfNull(formData.hobbies),
+  },
+  emergency_contact: {
+    name: emptyIfNull(formData.emerName),
+    relationship: emptyIfNull(formData.emerRelation),
+    contact_number: emptyIfNull(formData.emerContact),
+    address: emptyIfNull(formData.emerAddress),
+  },
+  student_profile: (formData.affiliation || "").toLowerCase() === "student"
+    ? {
+        degree_program: emptyIfNull(formData.degreeProgram),
+        year_level: emptyIfNull(formData.yearLevel),
+        college: emptyIfNull(formData.college),
+        department: emptyIfNull(formData.department),
+      }
+    : undefined,
+  alumni_profile: (formData.affiliation || "").toLowerCase() === "alumni"
+    ? {
+        constituent_unit: emptyIfNull(formData.constituentUnit),
+        degree_program: emptyIfNull(formData.degreeProgram),
+        year_graduated: emptyIfNull(formData.yearGraduated),
+      }
+    : undefined,
+  // ... other profiles
 
     staff_profile:
-      formData.affiliation?.toLowerCase() === "staff"
+      (formData.affiliation || "").toLowerCase() === "staff"
         ? {
             office_department: emptyIfNull(formData.officeDepartment),
             designation: emptyIfNull(formData.designation),
           }
-        : {},
+        : undefined,
 
     faculty_profile:
-      formData.affiliation?.toLowerCase() === "faculty"
+      (formData.affiliation || "").toLowerCase() === "faculty"
         ? {
             college: emptyIfNull(formData.facultyCollege),
             department: emptyIfNull(formData.facultyDepartment),
           }
-        : {},
+        : undefined,
 
     retiree_profile:
-      formData.affiliation?.toLowerCase() === "retiree"
+      (formData.affiliation || "").toLowerCase() === "retiree"
         ? {
             designation_while_in_up: emptyIfNull(formData.oldDesignation),
             office_college_department: emptyIfNull(formData.oldCollegeDept),
           }
-        : {},
+        : undefined,
   };
-};
 
   try {
-    const finalData = prepareFinalData(formData, password);
-    console.log("Submitting finalData:", finalData);
-
-    await onSubmit(finalData);
+    console.log("Submitting payload:", payload);
+    await onSubmit(payload); // send to backend
     setLoading(false);
     setSuccessDialog(true);
   } catch (error) {
-    // Stop already handled birthdate errors
-    if (error.message === "Invalid birthdate") return;
-
     setLoading(false);
     console.error("Registration failed:", error);
     const message =
       error.error ||
       (error.errors ? JSON.stringify(error.errors) : null) ||
-      error._general ||
       "Registration failed. Please check your input.";
-
     alert(message);
   }
 };
+
+
 
 const handleSuccessClose = () => {
   setSuccessDialog(false);

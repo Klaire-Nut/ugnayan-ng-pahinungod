@@ -43,24 +43,38 @@ export default function LoginPopup({ open, onClose, role }) {
         onClose();
 
       } else {
-        // ⭐ Volunteer login uses volunteerAPI (session-based)
-        const response = await volunteerAPI.login(username, password);
+  // ⭐ Volunteer login (now Token-based)
+  const response = await volunteerAPI.login(username, password);
 
-        if (!response.success) {
-          setErrorMessage(response.error || "Login failed");
-          setLoading(false);
-          return;
-        }
+  if (!response.success) {
+    setErrorMessage(response.error || "Login failed");
+    setLoading(false);
+    return;
+  }
 
-        console.log("✅ VOLUNTEER LOGIN SUCCESS:", response.data);
-        
-        // Optional: Store volunteer data in localStorage
-        if (response.data.volunteer) {
-          localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
-        }
+  console.log("🍪 Cookies after login:", document.cookie);
+  console.log("✅ VOLUNTEER LOGIN SUCCESS:", response.data);
 
-        navigate("/volunteer/dashboard");
-      }
+  // ⭐⭐⭐ IMPORTANT: STORE AUTH TOKEN ⭐⭐⭐
+  if (response.data.token) {
+    localStorage.setItem("volunteerToken", response.data.token);
+    console.log("🔐 Stored volunteer token:", response.data.token);
+  } else {
+    console.warn("⚠ No token returned from backend!");
+  }
+
+  // ⭐ Save role
+  saveRole("Volunteer");
+
+  // ⭐ Store volunteer profile
+  if (response.data.volunteer) {
+    localStorage.setItem("volunteer", JSON.stringify(response.data.volunteer));
+  }
+
+  navigate("/volunteer/dashboard", {
+    state: { volunteer: response.data.volunteer }
+  });
+}
 
       onClose();
 
@@ -182,7 +196,7 @@ export default function LoginPopup({ open, onClose, role }) {
             textAlign="center"
             sx={{ mt: 1, color: "#555" }}
           >
-            For authorized admins only.
+           
           </Typography>
           {role === "Volunteer" && (
             <Typography textAlign="center" sx={{ mt: 1, color: "#555" }}>

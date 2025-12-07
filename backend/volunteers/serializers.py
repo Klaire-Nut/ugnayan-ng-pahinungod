@@ -2,7 +2,7 @@ import importlib
 import importlib.util
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-
+from core.utils import generate_volunteer_identifier
 from core.models import (
     Volunteer, VolunteerContact, VolunteerAddress, VolunteerBackground,
     EmergencyContact, VolunteerAccount, ProgramInterest,
@@ -348,3 +348,79 @@ class EventVolunteersSerializer(serializers.ModelSerializer):
             "email": v.accounts.first().email if v.accounts.exists() else None,
             "mobile": v.contacts.first().mobile_number if v.contacts.exists() else None,
         }
+
+
+class VolunteerRegistrationSerializer(serializers.Serializer):
+    # --- Main volunteer fields ---
+    first_name = serializers.CharField()
+    middle_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField()
+    nickname = serializers.CharField(required=False, allow_blank=True)
+    sex = serializers.CharField()
+    birthdate = serializers.DateField()
+    affiliation_type = serializers.CharField()
+
+    # --- Nested serializers ---
+    account = VolunteerAccountSerializer()
+    contact = VolunteerContactSerializer()
+    address = VolunteerAddressSerializer()
+    background = VolunteerBackgroundSerializer()
+    emergency_contact = EmergencyContactSerializer()   # FIXED NAME
+
+    # --- Affiliation profiles ---
+    student_profile = StudentProfileSerializer(required=False)
+    alumni_profile = AlumniProfileSerializer(required=False)
+    staff_profile = StaffProfileSerializer(required=False)
+    faculty_profile = FacultyProfileSerializer(required=False)
+    retiree_profile = RetireeProfileSerializer(required=False)
+
+    def create(self, validated_data):
+        from django.contrib.auth.hashers import make_password
+
+        # Pop nested data
+        account_data = validated_data.pop("account")
+        contact_data = validated_data.pop("contact")
+        address_data = validated_data.pop("address")
+        background_data = validated_data.pop("background")
+        emergency_data = validated_data.pop("emergency_contact")  # FIXED KEY
+
+        student_data = validated_data.pop("student_profile", None)
+        alumni_data = validated_data.pop("alumni_profile", None)
+        staff_data = validated_data.pop("staff_profile", None)
+        faculty_data = validated_data.pop("faculty_profile", None)
+        retiree_data = validated_data.pop("retiree_profile", None)
+
+        # Generate unique volunteer identifier
+        validated_data["volunteer_identifier"] = generate_volunteer_identifier()
+        
+        # Create main volunteer
+        volunteer = Volunteer.objects.create(**validated_data)
+
+        # Create related tables
+        account_data["password"] = make_password(account_data["password"])
+        VolunteerAccount.objects.create(volunteer=volunteer, **account_data)
+
+        VolunteerContact.objects.create(volunteer=volunteer, **contact_data)
+        VolunteerAddress.objects.create(volunteer=volunteer, **address_data)
+        VolunteerBackground.objects.create(volunteer=volunteer, **background_data)
+        EmergencyContact.objects.create(volunteer=volunteer, **emergency_data)
+
+        # Save affiliation profile
+        aff_type = validated_data["affiliation_type"].lower()
+
+        if aff_type == "student" and student_data:
+            StudentProfile.objects.create(volunteer=volunteer, **student_data)
+
+        elif aff_type == "alumni" and alumni_data:
+            AlumniProfile.objects.create(volunteer=volunteer, **alumni_data)
+
+        elif aff_type == "staff" and staff_data:
+            StaffProfile.objects.create(volunteer=volunteer, **staff_data)
+
+        elif aff_type == "faculty" and faculty_data:
+            FacultyProfile.objects.create(volunteer=volunteer, **faculty_data)
+
+        elif aff_type == "retiree" and retiree_data:
+            RetireeProfile.objects.create(volunteer=volunteer, **retiree_data)
+
+        return volunteer

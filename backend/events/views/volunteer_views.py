@@ -1,31 +1,28 @@
 # events/views/volunteer_views.py
+
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import BasePermission
 from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-from core.models import Event, VolunteerEvent
+from core.models import Event, VolunteerEvent, VolunteerAccount
 from events.serializers import (
     EventListSerializer,
     EventDetailSerializer,
     VolunteerEventJoinSerializer,
     VolunteerEventSerializer,
 )
-from admin_api.events_serializers import AdminEventSerializer
 
-# ===============================================================
-#   SIMPLE PERMISSION — based on your session middleware
-# ===============================================================
-class IsVolunteer(BasePermission):
-    """
-    Checks if request.volunteer is attached via your session middleware.
-    """
-    def has_permission(self, request, view):
-        return hasattr(request, "volunteer") and request.volunteer is not None
+# Helper function to extract the logged-in volunteer
+def get_token_volunteer(user):
+    account = VolunteerAccount.objects.get(email=user.username)
+    return account.volunteer
 
 
 # ===============================================================
@@ -33,13 +30,14 @@ class IsVolunteer(BasePermission):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerEventListView(generics.ListAPIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = EventListSerializer
 
     def get_queryset(self):
         queryset = Event.objects.all().order_by('-date_start')
 
-        # Optional filtering: available events
+        # Optional filter: available slots only
         available = self.request.query_params.get('available')
         if available == 'true':
             return [
@@ -62,18 +60,19 @@ class VolunteerEventListView(generics.ListAPIView):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerJoinEventView(generics.CreateAPIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = VolunteerEventJoinSerializer
 
     def get_serializer_context(self):
+        # Inject volunteer object into serializer
         context = super().get_serializer_context()
-        context['volunteer'] = self.request.volunteer
+        context['volunteer'] = get_token_volunteer(self.request.user)
         return context
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         self.perform_create(serializer)
 
         return Response(
@@ -87,11 +86,12 @@ class VolunteerJoinEventView(generics.CreateAPIView):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerMyEventsView(generics.ListAPIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = VolunteerEventSerializer
 
     def get_queryset(self):
-        volunteer = self.request.volunteer
+        volunteer = get_token_volunteer(self.request.user)
 
         queryset = VolunteerEvent.objects.filter(
             volunteer=volunteer
@@ -109,10 +109,11 @@ class VolunteerMyEventsView(generics.ListAPIView):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerDropEventView(APIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, event_id):
-        volunteer = request.volunteer
+        volunteer = get_token_volunteer(request.user)
 
         volunteer_event = get_object_or_404(
             VolunteerEvent,
@@ -120,6 +121,7 @@ class VolunteerDropEventView(APIView):
             event_id=event_id
         )
 
+        # Prevent dropping if already started
         if volunteer_event.event.date_start < timezone.now():
             return Response(
                 {"error": "Cannot drop — event already started"},
@@ -143,22 +145,22 @@ class VolunteerDropEventView(APIView):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerEventDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = EventDetailSerializer
     queryset = Event.objects.all()
     lookup_field = "event_id"
 
     def retrieve(self, request, *args, **kwargs):
         event = self.get_object()
-        serializer = self.get_serializer(event)
+        volunteer = get_token_volunteer(request.user)
 
-        volunteer = request.volunteer
         volunteer_event = VolunteerEvent.objects.filter(
             volunteer=volunteer,
             event=event
         ).first()
 
-        data = serializer.data
+        data = self.get_serializer(event).data
         data["volunteer_status"] = {
             "is_joined": volunteer_event is not None,
             "status": volunteer_event.status if volunteer_event else None,
@@ -174,10 +176,11 @@ class VolunteerEventDetailView(generics.RetrieveAPIView):
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerUpdateAvailabilityView(APIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def patch(self, request, event_id):
-        volunteer = request.volunteer
+        volunteer = get_token_volunteer(request.user)
 
         volunteer_event = get_object_or_404(
             VolunteerEvent,
@@ -198,14 +201,16 @@ class VolunteerUpdateAvailabilityView(APIView):
 
 
 # ===============================================================
-#   LEGACY REGISTER ENDPOINT (kept for compatibility)
+#   LEGACY REGISTER ENDPOINT
 # ===============================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterEventAPIView(APIView):
-    permission_classes = [IsVolunteer]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, event_id):
-        volunteer = request.volunteer
+        volunteer = get_token_volunteer(request.user)
+
         availability_time = request.data.get("availability_time", "")
         availability_orientation = request.data.get("availability_orientation", False)
 

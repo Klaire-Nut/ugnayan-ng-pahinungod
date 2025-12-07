@@ -1,27 +1,53 @@
 // src/services/eventApi.js
-import api from './api'; // Axios instance already configured with baseURL and interceptors
+import axios from "axios";
 
-// ==================== PUBLIC EVENT ENDPOINTS ====================
-// Public endpoints are accessible to anyone
+const API_BASE_URL = "http://127.0.0.1:8000/api";
+
+// =====================================================
+//  VOLUNTEER AXIOS INSTANCE (TOKEN AUTH)
+// =====================================================
+const volunteerApi = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+// 🔥 Automatically attach volunteer token to every request
+volunteerApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// =====================================================
+//  PUBLIC EVENTS (NO AUTH)
+// =====================================================
 export const getPublicEvents = async (params = {}) => {
-  const response = await api.get('/events/', { params }); // Matches path('events/', ...)
+  const response = await axios.get(`${API_BASE_URL}/events/`, { params });
   return response.data;
 };
 
 export const getPublicEventDetail = async (eventId) => {
-  const response = await api.get(`/events/${eventId}/`); // Matches path('events/<int:event_id>/', ...)
+  const response = await axios.get(`${API_BASE_URL}/events/${eventId}/`);
   return response.data;
 };
 
-// ==================== ADMIN EVENT ENDPOINTS ====================
-// Admin routes must match the Django urls.py exactly
+// =====================================================
+//  ADMIN EVENTS (uses admin API instance)
+// =====================================================
+import api from "./api"; // admin axios instance
+
 export const adminGetEvents = async (params = {}) => {
-  const response = await api.get('/events/admin/events/', { params }); 
+  const response = await api.get("/events/admin/events/", { params });
   return response.data;
 };
 
 export const adminCreateEvent = async (eventData) => {
-  const response = await api.post('/events/admin/events/', eventData); 
+  const response = await api.post("/events/admin/events/", eventData);
   return response.data;
 };
 
@@ -36,7 +62,10 @@ export const adminUpdateEvent = async (eventId, eventData) => {
 };
 
 export const adminPartialUpdateEvent = async (eventId, eventData) => {
-  const response = await api.patch(`/events/admin/events/${eventId}/`, eventData);
+  const response = await api.patch(
+    `/events/admin/events/${eventId}/`,
+    eventData
+  );
   return response.data;
 };
 
@@ -51,13 +80,19 @@ export const adminDeleteEvent = async (eventId) => {
 };
 
 export const adminGetEventVolunteers = async (eventId) => {
-  const response = await api.get(`/events/admin/events/${eventId}/volunteers/`);
+  const response = await api.get(
+    `/events/admin/events/${eventId}/volunteers/`
+  );
   return response.data;
 };
 
-export const adminUpdateVolunteerEvent = async (eventId, volunteerId, data) => {
+export const adminUpdateVolunteerEvent = async (
+  eventId,
+  volunteerId,
+  data
+) => {
   const response = await api.patch(
-    `/events/admin/events/${eventId}/volunteers/${volunteerId}/`, 
+    `/events/admin/events/${eventId}/volunteers/${volunteerId}/`,
     data
   );
   return response.data;
@@ -70,54 +105,49 @@ export const adminGetEventStats = async (eventId) => {
 
 /// ==================== VOLUNTEER EVENT ENDPOINTS ====================
 
-// ✅ This was the main fix that resolved your 404 issue:
-// Volunteer endpoints now exactly match Django paths in urls.py
-
 // List all available events for volunteers
 export const volunteerGetEvents = async (params = {}) => {
-  const response = await api.get('/volunteer/events/', { params }); // Corrected path
+  const response = await api.get('/volunteer/events/', { params });
   return response.data;
 };
 
 // Get specific event detail for a volunteer
 export const volunteerGetEventDetail = async (eventId) => {
-  const response = await api.get(`/volunteer/events/${eventId}/`); // Corrected path
+  const response = await api.get(`/volunteer/events/${eventId}/`);
   return response.data;
 };
 
 // Volunteer joins an event
 export const volunteerJoinEvent = async (eventId) => {
   const response = await api.post(
-    "/volunteer/events/join/",
+    '/volunteer/events/join/',
     {
-      event: eventId,                   // 🔥 correct field name for Django serializer
-      availability_time: "",            // optional
-      availability_orientation: false   // optional
+      event: eventId,
+      availability_time: "",
+      availability_orientation: false
     },
     { withCredentials: true }
   );
-
   return response.data;
 };
 
-
-// Get all events that the volunteer has joined
+// Get all events the volunteer joined
 export const volunteerGetMyEvents = async (params = {}) => {
-  const response = await api.get('/volunteer/my-events/', { params }); // Corrected path
+  const response = await api.get('/volunteer/my-events/', { params });
   return response.data;
 };
 
-// Drop a volunteer event
+// Drop event
 export const volunteerDropEvent = async (eventId) => {
-  const response = await api.post(`/volunteer/events/${eventId}/drop/`); // Corrected path
+  const response = await api.post(`/volunteer/events/${eventId}/drop/`);
   return response.data;
 };
 
-// Update volunteer availability for an event
-export const volunteerUpdateAvailability = async (eventId, availabilityData) => {
+// Update availability
+export const volunteerUpdateAvailability = async (eventId, data) => {
   const response = await api.patch(
-    `/volunteer/events/${eventId}/availability/`, // Corrected path
-    availabilityData
+    `/volunteer/events/${eventId}/availability/`,
+    data
   );
   return response.data;
 };

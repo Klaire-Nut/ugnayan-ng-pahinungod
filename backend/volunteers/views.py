@@ -30,6 +30,11 @@ from core.models import (
 )
 
 from volunteers.serializers import VolunteerSerializer
+from core.utils import generate_volunteer_identifier
+from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+
 
 
 # ================================================================
@@ -87,10 +92,14 @@ def volunteer_login(request):
     request.session["volunteer_id"] = volunteer.volunteer_id
     request.session.save()
 
+    # 🔥 Generate or get authentication token
+    token, _ = Token.objects.get_or_create(user=user)
     return JsonResponse({
+        "success": True,
         "message": "Login successful",
         "volunteer_id": volunteer.volunteer_id,
-        "volunteer": VolunteerSerializer(volunteer).data
+        "volunteer": VolunteerSerializer(volunteer).data,
+        "token": token.key,
     })
 
 
@@ -103,27 +112,26 @@ def volunteer_logout(request):
     return JsonResponse({"message": "Logout successful"})
 
 
-# ================================================================
-#  👤 PROFILE VIEW (GET + PATCH)
-# ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     # ------------------------------------------------------------
-    # GET PROFILE
+    # GET PROFILE (TOKEN-BASED)
     # ------------------------------------------------------------
     def get(self, request):
-        volunteer = get_volunteer_from_session(request)
-        if not volunteer:
-            return Response({"error": "Not logged in"}, status=403)
+        try:
+            account = VolunteerAccount.objects.get(email=request.user.username)
+            volunteer = account.volunteer
+        except VolunteerAccount.DoesNotExist:
+            return Response({"error": "Invalid token user"}, status=403)
 
-        account = volunteer.accounts.first()
         contact = VolunteerContact.objects.filter(volunteer=volunteer).first()
         address = VolunteerAddress.objects.filter(volunteer=volunteer).first()
         background = VolunteerBackground.objects.filter(volunteer=volunteer).first()
         emergency = EmergencyContact.objects.filter(volunteer=volunteer).first()
 
-        # Affiliation
         affiliation_data = {}
         aff = (volunteer.affiliation_type or "").upper()
 
@@ -134,7 +142,7 @@ class VolunteerProfileView(APIView):
                     "degree_program": p.degree_program,
                     "year_level": p.year_level,
                     "college": p.college,
-                    "department": p.department
+                    "department": p.department,
                 }
 
         elif aff == "ALUMNI":
@@ -143,7 +151,7 @@ class VolunteerProfileView(APIView):
                 affiliation_data = {
                     "constituent_unit": p.constituent_unit,
                     "degree_program": p.degree_program,
-                    "year_graduated": p.year_graduated
+                    "year_graduated": p.year_graduated,
                 }
 
         elif aff == "UP STAFF":
@@ -151,7 +159,7 @@ class VolunteerProfileView(APIView):
             if p:
                 affiliation_data = {
                     "office_department": p.office_department,
-                    "designation": p.designation
+                    "designation": p.designation,
                 }
 
         elif aff == "FACULTY":
@@ -159,7 +167,7 @@ class VolunteerProfileView(APIView):
             if p:
                 affiliation_data = {
                     "college": p.college,
-                    "department": p.department
+                    "department": p.department,
                 }
 
         elif aff == "RETIREE":
@@ -167,10 +175,9 @@ class VolunteerProfileView(APIView):
             if p:
                 affiliation_data = {
                     "designation_while_in_up": p.designation_while_in_up,
-                    "office_college_department": p.office_college_department
+                    "office_college_department": p.office_college_department,
                 }
 
-        # Final Response
         data = {
             "volunteer_id": volunteer.volunteer_id,
             "first_name": volunteer.first_name,
@@ -180,38 +187,101 @@ class VolunteerProfileView(APIView):
             "sex": volunteer.sex,
             "birthdate": volunteer.birthdate,
             "affiliation_type": volunteer.affiliation_type,
-
-            "email": account.email if account else None,
+            "email": account.email,
             "mobile_number": contact.mobile_number if contact else None,
             "facebook_link": contact.facebook_link if contact else None,
-
             "street_address": address.street_address if address else None,
             "province": address.province if address else None,
             "region": address.region if address else None,
-
             "occupation": background.occupation if background else None,
             "org_affiliation": background.org_affiliation if background else None,
             "hobbies_interests": background.hobbies_interests if background else None,
-
             "emergency_contact": {
-                "name": emergency.name,
-                "relationship": emergency.relationship,
-                "contact_number": emergency.contact_number,
-                "address": emergency.address,
-            } if emergency else None,
-
+                "name": emergency.name if emergency else None,
+                "relationship": emergency.relationship if emergency else None,
+                "contact_number": emergency.contact_number if emergency else None,
+                "address": emergency.address if emergency else None,
+            },
             "affiliation_data": affiliation_data,
         }
 
         return Response(data)
 
     # ------------------------------------------------------------
-    # PATCH (UPDATE PROFILE)
+    # PATCH (UPDATE PROFILE) — TOKEN AUTH VERSION
     # ------------------------------------------------------------
     def patch(self, request):
-        volunteer = get_volunteer_from_session(request)
-        if not volunteer:
-            return Response({"error": "Not logged in"}, status=403)
+        try:
+            account = VolunteerAccount.objects.get(email=request.user.username)
+            volunteer = account.volunteer
+        except VolunteerAccount.DoesNotExist:
+            return Response({"error": "Invalid or expired token"}, status=403)
+
+        data = request.data
+        account = volunteer.accounts.first()
+
+        try:
+            with transaction.atomic():
+
+                # BASIC FIELDS
+                for field in ["first_name", "middle_name", "last_name",
+                              "nickname", "sex", "birthdate"]:
+                    if field in data:
+                        setattr(volunteer, field, data[field])
+                volunteer.save()
+
+                # EMAIL UPDATE
+                if account and "email" in data:
+                    account.email = data["email"]
+                    account.save()
+
+                # CONTACT
+                contact, _ = VolunteerContact.objects.get_or_create(volunteer=volunteer)
+                contact.mobile_number = data.get("mobile_number", contact.mobile_number)
+                contact.facebook_link = data.get("facebook_link", contact.facebook_link)
+                contact.save()
+
+                # ADDRESS
+                address, _ = VolunteerAddress.objects.get_or_create(volunteer=volunteer)
+                address.street_address = data.get("street_address", address.street_address)
+                address.province = data.get("province", address.province)
+                address.region = data.get("region", address.region)
+                address.save()
+
+                # BACKGROUND
+                background, _ = VolunteerBackground.objects.get_or_create(volunteer=volunteer)
+                background.occupation = data.get("occupation", background.occupation)
+                background.org_affiliation = data.get("org_affiliation", background.org_affiliation)
+                background.hobbies_interests = data.get("hobbies_interests", background.hobbies_interests)
+                background.save()
+
+                # EMERGENCY CONTACT
+                if data.get("emergency_contact"):
+                    emer = data["emergency_contact"]
+                    emergency, _ = EmergencyContact.objects.get_or_create(volunteer=volunteer)
+                    emergency.name = emer.get("name", emergency.name)
+                    emergency.relationship = emer.get("relationship", emergency.relationship)
+                    emergency.contact_number = emer.get("contact_number", emergency.contact_number)
+                    emergency.address = emer.get("address", emergency.address)
+                    emergency.save()
+
+            return Response({"success": True, "message": "Profile updated successfully"})
+
+        except Exception as e:
+            print("PATCH ERROR:", traceback.format_exc())
+            return Response({"error": str(e)}, status=400)
+
+
+        # ------------------------------------------------------------
+    # PATCH (UPDATE PROFILE) — TOKEN AUTH VERSION
+    # ------------------------------------------------------------
+    def patch(self, request):
+        # 🔥 Convert token → volunteer
+        try:
+            account = VolunteerAccount.objects.get(email=request.user.username)
+            volunteer = account.volunteer
+        except VolunteerAccount.DoesNotExist:
+            return Response({"error": "Invalid or expired token"}, status=403)
 
         data = request.data
         account = volunteer.accounts.first()
@@ -271,16 +341,22 @@ class VolunteerProfileView(APIView):
             return Response({"error": str(e)}, status=400)
 
 
+
 # ================================================================
-#  📜 EVENT HISTORY (FULL UPDATED VERSION)
+#  📜 EVENT HISTORY (TOKEN AUTH VERSION)
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerHistoryView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        volunteer = get_volunteer_from_session(request)
-        if not volunteer:
-            return Response({"error": "Not logged in"}, status=403)
+        # 🔥 Convert token → volunteer
+        try:
+            account = VolunteerAccount.objects.get(email=request.user.username)
+            volunteer = account.volunteer
+        except VolunteerAccount.DoesNotExist:
+            return Response({"error": "Invalid or expired token"}, status=403)
 
         queryset = VolunteerEvent.objects.filter(
             volunteer=volunteer
@@ -297,30 +373,32 @@ class VolunteerHistoryView(APIView):
                 "hours_rendered": ve.hours_rendered,
                 "status": ve.status,
             })
-        return Response({
-            "history": history
-        })
+
+        return Response({"history": history})
 
 
 # ================================================================
-#  🔐 CHANGE PASSWORD
+#  🔐 CHANGE PASSWORD (TOKEN AUTH VERSION)
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangePasswordView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        volunteer = get_volunteer_from_session(request)
-        if not volunteer:
-            return Response({"error": "Not logged in"}, status=403)
+        # 🔥 Convert token → volunteer account
+        try:
+            account = VolunteerAccount.objects.get(email=request.user.username)
+        except VolunteerAccount.DoesNotExist:
+            return Response({"error": "Invalid or expired token"}, status=403)
 
-        account = volunteer.accounts.first()
-        if not account:
-            return Response({"error": "Account not found"}, status=404)
+        volunteer = account.volunteer
 
         current = request.data.get("current_password")
         new = request.data.get("new_password")
         confirm = request.data.get("confirm_password")
 
+        # Validation
         if not current or not new or not confirm:
             return Response({"error": "All fields are required"}, status=400)
 
@@ -330,10 +408,12 @@ class ChangePasswordView(APIView):
         if new != confirm:
             return Response({"error": "Passwords do not match"}, status=400)
 
+        # Update password
         account.password = make_password(new)
         account.save()
 
         return Response({"message": "Password updated successfully"})
+
 
 
 # ================================================================
@@ -385,7 +465,9 @@ class RegisterVolunteer(APIView):
 
                 if errors:
                     return Response({"errors": errors}, status=400)
-
+                # Generate unique volunteer identifier
+                volunteer_data['volunteer_identifier'] = generate_volunteer_identifier()
+                
                 # Create volunteer
                 volunteer = Volunteer.objects.create(
                     first_name=volunteer_data.get('first_name', '').strip(),

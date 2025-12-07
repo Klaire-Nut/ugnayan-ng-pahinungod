@@ -45,18 +45,9 @@ export const logout = (role) => {
 // GET CURRENT LOGGED-IN USER
 // --------------------
 export const getCurrentUser = async () => {
-  try {
-    const v = await axios.get(`${BASE}volunteer/user/`, { withCredentials: true });
-    if (v.data?.volunteer_id) return { role: "Volunteer", data: v.data };
-
-    const a = await axios.get(`${BASE}auth/user/`, { withCredentials: true });
-    if (a.data?.user) return { role: "Admin", data: a.data.user };
-
-    return { role: null, data: null };
-  } catch {
-    return { role: null, data: null };
-  }
+  return { role: localStorage.getItem("role"), data: null };
 };
+
 
 // --------------------
 // VOLUNTEER-SPECIFIC HELPERS

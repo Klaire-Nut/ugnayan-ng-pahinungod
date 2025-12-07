@@ -1,7 +1,6 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { authAPI } from "../services/api";                  // ✅ correct
-import { volunteerAPI } from "../services/volunteerApi";    // ✅ correct
+import { volunteerAPI } from "../services/volunteerApi";
 
 const AuthContext = createContext(null);
 
@@ -9,123 +8,90 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ---------------------------
+  // LOAD USER FROM LOCAL STORAGE
+  // ---------------------------
   useEffect(() => {
-    // Check for existing auth on mount
-    const token = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("volunteer");
 
-    if (token && storedUser) {
+    if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("authToken");
+      } catch (e) {
+        console.error("Stored user is corrupted:", e);
         localStorage.removeItem("volunteer");
       }
     }
+
     setLoading(false);
   }, []);
 
   // ---------------------------
-  // LOGIN
+  // LOGIN (USES volunteerAPI)
   // ---------------------------
   const login = async (email, password) => {
-    try {
-      // New API returns { success, data }
-      const result = await authAPI.login({ email, password, role: "Volunteer" });
+    const result = await volunteerAPI.login(email, password);
 
-      if (!result.success) {
-        return { success: false, error: result.error };
-      }
-
-      const { token, volunteer } = result.data;
-
-      // Store token and user
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("volunteer", JSON.stringify(volunteer));
-      setUser(volunteer);
-
-      return { success: true, data: volunteer };
-    } catch (error) {
-      console.error("Login error:", error);
-      return {
-        success: false,
-        error:
-          error.response?.data?.error ||
-          error.response?.data?.detail ||
-          "Login failed",
-      };
+    if (!result.success) {
+      return result;
     }
+
+    const { volunteer } = result.data;
+
+    // Save user data (token is stored via cookies automatically)
+    localStorage.setItem("volunteer", JSON.stringify(volunteer));
+    setUser(volunteer);
+
+    return { success: true };
   };
 
   // ---------------------------
   // LOGOUT
   // ---------------------------
-  const logout = () => {
-    authAPI.logout("Volunteer"); // new API accepts role
+  const logout = async () => {
+    await volunteerAPI.logout(); // session logout
     setUser(null);
-    localStorage.removeItem("authToken");
     localStorage.removeItem("volunteer");
   };
 
   // ---------------------------
   // REGISTER
   // ---------------------------
-  const register = async (volunteerData) => {
-    try {
-      return await authAPI.register(volunteerData);
-    } catch (error) {
-      console.error("Registration error:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Registration failed",
-      };
-    }
+  const register = async (data) => {
+    return await volunteerAPI.register(data);
   };
 
   // ---------------------------
-  // UPDATE USER (GET PROFILE)
+  // REFRESH USER VIA PROFILE API
   // ---------------------------
   const updateUser = async () => {
-    try {
-      const response = await volunteerAPI.getProfile();
+    const response = await volunteerAPI.getProfile();
 
-      if (!response.success) return response;
+    if (!response.success) return response;
 
-      setUser(response.data);
-      localStorage.setItem("volunteer", JSON.stringify(response.data));
+    setUser(response.data);
+    localStorage.setItem("volunteer", JSON.stringify(response.data));
 
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("Failed to update user:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Failed to update user",
-      };
-    }
+    return { success: true };
   };
 
   const value = {
     user,
+    loading,
     login,
     logout,
     register,
-    loading,
     updateUser,
     isAuthenticated: !!user,
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 };

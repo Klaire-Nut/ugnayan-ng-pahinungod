@@ -3,13 +3,31 @@ import axios from "axios";
 
 const API_BASE_URL = "http://127.0.0.1:8000/api";
 
-// General axios instance
+// ================================
+// ⭐ 1. CREATE THE MAIN API CLIENT
+// ================================
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // 🔥 Required for Django session cookies
+  withCredentials: true, // still okay even with TokenAuth
 });
 
-// Auth-specific axios instance
+// ================================
+// ⭐ 2. ADD AUTH TOKEN INTERCEPTOR
+// ================================
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("volunteerToken");
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ================================
+// ⭐ 3. AUTH CLIENT (login/register)
+// ================================
 const authClient = axios.create({
   baseURL: `${API_BASE_URL}/auth/`,
   withCredentials: true,
@@ -18,17 +36,15 @@ const authClient = axios.create({
   },
 });
 
-// ================================
-// 🔐 AUTH API (VOLUNTEER ONLY)
-// ================================
+// ====================================================
+// 🔐 AUTH API (Volunteer)
+// ====================================================
 export const authAPI = {
-  // --- REGISTER VOLUNTEER ---
   register: async (data) => {
     try {
       const response = await authClient.post("register/", data);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Register error:", error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.errors || "Registration failed",
@@ -36,7 +52,6 @@ export const authAPI = {
     }
   },
 
-  // --- LOGIN (VOLUNTEER ONLY) ---
   login: async ({ email, password }) => {
     try {
       const response = await authClient.post("volunteer/login/", {
@@ -44,9 +59,13 @@ export const authAPI = {
         password,
       });
 
+      // ⭐ IMPORTANT: STORE TOKEN HERE
+      if (response.data.token) {
+        localStorage.setItem("volunteerToken", response.data.token);
+      }
+
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
       return {
         success: false,
         error:
@@ -57,30 +76,27 @@ export const authAPI = {
     }
   },
 
-  // --- LOGOUT VOLUNTEER ---
   logout: async () => {
     try {
       await authClient.post("volunteer/logout/", {});
+      localStorage.removeItem("volunteerToken");
       return { success: true };
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch {
       return { success: false };
     }
   },
 
-  // --- GET CURRENT LOGGED-IN USER ---
   getCurrentUser: async () => {
     try {
       const response = await authClient.get("user/");
       return { success: true, data: response.data };
-    } catch (error) {
-      console.error("Get current user error:", error);
+    } catch {
       return { success: false, error: "Failed to fetch current user" };
     }
   },
 };
 
-// ======================================================
-// 🔧 EXPORT MAIN API INSTANCE FOR OTHER FEATURES
-// ======================================================
+// ====================================================
+// ⭐ EXPORT
+// ====================================================
 export default api;
