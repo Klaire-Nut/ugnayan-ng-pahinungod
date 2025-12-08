@@ -34,7 +34,7 @@ export default function VolunteerPrivacySettings() {
   };
 
   // -----------------------------------------------------
-  // 🔐 VOLUNTEER PASSWORD CHANGE API CALL
+  // 🔐 CHANGE PASSWORD (Corrected Token Version)
   // -----------------------------------------------------
   const handleChangePassword = async () => {
     if (!oldPass || !newPass || !confirmPass) {
@@ -48,6 +48,9 @@ export default function VolunteerPrivacySettings() {
     }
 
     try {
+      // 🔑 Correct localStorage key
+      const token = localStorage.getItem("volunteerToken");
+
       const response = await axios.post(
         "http://127.0.0.1:8000/api/volunteers/change-password/",
         {
@@ -55,12 +58,17 @@ export default function VolunteerPrivacySettings() {
           new_password: newPass,
           confirm_password: confirmPass,
         },
-        { withCredentials: true } // IMPORTANT
+        {
+          headers: {
+            Authorization: `Token ${token}`, // ✔ Correct header
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       showNotif("success", response.data.message || "Password changed!");
 
-      // Reset fields
+      // Reset inputs
       setOldPass("");
       setNewPass("");
       setConfirmPass("");
@@ -68,7 +76,6 @@ export default function VolunteerPrivacySettings() {
     } catch (error) {
       const errMsg =
         error.response?.data?.error || "Failed to change password.";
-
       showNotif("error", errMsg);
     }
   };

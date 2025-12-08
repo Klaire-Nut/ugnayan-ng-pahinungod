@@ -19,6 +19,8 @@ import VolunteerEvents from "./pages/Volunteers/VolunteerEvents";
 import VolunteerProfile from "./pages/Volunteers/VolunteerProfile";
 import VolunteeringHistory from "./pages/Volunteers/VolunteeringHistory";
 import PrivacySettings from "./pages/Volunteers/PrivacySettings";
+import ProtectedVolunteerRoute from "./components/ProtectedVolunteerRoute";
+
 
 import AdminEvents from "./pages/Admin/AdminEvents.jsx";
 import EventDetails from "./pages/Admin/EventDetails";
@@ -47,10 +49,17 @@ function App() {
           </Route>
 
           {/* VOLUNTEER ROUTES */}
-          <Route path="/volunteer" element={<DefaultPageVolunteer />}>
+          <Route
+            path="/volunteer"
+            element={
+              <ProtectedVolunteerRoute>
+                <DefaultPageVolunteer />
+              </ProtectedVolunteerRoute>
+            }
+          >
             <Route index element={<VolunteerDashboard />} />
             <Route path="dashboard" element={<VolunteerDashboard />} />
-            <Route path="/volunteer/events" element={<VolunteerEvents />} />
+            <Route path="events" element={<VolunteerEvents />} />
             <Route path="profile" element={<VolunteerProfile />} />
             <Route path="history" element={<VolunteeringHistory />} />
             <Route path="privacy" element={<PrivacySettings />} />
