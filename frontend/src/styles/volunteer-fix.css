@@ -1,0 +1,18 @@
+/* Make volunteer content full width — remove inherited admin constraints */
+.vol-dashboard .admin-content {
+  padding: 20px 40px !important;
+  width: 100% !important;
+  max-width: 1600px !important;
+  margin: 0 auto !important;
+}
+
+.vol-dashboard .admin-content-inner {
+  max-width: 1600px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure Grid behaves like admin */
+.vol-dashboard .MuiGrid-item {
+  display: flex !important;
+}

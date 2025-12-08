@@ -1,0 +1,75 @@
+.event-details-container {
+  padding: 20px;
+  background: #f3f3f3;
+}
+
+.event-title {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #6d0000;
+}
+
+.event-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.field, .field-desc {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label,
+.field-desc label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.field input,
+.field-desc textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.field-desc textarea {
+  height: 120px;
+  resize: none;
+}
+
+.time-row {
+  display: flex;
+  gap: 20px;
+}
+
+.volunteers-header {
+  margin-top: 30px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.volunteer-table {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding-bottom: 10px;
+}
+
+td {
+  padding: 8px 0;
+  border-top: 1px solid #ddd;
+}

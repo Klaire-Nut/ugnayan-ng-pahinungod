@@ -1,0 +1,19 @@
+.admin-vol-profile {
+  padding: 20px;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-vol-photo {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.info-box {
+  padding: 8px 0;
+  font-size: 15px;
+}

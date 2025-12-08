@@ -1,0 +1,31 @@
+/* Fixed Admin Header */
+.admin-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 1000;
+}
+
+/* Sidebar under header */
+.admin-sidebar {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 240px;
+  height: calc(100vh - 60px);
+  background: #8C1C13;
+  overflow-y: auto;
+}
+
+/* Main content beside sidebar */
+.admin-content {
+  margin-top: 60px;       /* Push below header */
+  margin-left: 240px;     /* Push beside sidebar */
+  padding: 32px;
+  overflow-y: auto;
+  min-height: calc(100vh - 60px);
+  background: #f6f6f6;
+  box-sizing: border-box;
+}

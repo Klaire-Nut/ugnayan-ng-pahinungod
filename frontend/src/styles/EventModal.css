@@ -1,0 +1,294 @@
+/* ------------------------------------------------------
+   BACKDROP
+------------------------------------------------------ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 12, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(2px);
+}
+
+/* ------------------------------------------------------
+   MODAL CONTAINER
+------------------------------------------------------ */
+.modal-container {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 900px;
+  max-width: 95%;
+  max-height: 92vh;
+  animation: pop 160ms ease;
+  box-shadow: 0 20px 45px rgba(6, 6, 10, 0.35);
+}
+
+.modal-lg {
+  width: 960px;
+}
+
+/* ------------------------------------------------------
+   HEADER
+------------------------------------------------------ */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  background: #7B1113;
+  color: white;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 26px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+/* ------------------------------------------------------
+   TABS
+------------------------------------------------------ */
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: 0.2s ease;
+}
+
+.tab:hover {
+  background: rgba(123, 17, 19, 0.07);
+}
+
+.tab.active {
+  background: white;
+  border-bottom: 3px solid #7B1113;
+  color: #7B1113;
+}
+
+/* ------------------------------------------------------
+   MODAL BODY
+------------------------------------------------------ */
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  background: white;
+}
+
+/* ------------------------------------------------------
+   FORM GRID
+------------------------------------------------------ */
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+/* ------------------------------------------------------
+   FLOATING INPUTS
+------------------------------------------------------ */
+.floating {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.floating input,
+.floating textarea {
+  padding: 12px 14px 12px 40px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  width: 100%;
+  background: white;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating input:focus,
+.floating textarea:focus {
+  border-color: #7B1113;
+  box-shadow: 0 0 0 2px rgba(123, 17, 19, 0.2);
+  outline: none;
+}
+
+.floating label {
+  position: absolute;
+  left: 40px;
+  top: 12px;
+  font-size: 0.9rem;
+  color: #777;
+  transition: 0.2s ease;
+  pointer-events: none;
+}
+
+/* Floating label effect */
+.floating input:not(:placeholder-shown) + label,
+.floating textarea:not(:placeholder-shown) + label,
+.floating input:focus + label,
+.floating textarea:focus + label {
+  top: -10px;
+  left: 10px;
+  background: white;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  color: #7B1113;
+}
+
+/* ------------------------------------------------------
+   INPUT ICONS
+------------------------------------------------------ */
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 13px;
+  font-size: 15px;
+  color: #7B1113;
+  opacity: 0.8;
+}
+
+/* ------------------------------------------------------
+   NEW SCHEDULE CARD UI
+------------------------------------------------------ */
+.schedule-card {
+  background: #fafafa;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.2s ease;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.schedule-header h4 {
+  margin: 0;
+  font-weight: 700;
+  color: #7B1113;
+}
+
+/* grid of date/time/max slots */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* Remove button */
+.btn-remove-sched {
+  background: #ffe5e5;
+  border: 1px solid #ffb3b3;
+  color: #a10000;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-remove-sched:hover {
+  background: #ffd2d2;
+}
+
+/* Add schedule button */
+.btn-add-sched {
+  margin-top: 10px;
+  background: white;
+  color: #7B1113;
+  border: 1px solid #7B1113;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-add-sched:hover {
+  background: #7B1113;
+  color: white;
+}
+
+/* ------------------------------------------------------
+   FOOTER
+------------------------------------------------------ */
+.modal-footer {
+  background: #fafafa;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #eee;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-cancel:hover {
+  background: #f2f2f2;
+}
+
+.btn-confirm {
+  background: #7B1113;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-confirm:hover {
+  background: #670d0e;
+}
+
+/* ------------------------------------------------------
+   ANIMATIONS
+------------------------------------------------------ */
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
