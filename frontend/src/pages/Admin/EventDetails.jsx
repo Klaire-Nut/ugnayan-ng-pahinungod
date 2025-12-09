@@ -42,6 +42,27 @@ export default function EventDetails() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
+
+  const formatName = (v) => {
+    const info = v.volunteer_info || {};
+    const first = info.first_name || null;
+    const last = info.last_name || null;
+
+    if (first || last) {
+      return `${last ? last : ""}${last && first ? ", " : ""}${first ? first : ""}`;
+    }
+
+    const raw = info.name || v.name || "";
+    if (!raw) return "Unknown";
+
+    const parts = raw.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    const f = parts[0];
+    const l = parts.slice(1).join(" ");
+    return `${l}, ${f}`;
+  };
+
 
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleDateString("en-US", {
@@ -77,6 +98,31 @@ export default function EventDetails() {
     }
   };
 
+  const formatSchedules = (v) => {
+    const arr =
+      v.schedules ||
+      v.selected_schedules ||
+      v.selected_slots ||
+      v.chosen_schedules ||
+      [];
+
+    if (Array.isArray(arr) && arr.length) {
+      return arr
+        .map((s) => {
+          if (!s) return "";
+          if (typeof s === "string") return s;
+          if (s.date && (s.start_time || s.end_time)) {
+            return `${s.date} (${s.start_time}–${s.end_time})`;
+          }
+          return JSON.stringify(s);
+        })
+        .filter(Boolean)
+        .join(" — ");
+    }
+
+    return "-";
+  };
+
   /** -------------------------------
    * LOAD EVENT VOLUNTEERS
    * ------------------------------- */
@@ -87,7 +133,7 @@ export default function EventDetails() {
         "GET",
         null
       );
-      setVolunteers(data);
+      setVolunteers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("LOAD VOLUNTEERS ERROR:", err);
     }
@@ -166,6 +212,33 @@ export default function EventDetails() {
       navigate("/admin/events");
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const updateVolunteerHours = async (rowId, newHours) => {
+    const v = volunteers.find(x => x.id === rowId || x.volunteer_event_id === rowId);
+
+    const identifier = v?.id || v?.volunteer_event_id || rowId;
+
+    setVolunteers(prev =>
+      prev.map(x =>
+        x.id === identifier || x.volunteer_event_id === identifier
+          ? { ...x, hours_rendered: newHours }
+          : x
+      )
+    );
+
+    try {
+      await apiClient(
+        `http://localhost:8000/api/admin/events/${id}/volunteers/${identifier}/`,
+        "PATCH",
+        { hours_rendered: newHours }
+      );
+      setSnack({ open: true, severity: "success", message: "Hours saved." });
+    } catch (err) {
+      console.error(err);
+      setSnack({ open: true, severity: "error", message: "Failed to save hours." });
+      loadVolunteers();
     }
   };
 
@@ -332,20 +405,32 @@ export default function EventDetails() {
 
         <Paper sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid #ddd" }}>
           <DataGrid
-            rows={volunteers.map((v, index) => ({
-              id: index,
-              name: v.volunteer_info.name,
-              email: v.volunteer_info.email,
-              mobile: v.volunteer_info.mobile,
-              hours: v.hours_rendered,
-              status: v.status,
-            }))}
+            rows={volunteers.map((v, index) => {
+              const rowId = v.id ?? v.volunteer_event_id ?? index;
+
+              return {
+                id: rowId,
+                volunteerId: rowId,
+                name: formatName(v),
+                affiliation: formatAffiliation(v),
+                email: v.volunteer_info?.email ?? "-",
+                schedules: formatSchedules(v),
+                hours: v.hours_rendered ?? 0,
+              };
+            })}
             columns={[
-              { field: "name", headerName: "Name", flex: 1 },
+              { field: "volunteerId", headerName: "Volunteer ID", width: 130 },
+              { field: "name", headerName: "Name (Last, First)", flex: 1 },
               { field: "email", headerName: "Email", flex: 1 },
-              { field: "mobile", headerName: "Mobile", width: 130 },
-              { field: "status", headerName: "Status", width: 130 },
-              { field: "hours", headerName: "Hours", width: 100 },
+              { field: "affiliation", headerName: "Affiliation", flex: 1 },
+              { field: "schedules", headerName: "Schedule/s", flex: 1.5 },
+              {
+                field: "hours",
+                headerName: "Hours",
+                width: 120,
+                editable: true,
+                type: "number",
+              },
             ]}
             hideFooter
             sx={{
@@ -353,6 +438,14 @@ export default function EventDetails() {
                 background: "#f3f3f3",
                 fontWeight: 700,
               },
+            }}
+
+            onCellEditCommit={(params) => {
+              if (params.field === "hours") {
+                const value = Number(params.value);
+                if (isNaN(value) || value < 0) return;
+                updateVolunteerHours(params.id, value);
+              }
             }}
           />
         </Paper>
@@ -437,6 +530,21 @@ export default function EventDetails() {
           Event updated successfully!
         </Alert>
       </Snackbar>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3000}
+        onClose={() => setSnack(s => ({ ...s, open: false }))}
+      >
+        <Alert
+          onClose={() => setSnack(s => ({ ...s, open: false }))}
+          severity={snack.severity}
+          variant="filled"
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 }
