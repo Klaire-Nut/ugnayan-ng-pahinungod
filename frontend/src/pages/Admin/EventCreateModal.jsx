@@ -105,31 +105,6 @@ export default function EventCreateModal({
       schedules: prev.schedules.filter((_, i) => i !== index),
     }));
 
-  // -------------------------------------------------------
-  // CREATE EVENT — includes full error handling
-  // -------------------------------------------------------
-  async function handleCreate(payload) {
-    try {
-      const result = await adminCreateEvent(payload);
-      return result;
-    } catch (err) {
-      console.error("Create event error:", err);
-
-      let message = "Unknown error occurred.";
-
-      if (err && err.body) {
-        if (typeof err.body === "string") message = err.body;
-        else if (err.body.detail) message = err.body.detail;
-        else if (err.body.error) message = err.body.error;
-        else message = JSON.stringify(err.body);
-      } else if (err.status) {
-        message = `Server returned status ${err.status}`;
-      }
-
-      setErrorMessage(message);
-      return null;
-    }
-  }
 
   // -------------------------------------------------------
   // FORM SUBMIT
@@ -139,12 +114,9 @@ export default function EventCreateModal({
     setErrorMessage("");
 
     if (mode === "create") {
-      const result = await handleCreate(form);
-      if (result) {
-        onCreate(result);
+        onCreate(form);
         onClose();
-      }
-    } else {
+      } else {
       onUpdate(eventData.event_id, form);
       onClose();
     }
