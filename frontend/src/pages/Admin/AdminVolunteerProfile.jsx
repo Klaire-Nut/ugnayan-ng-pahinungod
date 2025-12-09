@@ -122,7 +122,7 @@ const AdminVolunteerProfile = () => {
     <div className="vol-profile-page">
       <div className="vol-profile-main">
         <div className="profile-header">
-          <h2 className="profile-title">Profile</h2>
+          <h2 className="profile-title">PROFILE</h2>
         </div>
 
         {/* ProfileForm handles displaying all fields */}

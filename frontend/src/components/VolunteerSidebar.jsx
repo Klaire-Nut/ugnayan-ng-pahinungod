@@ -16,10 +16,36 @@ import "../styles/Sidebar.css"; // ← same CSS as admin
 const VolunteerSidebar = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+ const handleLogout = () => {
+    // Remove volunteer token
+    localStorage.removeItem("volunteerToken");
+    localStorage.removeItem("volunteerData");
+    sessionStorage.clear();
+
+    // Clear cookies
+    document.cookie.split(";").forEach(cookie => {
+        document.cookie = cookie
+            .replace(/^ +/, "")
+            .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
+
+    // Redirect to HOME PAGE
     navigate("/", { replace: true });
-    window.location.reload();
-  };
+
+    // Prevent back navigation to protected pages
+    setTimeout(() => {
+        window.history.pushState(null, "", window.location.href);
+        window.addEventListener("popstate", () => {
+            navigate("/", { replace: true });
+        });
+    }, 50);
+
+    // OPTIONAL: reload UI once
+    setTimeout(() => window.location.reload(), 80);
+};
+
+
+
 
   return (
     <aside className="sidebar">

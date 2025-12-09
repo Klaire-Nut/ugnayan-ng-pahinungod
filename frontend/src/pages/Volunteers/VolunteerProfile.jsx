@@ -80,7 +80,7 @@ export default function VolunteerProfile() {
           <div className="profile-left">
             <img
               src={userData.profile_picture || "/default-profile.png"}
-              alt="Profile"
+              alt=""
               className="profile-photo"
             />
             <div className="volunteer-id">ID: {userData.volunteer_id}</div>
