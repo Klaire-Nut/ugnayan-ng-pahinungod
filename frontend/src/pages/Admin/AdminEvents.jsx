@@ -82,14 +82,7 @@ export default function AdminEvents() {
   // ----------------------------------------------------------
   const handleCreateEvent = async (form) => {
     try {
-      const res = await apiClient(API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
+      const res = await apiClient(API, "POST", form);
 
       if (!res.ok) throw new Error("Failed to create event");
 
@@ -97,15 +90,9 @@ export default function AdminEvents() {
       const eventId = event.event_id;
 
       for (const s of form.schedules) {
-        await apiClient(`${API}${eventId}/schedule/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(s),
-        });
+        await apiClient(`${API}${eventId}/schedule/`, "POST", s);
       }
+
 
       showNotif("success", "Event created successfully!");
       setOpenModal(false);
@@ -117,31 +104,14 @@ export default function AdminEvents() {
 
   const handleUpdateEvent = async (event_id, form) => {
     try {
-      const res = await apiClient(`${API}${event_id}/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
+      const res = await apiClient(`${API}${event_id}/`, "PUT", form);
 
       if (!res.ok) throw new Error("Failed to update event");
 
-      await apiClient(`${API}${event_id}/schedule/`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient(`${API}${event_id}/schedule/`, "DELETE");
 
       for (const s of form.schedules) {
-        await apiClient(`${API}${event_id}/schedule/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(s),
-        });
+        await apiClient(`${API}${event_id}/schedule/`, "POST", s);
       }
 
       showNotif("success", "Event updated successfully!");
@@ -155,10 +125,8 @@ export default function AdminEvents() {
 
   const handleDeleteEvent = async (event_id) => {
     try {
-      await apiClient(`${API}${event_id}/`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient(`${API}${event_id}/`, "DELETE");
+
 
       showNotif("warning", "Event deleted.");
       window.dispatchEvent(new Event("eventUpdated"));

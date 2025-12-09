@@ -10,55 +10,53 @@ export default function DefaultPageVolunteer() {
   const [events, setEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("volunteerToken");
   const isLoggedIn = Boolean(token);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("volunteerToken");
     window.location.href = "/login";
   };
 
-  // -----------------------------------------
-  // FETCH AVAILABLE EVENTS
-  // -----------------------------------------
+  // ---------------------------------------------------
+  // FETCH ALL EVENTS
+  // ---------------------------------------------------
   useEffect(() => {
     if (!token) return;
 
-    const loadEvents = async () => {
+    async function loadEvents() {
       try {
-        const res = await fetch("http://localhost:8000/api/events/volunteer/events/", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch("http://localhost:8000/api/volunteer/events/", {
+          headers: { Authorization: `Token ${token}` },
         });
 
         const data = await res.json();
-
-        // keep original fields (event_id, date_start, schedules, etc.)
         setEvents(data);
       } catch (err) {
         console.error("Error loading events:", err);
       }
-    };
+    }
 
     loadEvents();
   }, [token]);
 
-  // -----------------------------------------
-  // FETCH VOLUNTEER JOINED EVENTS
-  // -----------------------------------------
+  // ---------------------------------------------------
+  // FETCH JOINED EVENTS
+  // ---------------------------------------------------
   useEffect(() => {
     if (!token) return;
 
-    const loadJoined = async () => {
+    async function loadJoined() {
       try {
-        const res = await fetch("http://localhost:8000/api/events/volunteer/my-events/", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch("http://localhost:8000/api/volunteer/my-events/", {
+          headers: { Authorization: `Token ${token}` },
         });
 
         const data = await res.json();
 
-        // Backend returns: {event_id, event_name, status}
+        // normalize structure
         setJoinedEvents(
-          data.map((j) => ({
+          (data || []).map((j) => ({
             event_id: j.event_id,
             event_name: j.event_name,
             status: j.status,
@@ -67,26 +65,25 @@ export default function DefaultPageVolunteer() {
       } catch (err) {
         console.error("Error loading joined events:", err);
       }
-    };
+    }
 
     loadJoined();
   }, [token]);
 
   return (
     <div className="admin-layout vol-dashboard">
-      {/* Header */}
+      {/* HEADER */}
       <div className="admin-header">
         <VolunteerHeader isLoggedIn={isLoggedIn} onLogout={handleLogout} />
       </div>
 
       <div className="admin-main">
-        
-        {/* Sidebar */}
+        {/* SIDEBAR */}
         <aside className="admin-sidebar vol-sidebar">
           <VolunteerSidebar />
         </aside>
 
-        {/* Main content */}
+        {/* MAIN CONTENT */}
         <section className="admin-content">
           <div className="admin-content-inner">
             <Outlet
@@ -98,7 +95,6 @@ export default function DefaultPageVolunteer() {
             />
           </div>
         </section>
-
       </div>
 
       <footer className="admin-footer">

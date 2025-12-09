@@ -7,6 +7,7 @@ from .views import (
     ChangePasswordView,
     RegisterVolunteer
 )
+from events.views.volunteer_views import VolunteerEventListView
 
 urlpatterns = [
     # Auth
@@ -27,4 +28,6 @@ urlpatterns = [
 
     # Privacy Settings
     path('change-password/', ChangePasswordView.as_view(), name='volunteer-change-password'),
+    
+    path('events/', VolunteerEventListView.as_view(), name='volunteer-events'),
 ]

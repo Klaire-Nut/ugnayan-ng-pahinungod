@@ -162,13 +162,32 @@ class AdminEventListCreateView(APIView):
         ])
 
     def post(self, request):
+        data = request.data
+        schedules = data.get("schedules", [])
+
+        if not schedules:
+            return Response({"error": "At least one schedule is required"}, status=400)
+
+        # Create event
         e = Event.objects.create(
-            event_name=request.data.get("event_name"),
-            description=request.data.get("description"),
-            location=request.data.get("location"),
-            date_start=request.data['schedules'][0]['date'],
-            date_end=request.data['schedules'][-1]['date'],
+            event_name=data.get("event_name"),
+            description=data.get("description"),
+            location=data.get("location"),
+            date_start=schedules[0]["date"],   # earliest date
+            date_end=schedules[-1]["date"],    # latest date
+            created_by=request.user,
         )
+
+        # Create schedules
+        for sched in schedules:
+            EventSchedule.objects.create(
+                event=e,
+                date=sched["date"],
+                start_time=sched["start_time"],
+                end_time=sched["end_time"],
+                max_slots=sched.get("max_slots", 10),
+            )
+
         return Response({"event_id": e.event_id}, status=201)
 
 

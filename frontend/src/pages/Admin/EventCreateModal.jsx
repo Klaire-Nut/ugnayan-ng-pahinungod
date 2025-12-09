@@ -6,6 +6,7 @@ import {
   FaMapMarkerAlt,
   FaUserFriends,
 } from "react-icons/fa";
+import { adminCreateEvent } from "../../services/adminApi";
 
 export default function EventCreateModal({
   open = false,
@@ -16,6 +17,7 @@ export default function EventCreateModal({
   onClose = () => {},
 }) {
   const [activeTab, setActiveTab] = useState("basic");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [form, setForm] = useState({
     event_name: "",
@@ -24,13 +26,17 @@ export default function EventCreateModal({
     schedules: [],
   });
 
+  // -------------------------------------------------------
+  // Load event data when editing
+  // -------------------------------------------------------
   useEffect(() => {
+    setErrorMessage("");
+
     if (mode === "edit" && eventData) {
       setForm({
         event_name: eventData.event_name,
         description: eventData.description,
         location: eventData.location,
-
         schedules:
           eventData.schedules?.length > 0
             ? eventData.schedules.map((s) => ({
@@ -67,6 +73,9 @@ export default function EventCreateModal({
 
   if (!open) return null;
 
+  // -------------------------------------------------------
+  // Helpers for updating state
+  // -------------------------------------------------------
   const updateField = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -96,12 +105,54 @@ export default function EventCreateModal({
       schedules: prev.schedules.filter((_, i) => i !== index),
     }));
 
-  const handleSubmit = (e) => {
+  // -------------------------------------------------------
+  // CREATE EVENT — includes full error handling
+  // -------------------------------------------------------
+  async function handleCreate(payload) {
+    try {
+      const result = await adminCreateEvent(payload);
+      return result;
+    } catch (err) {
+      console.error("Create event error:", err);
+
+      let message = "Unknown error occurred.";
+
+      if (err && err.body) {
+        if (typeof err.body === "string") message = err.body;
+        else if (err.body.detail) message = err.body.detail;
+        else if (err.body.error) message = err.body.error;
+        else message = JSON.stringify(err.body);
+      } else if (err.status) {
+        message = `Server returned status ${err.status}`;
+      }
+
+      setErrorMessage(message);
+      return null;
+    }
+  }
+
+  // -------------------------------------------------------
+  // FORM SUBMIT
+  // -------------------------------------------------------
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (mode === "create") onCreate(form);
-    else onUpdate(eventData.event_id, form);
+    setErrorMessage("");
+
+    if (mode === "create") {
+      const result = await handleCreate(form);
+      if (result) {
+        onCreate(result);
+        onClose();
+      }
+    } else {
+      onUpdate(eventData.event_id, form);
+      onClose();
+    }
   };
 
+  // -------------------------------------------------------
+  // RENDER
+  // -------------------------------------------------------
   return (
     <div className="modal-backdrop">
       <form className="modal-container modal-lg animate-scale" onSubmit={handleSubmit}>
@@ -114,7 +165,14 @@ export default function EventCreateModal({
           </button>
         </div>
 
-        {/* TAB BUTTONS */}
+        {/* ERROR MESSAGE BOX */}
+        {errorMessage && (
+          <div className="error-box">
+            <p>{errorMessage}</p>
+          </div>
+        )}
+
+        {/* TABS */}
         <div className="modal-tabs">
           <button
             type="button"
@@ -133,8 +191,9 @@ export default function EventCreateModal({
           </button>
         </div>
 
+        {/* BODY */}
         <div className="modal-body">
-          {/* -------------------- BASIC INFO -------------------- */}
+
           {activeTab === "basic" && (
             <div className="form-grid-2col">
               <div className="floating form-group">
@@ -168,13 +227,14 @@ export default function EventCreateModal({
             </div>
           )}
 
-          {/* -------------------- SCHEDULE TAB -------------------- */}
+          {/* SCHEDULE TAB */}
           {activeTab === "schedule" && (
             <div>
               <h3 className="section-title">Event Schedules</h3>
 
               {form.schedules.map((sched, index) => (
                 <div className="schedule-card" key={index}>
+                  
                   <div className="schedule-header">
                     <h4>Day {index + 1}</h4>
                     <button
@@ -190,7 +250,6 @@ export default function EventCreateModal({
                     <div className="floating form-group">
                       <input
                         type="date"
-                        placeholder=" "
                         value={sched.date}
                         onChange={(e) => updateSchedule(index, "date", e.target.value)}
                       />
@@ -201,7 +260,6 @@ export default function EventCreateModal({
                     <div className="floating form-group">
                       <input
                         type="time"
-                        placeholder=" "
                         value={sched.start_time}
                         onChange={(e) => updateSchedule(index, "start_time", e.target.value)}
                       />
@@ -212,7 +270,6 @@ export default function EventCreateModal({
                     <div className="floating form-group">
                       <input
                         type="time"
-                        placeholder=" "
                         value={sched.end_time}
                         onChange={(e) => updateSchedule(index, "end_time", e.target.value)}
                       />
@@ -224,13 +281,12 @@ export default function EventCreateModal({
                       <input
                         type="number"
                         min={1}
-                        placeholder=" "
                         value={sched.max_slots}
                         onChange={(e) =>
                           updateSchedule(index, "max_slots", Number(e.target.value))
                         }
                       />
-                      <label>Max Slots for This Day</label>
+                      <label>Max Slots</label>
                       <FaUserFriends className="input-icon" />
                     </div>
                   </div>
@@ -253,6 +309,7 @@ export default function EventCreateModal({
             {mode === "create" ? "Create Event" : "Save Changes"}
           </button>
         </div>
+
       </form>
     </div>
   );

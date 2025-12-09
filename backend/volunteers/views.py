@@ -1,15 +1,14 @@
-# volunteers/views.py
-
+# backend/volunteers/views.py
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.contrib.auth import login, logout
-from django.contrib.auth import get_user_model
+from django.contrib.auth import login, logout, get_user_model
 
 from django.http import JsonResponse
 from django.db import transaction
@@ -30,18 +29,28 @@ from core.models import (
     AlumniProfile,
     StaffProfile,
     FacultyProfile,
-    RetireeProfile
+    RetireeProfile,
+    Event,
 )
 
 from volunteers.serializers import VolunteerSerializer
 from core.utils import generate_volunteer_identifier
 
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
+from events.serializers import EventListSerializer
 
+# Helper: safely get volunteer account from the current user
+def _get_volunteer_account_for_user(user):
+    email = getattr(user, "email", None)
+    if not email:
+        return None
+    try:
+        return VolunteerAccount.objects.select_related("volunteer").get(email=email)
+    except VolunteerAccount.DoesNotExist:
+        return None
 
 # ================================================================
-#  🔐 VOLUNTEER LOGIN (TOKEN-BASED)
+#   VOLUNTEER LOGIN (TOKEN-BASED)
 # ================================================================
 @csrf_exempt
 def volunteer_login(request):
@@ -69,17 +78,21 @@ def volunteer_login(request):
 
     volunteer = account.volunteer
 
-    # Ensure Django user exists (for token)
-    user, _ = User.objects.get_or_create(username=email)
-    if not user.password:
+    # Ensure Django auth user exists (used for TokenAuthentication)
+    user, created = User.objects.get_or_create(email=email)
+    if created or not user.password:
         user.password = make_password(password)
-        user.save()
 
-    # Login user for session compatibility
+    # mark role flags on user if you use them
+    if hasattr(user, "is_volunteer"):
+        user.is_volunteer = True
+    user.save()
+
+    # login to create session compatibility (not required for token auth but harmless)
     user.backend = "django.contrib.auth.backends.ModelBackend"
     login(request, user)
 
-    # Get or create token
+    # create/get token
     token, _ = Token.objects.get_or_create(user=user)
 
     return JsonResponse({
@@ -91,7 +104,7 @@ def volunteer_login(request):
 
 
 # ================================================================
-#  🚪 LOGOUT
+#  LOGOUT
 # ================================================================
 @csrf_exempt
 def volunteer_logout(request):
@@ -100,18 +113,23 @@ def volunteer_logout(request):
 
 
 # ================================================================
-#  👤 VOLUNTEER PROFILE VIEW (TOKEN)
+#  VOLUNTEER PROFILE VIEW (TOKEN)
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerProfileView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def _get_account_or_403(self, request):
+        account = _get_volunteer_account_for_user(request.user)
+        if not account:
+            return None, Response({"error": "Invalid token or account not found"}, status=403)
+        return account, None
+
     def get(self, request):
-        try:
-            account = VolunteerAccount.objects.get(email=request.user.username)
-        except VolunteerAccount.DoesNotExist:
-            return Response({"error": "Invalid token"}, status=403)
+        account, err = self._get_account_or_403(request)
+        if err:
+            return err
 
         volunteer = account.volunteer
 
@@ -134,7 +152,7 @@ class VolunteerProfileView(APIView):
             "background": {
                 "occupation": background.occupation if background else None,
                 "org_affiliation": background.org_affiliation if background else None,
-                "hobbies_interests": background.hobbies_interrests if background else None,
+                "hobbies_interests": getattr(background, "hobbies_interests", None),
             },
             "emergency_contact": {
                 "name": emergency.name if emergency else None,
@@ -145,30 +163,25 @@ class VolunteerProfileView(APIView):
         })
 
     def patch(self, request):
-        try:
-            account = VolunteerAccount.objects.get(email=request.user.username)
-        except VolunteerAccount.DoesNotExist:
-            return Response({"error": "Invalid token"}, status=403)
+        account, err = self._get_account_or_403(request)
+        if err:
+            return err
 
         volunteer = account.volunteer
         data = request.data
 
         try:
             with transaction.atomic():
-                # BASIC INFO
-                for field in ["first_name", "middle_name", "last_name",
-                              "nickname", "sex", "birthdate"]:
+                for field in ["first_name", "middle_name", "last_name", "nickname", "sex", "birthdate"]:
                     if field in data:
                         setattr(volunteer, field, data[field])
                 volunteer.save()
 
-                # CONTACT INFO
                 contact, _ = VolunteerContact.objects.get_or_create(volunteer=volunteer)
                 contact.mobile_number = data.get("mobile_number", contact.mobile_number)
                 contact.facebook_link = data.get("facebook_link", contact.facebook_link)
                 contact.save()
 
-                # ADDRESS
                 address, _ = VolunteerAddress.objects.get_or_create(volunteer=volunteer)
                 address.street_address = data.get("street_address", address.street_address)
                 address.province = data.get("province", address.province)
@@ -176,13 +189,14 @@ class VolunteerProfileView(APIView):
                 address.save()
 
             return Response({"success": True})
-
         except Exception as e:
+            # log stack for server
+            print("VolunteerProfileView.patch error:", traceback.format_exc())
             return Response({"error": str(e)}, status=400)
 
 
 # ================================================================
-#  📜 EVENT HISTORY
+#  EVENT HISTORY
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class VolunteerHistoryView(APIView):
@@ -190,18 +204,15 @@ class VolunteerHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            account = VolunteerAccount.objects.get(email=request.user.username)
-            volunteer = account.volunteer
-        except VolunteerAccount.DoesNotExist:
-            return Response({"error": "Invalid token"}, status=403)
+        account = _get_volunteer_account_for_user(request.user)
+        if not account:
+            return Response({"error": "Invalid token or account not found"}, status=403)
 
-        queryset = VolunteerEvent.objects.filter(
-            volunteer=volunteer
-        ).select_related("event").order_by("event__date_start")
+        volunteer = account.volunteer
 
-        history = [
-            {
+        queryset = VolunteerEvent.objects.filter(volunteer=volunteer).select_related("event").order_by("event__date_start")
+
+        history = [{
                 "event_id": ve.event.event_id,
                 "event_name": ve.event.event_name,
                 "date": ve.event.date_start,
@@ -209,15 +220,13 @@ class VolunteerHistoryView(APIView):
                 "time_out": ve.event.date_end,
                 "hours_rendered": ve.hours_rendered,
                 "status": ve.status,
-            }
-            for ve in queryset
-        ]
+            } for ve in queryset]
 
         return Response({"history": history})
 
 
 # ================================================================
-#  🔐 CHANGE PASSWORD
+#  CHANGE PASSWORD
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class ChangePasswordView(APIView):
@@ -225,10 +234,9 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        try:
-            account = VolunteerAccount.objects.get(email=request.user.username)
-        except VolunteerAccount.DoesNotExist:
-            return Response({"error": "Invalid token"}, status=403)
+        account = _get_volunteer_account_for_user(request.user)
+        if not account:
+            return Response({"error": "Invalid token or account not found"}, status=403)
 
         current = request.data.get("current_password")
         new = request.data.get("new_password")
@@ -250,7 +258,7 @@ class ChangePasswordView(APIView):
 
 
 # ================================================================
-#  📝 REGISTER VOLUNTEER
+#  REGISTER VOLUNTEER
 # ================================================================
 @method_decorator(csrf_exempt, name='dispatch')
 class RegisterVolunteer(APIView):
@@ -261,10 +269,8 @@ class RegisterVolunteer(APIView):
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         errors = {}
-
         try:
             with transaction.atomic():
-                # Extract data blocks
                 account_data = request.data.get("account", {})
                 volunteer_data = request.data.get("volunteer", {})
                 contact_data = request.data.get("contact", {})
@@ -276,7 +282,6 @@ class RegisterVolunteer(APIView):
                 email = account_data.get("email", "").strip()
                 password = account_data.get("password", "")
 
-                # BASIC VALIDATION
                 if not email:
                     errors["email"] = "Email is required"
                 if not password:
@@ -300,7 +305,6 @@ class RegisterVolunteer(APIView):
                 if errors:
                     return Response({"errors": errors}, status=400)
 
-                # Create volunteer
                 volunteer = Volunteer.objects.create(
                     first_name=volunteer_data.get("first_name", "").strip(),
                     middle_name=volunteer_data.get("middle_name", "").strip(),
@@ -312,91 +316,46 @@ class RegisterVolunteer(APIView):
                     volunteer_identifier=generate_volunteer_identifier(),
                 )
 
-                # Create account
-                VolunteerAccount.objects.create(
-                    volunteer=volunteer,
-                    email=email,
-                    password=make_password(password)
-                )
+                VolunteerAccount.objects.create(volunteer=volunteer, email=email, password=make_password(password))
 
-                # Contact
                 if contact_data:
-                    VolunteerContact.objects.create(
-                        volunteer=volunteer,
-                        mobile_number=contact_data.get("mobile_number", ""),
-                        facebook_link=contact_data.get("facebook_link", "")
-                    )
+                    VolunteerContact.objects.create(volunteer=volunteer, mobile_number=contact_data.get("mobile_number", ""), facebook_link=contact_data.get("facebook_link", ""))
 
-                # Address
                 if address_data:
-                    VolunteerAddress.objects.create(
-                        volunteer=volunteer,
-                        street_address=address_data.get("street_address", ""),
-                        province=address_data.get("province", ""),
-                        region=address_data.get("region", "")
-                    )
+                    VolunteerAddress.objects.create(volunteer=volunteer, street_address=address_data.get("street_address", ""), province=address_data.get("province", ""), region=address_data.get("region", ""))
 
-                # Background
                 if background_data:
-                    VolunteerBackground.objects.create(
-                        volunteer=volunteer,
-                        occupation=background_data.get("occupation", ""),
-                        org_affiliation=background_data.get("org_affiliation", ""),
-                        hobbies_interests=background_data.get("hobbies_interests", "")
-                    )
+                    VolunteerBackground.objects.create(volunteer=volunteer, occupation=background_data.get("occupation", ""), org_affiliation=background_data.get("org_affiliation", ""), hobbies_interests=background_data.get("hobbies_interests", ""))
 
-                # Emergency
                 if emergency_data:
-                    EmergencyContact.objects.create(
-                        volunteer=volunteer,
-                        name=emergency_data.get("name", ""),
-                        relationship=emergency_data.get("relationship", ""),
-                        contact_number=emergency_data.get("contact_number", ""),
-                        address=emergency_data.get("address", "")
-                    )
+                    EmergencyContact.objects.create(volunteer=volunteer, name=emergency_data.get("name", ""), relationship=emergency_data.get("relationship", ""), contact_number=emergency_data.get("contact_number", ""), address=emergency_data.get("address", ""))
 
-                # Affiliation-specific
                 aff = volunteer.affiliation_type
-
                 if aff == "STUDENT":
-                    StudentProfile.objects.create(
-                        volunteer=volunteer,
-                        degree_program=affiliation_data.get("degree_program", ""),
-                        year_level=affiliation_data.get("year_level", ""),
-                        college=affiliation_data.get("college", ""),
-                        department=affiliation_data.get("department", ""),
-                    )
+                    StudentProfile.objects.create(volunteer=volunteer, degree_program=affiliation_data.get("degree_program", ""), year_level=affiliation_data.get("year_level", ""), college=affiliation_data.get("college", ""), department=affiliation_data.get("department", ""))
                 elif aff == "ALUMNI":
-                    AlumniProfile.objects.create(
-                        volunteer=volunteer,
-                        constituent_unit=affiliation_data.get("constituent_unit", ""),
-                        degree_program=affiliation_data.get("degree_program", ""),
-                        year_graduated=affiliation_data.get("year_graduated", ""),
-                    )
+                    AlumniProfile.objects.create(volunteer=volunteer, constituent_unit=affiliation_data.get("constituent_unit", ""), degree_program=affiliation_data.get("degree_program", ""), year_graduated=affiliation_data.get("year_graduated", ""))
                 elif aff == "UP STAFF":
-                    StaffProfile.objects.create(
-                        volunteer=volunteer,
-                        office_department=affiliation_data.get("office_department", ""),
-                        designation=affiliation_data.get("designation", ""),
-                    )
+                    StaffProfile.objects.create(volunteer=volunteer, office_department=affiliation_data.get("office_department", ""), designation=affiliation_data.get("designation", ""))
                 elif aff == "FACULTY":
-                    FacultyProfile.objects.create(
-                        volunteer=volunteer,
-                        college=affiliation_data.get("college", ""),
-                        department=affiliation_data.get("department", ""),
-                    )
+                    FacultyProfile.objects.create(volunteer=volunteer, college=affiliation_data.get("college", ""), department=affiliation_data.get("department", ""))
                 elif aff == "RETIREE":
-                    RetireeProfile.objects.create(
-                        volunteer=volunteer,
-                        designation_while_in_up=affiliation_data.get("designation_while_in_up", ""),
-                        office_college_department=affiliation_data.get("office_college_department", ""),
-                    )
+                    RetireeProfile.objects.create(volunteer=volunteer, designation_while_in_up=affiliation_data.get("designation_while_in_up", ""), office_college_department=affiliation_data.get("office_college_department", ""))
 
-                return Response({
-                    "message": "Registration successful! You may now log in.",
-                    "volunteer_id": volunteer.volunteer_id
-                }, status=201)
+                return Response({"message": "Registration successful! You may now log in.", "volunteer_id": volunteer.volunteer_id}, status=201)
 
-        except Exception as e:
+        except Exception:
             print("REGISTER ERROR:", traceback.format_exc())
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": "Server error during registration"}, status=500)
+
+
+# Small convenience endpoint used by frontend (list of current events)
+class VolunteerEventListView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # we don't need to attach volunteer to request user object here; frontend only needs events
+        events = Event.objects.filter(is_cancelled=False).order_by("date_start")
+        serializer = EventListSerializer(events, many=True)
+        return Response(serializer.data)
