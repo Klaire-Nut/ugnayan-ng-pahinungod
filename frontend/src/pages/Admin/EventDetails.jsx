@@ -1,3 +1,4 @@
+// src/pages/EventDetails.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -7,6 +8,8 @@ import {
   Box,
   Button,
   Paper,
+  Collapse,
+  IconButton,
 } from "@mui/material";
 
 import {
@@ -19,9 +22,9 @@ import {
   FaCalendarAlt,
   FaClock,
   FaUserFriends,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
-
-import { DataGrid } from "@mui/x-data-grid";
 
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -52,7 +55,8 @@ export default function EventDetails() {
   const navigate = useNavigate();
 
   const [event, setEvent] = useState(null);
-  const [volunteers, setVolunteers] = useState([]);
+  const [scheduleData, setScheduleData] = useState([]); // schedules with volunteers
+  const [expandedScheduleIds, setExpandedScheduleIds] = useState([]);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -63,24 +67,15 @@ export default function EventDetails() {
   const [newHours, setNewHours] = useState("");
 
   const formatName = (v) => {
-    const info = v.volunteer_info || {};
-    const first = info.first_name || null;
-    const last = info.last_name || null;
-
-    if (first || last) {
-      return `${last ? last : ""}${last && first ? ", " : ""}${first ? first : ""}`;
-    }
-
-    const raw = info.name || v.name || "";
+    const info = v || {};
+    const raw = info.name || "";
     if (!raw) return "Unknown";
-
     const parts = raw.trim().split(/\s+/);
     if (parts.length === 1) return parts[0];
     const f = parts[0];
     const l = parts.slice(1).join(" ");
     return `${l}, ${f}`;
   };
-
 
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleDateString("en-US", {
@@ -91,6 +86,7 @@ export default function EventDetails() {
     });
 
   const formatTime = (timeStr) => {
+    if (!timeStr) return "—";
     const [h, m] = timeStr.split(":");
     const d = new Date();
     d.setHours(h, m);
@@ -100,14 +96,21 @@ export default function EventDetails() {
     });
   };
 
-  const openEditHoursDialog = (row) => {
-    setSelectedVolunteer(row);
-    setNewHours(row.hours);
+  const toggleExpand = (schId) => {
+    setExpandedScheduleIds(prev =>
+      prev.includes(schId) ? prev.filter(x => x !== schId) : [...prev, schId]
+    );
+  };
+
+  const openEditHoursDialog = (vol, schedule) => {
+    // vol is object from serializer: { ves_id, volunteer_id, name, email, hours_rendered }
+    setSelectedVolunteer({ ...vol, schedule_id: schedule.id });
+    setNewHours(vol.hours_rendered ?? 0);
     setEditHoursOpen(true);
   };
 
   /** -------------------------------
-   * LOAD EVENT DETAILS
+   * LOAD EVENT DETAILS + SCHEDULES+VOLUNTEERS
    * ------------------------------- */
   const loadEvent = async () => {
     try {
@@ -122,34 +125,25 @@ export default function EventDetails() {
     }
   };
 
-  const formatSchedules = (v) => {
-    if (!v.schedules || !Array.isArray(v.schedules)) return "-";
-
-    return v.schedules
-      .map((s) => s.day || "-")
-      .join(", ");
-  };
-
-
-  /** -------------------------------
-   * LOAD EVENT VOLUNTEERS
-   * ------------------------------- */
-  const loadVolunteers = async () => {
+  const loadSchedulesWithVolunteers = async () => {
     try {
       const data = await apiClient(
-        `http://localhost:8000/api/admin/events/${id}/volunteers/`,
+        `http://localhost:8000/api/admin/events/${id}/schedules/`,
         "GET",
         null
       );
-      setVolunteers(Array.isArray(data) ? data : []);
+      // data.schedules -> array of schedule objects with volunteers
+      setScheduleData(Array.isArray(data.schedules) ? data.schedules : []);
     } catch (err) {
-      console.error("LOAD VOLUNTEERS ERROR:", err);
+      console.error("LOAD SCHEDULE VOLUNTEERS ERROR:", err);
+      setScheduleData([]);
     }
   };
 
   useEffect(() => {
     loadEvent();
-    loadVolunteers();
+    loadSchedulesWithVolunteers();
+    // eslint-disable-next-line
   }, [id]);
 
   if (!event) return <p>Loading event details...</p>;
@@ -176,6 +170,7 @@ export default function EventDetails() {
   };
 
   const status = computeStatus();
+
   /** -------------------------------
    * CANCEL / UNDO CANCEL / DELETE
    * ------------------------------- */
@@ -187,7 +182,7 @@ export default function EventDetails() {
         null
       );
       setCancelOpen(false);
-      loadEvent();
+      await loadEvent();
     } catch (err) {
       console.error(err);
     }
@@ -201,7 +196,7 @@ export default function EventDetails() {
         null
       );
       setCancelOpen(false);
-      loadEvent();
+      await loadEvent();
     } catch (err) {
       console.error(err);
     }
@@ -224,26 +219,20 @@ export default function EventDetails() {
 
   const saveHours = async () => {
     if (!selectedVolunteer) return;
-
-    const identifier = selectedVolunteer.id;
+    const vesId = selectedVolunteer.ves_id || selectedVolunteer.id;
 
     try {
       await apiClient(
-        `http://localhost:8000/api/admin/events/${id}/volunteers/${identifier}/`,
+        `http://localhost:8000/api/admin/events/${id}/schedules/${vesId}/`,
         "PATCH",
         { hours_rendered: Number(newHours) }
       );
 
-      // Update UI
-      setVolunteers(prev =>
-        prev.map(v =>
-          v.id === identifier ? { ...v, hours_rendered: Number(newHours) } : v
-        )
-      );
+      // refresh the schedule data after update
+      await loadSchedulesWithVolunteers();
 
       setSnack({ open: true, severity: "success", message: "Hours updated successfully" });
       setEditHoursOpen(false);
-
     } catch (err) {
       console.error(err);
       setSnack({ open: true, severity: "error", message: "Save failed" });
@@ -365,7 +354,6 @@ export default function EventDetails() {
         {event.schedules?.map((sch, i) => {
           const taken = sch.filled_slots || sch.slots_taken || 0;
           const max = sch.max_slots || 0;
-          const left = max - taken;
 
           return (
             <Box
@@ -378,26 +366,25 @@ export default function EventDetails() {
                 mb: 2,
               }}
             >
-              <Typography sx={{ fontWeight: 700, mb: 1 }}>
-                Day {i + 1}
-              </Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                  Day {i + 1}
+                </Typography>
+
+                <Typography sx={{ color: "#666" }}>
+                  Slots: <strong>{taken}</strong> / <strong>{max}</strong>
+                </Typography>
+              </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <FaCalendarAlt size={14} style={{ marginRight: 8 }} />
                 <Typography>{formatDate(sch.date)}</Typography>
               </Box>
 
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
                 <FaClock size={14} style={{ marginRight: 8 }} />
                 <Typography>
                   {formatTime(sch.start_time)} – {formatTime(sch.end_time)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <FaUserFriends size={14} style={{ marginRight: 8 }} />
-                <Typography>
-                  Slots: <strong>{taken}</strong> / <strong>{max}</strong>
                 </Typography>
               </Box>
             </Box>
@@ -405,63 +392,81 @@ export default function EventDetails() {
         })}
       </Card>
 
-      {/* VOLUNTEERS SECTION */}
+      {/* VOLUNTEERS BY SCHEDULE (DROPDOWNS) */}
       <Card sx={{ borderRadius: 3, p: 2.5 }}>
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-          Volunteers ({volunteers.length})
+          Volunteers by Schedule
         </Typography>
 
-        <Paper sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid #ddd" }}>
-          <DataGrid
-            rows={volunteers.map((v, index) => {
-              const rowId = v.id;
+        {scheduleData.length === 0 && <Typography>No schedules or volunteers yet.</Typography>}
 
-              return {
-                id: rowId,
-                volunteerId: rowId,
-                name: formatName(v),
-                affiliation: formatAffiliation(v.volunteer_info?.affiliation_type),
-                email: v.volunteer_info?.email ?? "-",
-                schedules: formatSchedules(v),
-                hours: v.hours_rendered ?? 0,
-              };
-            })}
-            columns={[
-              { field: "volunteerId", headerName: "Volunteer ID", width: 130 },
-              { field: "name", headerName: "Name (Last, First)", flex: 1 },
-              { field: "email", headerName: "Email", flex: 1 },
-              { field: "affiliation", headerName: "Affiliation", flex: 1 },
-              { field: "schedules", headerName: "Schedule/s", flex: 1.5 },
-              {
-                field: "hours",
-                headerName: "Hours",
-                width: 120,
-                type: "number",
-              },
-              {
-                field: "actions",
-                headerName: "Actions",
-                width: 140,
-                renderCell: (params) => (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => openEditHoursDialog(params.row)}
-                  >
-                    Edit Hours
-                  </Button>
-                ),
-              }
-            ]}
-            hideFooter
-            sx={{
-              "& .MuiDataGrid-columnHeaders": {
-                background: "#f3f3f3",
-                fontWeight: 700,
-              },
-            }}
-          />
-        </Paper>
+        {scheduleData.map((sch) => {
+          const isOpen = expandedScheduleIds.includes(sch.id);
+          return (
+            <Box key={sch.id} sx={{ mb: 2 }}>
+              <Paper sx={{ p: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {sch.day || `Schedule ${sch.id}`} — {formatDate(sch.date)}
+                  </Typography>
+                  <Typography sx={{ color: "#666", fontSize: "0.9rem" }}>
+                    {sch.start_time ? `${formatTime(sch.start_time)} – ${formatTime(sch.end_time)}` : ""}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                  <Typography sx={{ color: "#666" }}>{(sch.volunteers || []).length} volunteers</Typography>
+                  <IconButton size="small" onClick={() => toggleExpand(sch.id)}>
+                    {isOpen ? <FaChevronUp /> : <FaChevronDown />}
+                  </IconButton>
+                </Box>
+              </Paper>
+
+              <Collapse in={isOpen}>
+                <Box sx={{ mt: 1 }}>
+                  <Paper sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid #ddd" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead style={{ background: "#f3f3f3", fontWeight: 700 }}>
+                        <tr>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Name</th>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Email</th>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Hours</th>
+                          <th style={{ padding: "8px", textAlign: "left" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sch.volunteers && sch.volunteers.length > 0 ? (
+                          sch.volunteers.map((v) => (
+                            <tr key={v.ves_id}>
+                              <td style={{ padding: "8px" }}>{v.name}</td>
+                              <td style={{ padding: "8px" }}>{v.email ?? "-"}</td>
+                              <td style={{ padding: "8px" }}>{v.hours_rendered}</td>
+                              <td style={{ padding: "8px" }}>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => openEditHoursDialog(v, sch)}
+                                >
+                                  Edit Hours
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={4} style={{ padding: "8px" }}>
+                              No volunteers for this schedule.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </Paper>
+                </Box>
+              </Collapse>
+            </Box>
+          );
+        })}
       </Card>
 
       {/* EDIT MODAL */}
@@ -534,16 +539,17 @@ export default function EventDetails() {
         </DialogActions>
       </Dialog>
 
+      {/* EDIT HOURS DIALOG */}
       <Dialog open={editHoursOpen} onClose={() => setEditHoursOpen(false)}>
         <DialogTitle>Edit Rendered Hours</DialogTitle>
 
-        <DialogContent sx={{ minWidth: "300px" }}>
+        <DialogContent sx={{ minWidth: "320px" }}>
           <Typography sx={{ mb: 1 }}>
             Volunteer: <strong>{selectedVolunteer?.name}</strong>
           </Typography>
 
           <Typography sx={{ mb: 1 }}>
-            Current Hours: <strong>{selectedVolunteer?.hours}</strong>
+            Current Hours: <strong>{selectedVolunteer?.hours_rendered ?? selectedVolunteer?.hours}</strong>
           </Typography>
 
           <input

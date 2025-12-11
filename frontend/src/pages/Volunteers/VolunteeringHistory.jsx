@@ -26,11 +26,12 @@ const VolunteerHistory = () => {
       }
 
       // ===============================
-      // FIXED: Show 0h instead of blank
+      // Show 0h instead of blank
       // ===============================
       const formatted = response.data.history.map((item) => ({
         event: item.event_name,
-        date: item.date?.split("T")[0] || "",
+        date: item.date?.split("T")[0] || (item.date ? String(item.date) : ""),
+        schedule: item.schedule_day || "",
         hours_rendered: item.hours_rendered ?? 0,
         timeAllotted:
           item.hours_rendered !== null && item.hours_rendered !== undefined

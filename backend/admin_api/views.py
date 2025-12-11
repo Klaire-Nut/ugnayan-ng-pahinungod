@@ -1,10 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
-from django.db.models import Q
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
+
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
+from django.db import transaction
+
 
 from accounts.permissions import IsAdmin
 from core.models import (
@@ -13,6 +16,7 @@ from core.models import (
     VolunteerEvent,
     Event,
     EventSchedule,
+    VolunteerScheduleSelection,
 )
 
 from .serializers import (
@@ -21,7 +25,7 @@ from .serializers import (
     AdminProfileSerializer,
 )
 
-from events.serializers import EventVolunteersSerializer
+from events.serializers import EventVolunteersSerializer, AdminEventDetailWithSchedulesSerializer
 
 # ========================================================================
 # ADMIN DASHBOARD
@@ -308,6 +312,7 @@ class AdminEventUndoCancelView(APIView):
 # ========================================================================
 # EVENT SCHEDULES
 # ========================================================================
+# Admin endpoint for managing event schedules.
 class AdminEventScheduleView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -340,8 +345,29 @@ class AdminEventScheduleView(APIView):
         return Response({"id": schedule.id}, status=201)
 
     def delete(self, request, event_id):
-        count, _ = EventSchedule.objects.filter(event_id=event_id).delete()
-        return Response({"deleted": count})
+        # ensure event exists (gives 404 if not)
+        event = get_object_or_404(Event, event_id=event_id)
+
+        try:
+            # Do everything inside a transaction so partial state can't occur
+            with transaction.atomic():
+                # 1) Remove volunteer schedule selections (per-schedule choices)
+                VolunteerScheduleSelection.objects.filter(
+                    volunteer_event__event_id=event_id
+                ).delete()
+
+                # 2) Remove volunteer_event parent records (unjoin volunteers for this event)
+                VolunteerEvent.objects.filter(event_id=event_id).delete()
+
+                # 3) Delete the EventSchedule rows themselves
+                EventSchedule.objects.filter(event_id=event_id).delete()
+
+            return Response({"message": "Schedules removed and volunteers unjoined for event."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # Log on server side if you want, then return friendly error
+            # (Don't return stack traces to clients in production)
+            return Response({"error": "Failed to delete schedules: " + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ========================================================================
@@ -380,3 +406,40 @@ class AdminVolunteerUpdateView(APIView):
         ve.hours_rendered = hours
         ve.save()
         return Response({"message": "Hours updated", "hours_rendered": ve.hours_rendered})
+    
+class AdminEventSchedulesWithVolunteersView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request, event_id):
+        event = get_object_or_404(Event, event_id=event_id)
+        serializer = AdminEventDetailWithSchedulesSerializer(event)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminUpdateVolunteerScheduleHoursView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def patch(self, request, event_id, ves_id):
+        """
+        Update hours_rendered on a specific VolunteerScheduleSelection (ves_id).
+        Validate that the selection belongs to a schedule that belongs to the event.
+        """
+        try:
+            sel = VolunteerScheduleSelection.objects.select_related("schedule", "volunteer_event__event").get(id=ves_id)
+        except VolunteerScheduleSelection.DoesNotExist:
+            return Response({"error": "Volunteer schedule selection not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # ensure it belongs to the correct event
+        if sel.volunteer_event.event.event_id != event_id:
+            return Response({"error": "Selection does not belong to this event"}, status=status.HTTP_400_BAD_REQUEST)
+
+        hours = request.data.get("hours_rendered", None)
+        if hours is None:
+            return Response({"error": "hours_rendered is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sel.hours_rendered = float(hours)
+            sel.save()
+            return Response({"message": "Hours updated", "ves_id": sel.id, "hours_rendered": sel.hours_rendered})
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid hours_rendered value"}, status=status.HTTP_400_BAD_REQUEST)

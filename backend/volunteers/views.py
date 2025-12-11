@@ -31,6 +31,8 @@ from core.models import (
     FacultyProfile,
     RetireeProfile,
     Event,
+    VolunteerScheduleSelection,
+    EventSchedule,
 )
 
 from volunteers.serializers import VolunteerSerializer
@@ -210,18 +212,34 @@ class VolunteerHistoryView(APIView):
 
         volunteer = account.volunteer
 
-        queryset = VolunteerEvent.objects.filter(volunteer=volunteer).select_related("event").order_by("event__date_start")
+        selections = VolunteerScheduleSelection.objects.select_related(
+            "schedule", "volunteer_event__event"
+        ).filter(volunteer_event__volunteer=volunteer).order_by("schedule__date")
 
-        history = [{
-                "event_id": ve.event.event_id,
-                "event_name": ve.event.event_name,
-                "date": ve.event.date_start,
-                "hours_rendered": ve.hours_rendered,
-                "status": ve.status,
-            } for ve in queryset]
+        history = []
+        for sel in selections:
+            evt = sel.volunteer_event.event
+            sch = sel.schedule
+            # compute day index (optional)
+            event_schedules = list(EventSchedule.objects.filter(event=evt).order_by("date"))
+            try:
+                day_index = next(i for i, s in enumerate(event_schedules) if s.id == sch.id)
+                day_label = f"Day {day_index + 1}"
+            except StopIteration:
+                day_label = None
+
+            history.append({
+                "event_id": evt.event_id,
+                "event_name": evt.event_name,
+                "date": sch.date,
+                "schedule_day": day_label,
+                "start_time": sch.start_time,
+                "end_time": sch.end_time,
+                "hours_rendered": sel.hours_rendered,
+                "status": sel.volunteer_event.status,
+            })
 
         return Response({"history": history})
-
 
 # ================================================================
 #  CHANGE PASSWORD

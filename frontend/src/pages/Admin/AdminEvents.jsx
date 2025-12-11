@@ -87,11 +87,6 @@ export default function AdminEvents() {
 
       const eventId = event.event_id;
 
-      // Create schedules
-      for (const s of form.schedules) {
-        await apiClient(`${API}${eventId}/schedule/`, "POST", s);
-      }
-
       showNotif("success", "Event created successfully!");
       setOpenModal(false);
       loadEvents();

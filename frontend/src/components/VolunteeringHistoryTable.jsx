@@ -14,6 +14,7 @@ const VolunteeringHistoryTable = ({ data }) => {
             <tr>
               <th>Event</th>
               <th>Date</th>
+              <th>Schedule</th>
               <th>Time Allotted</th>
             </tr>
           </thead>
@@ -23,6 +24,7 @@ const VolunteeringHistoryTable = ({ data }) => {
               <tr key={index}>
                 <td>{item.event}</td>
                 <td>{item.date}</td>
+                <td>{item.schedule}</td>
                 <td>{item.timeAllotted}</td>
               </tr>
             ))}

@@ -34,33 +34,33 @@ import { useOutletContext } from "react-router-dom";
 export default function DataStatistics() {
   const { events = [], volunteers = [] } = useOutletContext();
 
-  const normalizeStatus = (status) => {
-    if (!status) return "unknown";
-    const s = status.toLowerCase();
-    if (s.includes("done") || s.includes("completed")) return "completed";
-    if (s.includes("upcoming")) return "upcoming";
-    if (s.includes("cancel")) return "cancelled";
-    if (s.includes("ongoing") || s.includes("happening")) return "ongoing";
-    return s;
+  const computeEventStatus = (event) => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (event.is_cancelled) return "cancelled";
+    if (today < event.date_start) return "upcoming";
+    if (today > event.date_end) return "done";
+    return "happening";
   };
 
-  const normalizedEvents = events.map((e) => ({
+  const normalizedEvents = events.map(e => ({
     ...e,
-    normalizedStatus: normalizeStatus(e.status),
+    normalizedStatus: computeEventStatus(e),
   }));
 
   const totalEvents = normalizedEvents.length;
-  const upcoming = normalizedEvents.filter((e) => e.normalizedStatus === "upcoming").length;
-  const completed = normalizedEvents.filter((e) => e.normalizedStatus === "completed").length;
-  const cancelled = normalizedEvents.filter((e) => e.normalizedStatus === "cancelled").length;
-  const ongoing = normalizedEvents.filter((e) => e.normalizedStatus === "ongoing").length;
+  const upcoming = normalizedEvents.filter(e => e.normalizedStatus === "upcoming").length;
+  const happening = normalizedEvents.filter(e => e.normalizedStatus === "happening").length;
+  const done = normalizedEvents.filter(e => e.normalizedStatus === "done").length;
+  const cancelled = normalizedEvents.filter(e => e.normalizedStatus === "cancelled").length;
 
   const totalVolunteers = volunteers.length;
 
   const affiliationCounts = useMemo(() => {
     const map = {};
     volunteers.forEach((v) => {
-      map[v.affiliation] = (map[v.affiliation] || 0) + 1;
+      const aff = v.affiliation || "Unspecified";
+      map[aff] = (map[aff] || 0) + 1;
     });
     return map;
   }, [volunteers]);
@@ -72,8 +72,8 @@ export default function DataStatistics() {
 
   const barData = [
     { name: "Upcoming", value: upcoming },
-    { name: "Ongoing", value: ongoing },
-    { name: "Completed", value: completed },
+    { name: "Happening", value: happening },
+    { name: "Done", value: done },
     { name: "Cancelled", value: cancelled },
   ];
 
@@ -106,9 +106,9 @@ export default function DataStatistics() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card sx={{ p: 2, borderRadius: "12px", textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#ff9800" }}>
-              {ongoing}
+              {happening}
             </Typography>
-            <Typography variant="body2">Ongoing Events</Typography>
+            <Typography variant="body2">Happening Events</Typography>
           </Card>
         </Grid>
 
@@ -153,8 +153,8 @@ export default function DataStatistics() {
 
               <Box sx={{ mb: 2 }}>
                 <Chip label={`Upcoming: ${upcoming}`} icon={<FaCalendarCheck />} sx={{ mr: 1 }} />
-                <Chip label={`Ongoing: ${ongoing}`} icon={<FaFire />} sx={{ mr: 1 }} />
-                <Chip label={`Completed: ${completed}`} icon={<FaCheckCircle />} sx={{ mr: 1 }} />
+                <Chip label={`Happening: ${happening}`} icon={<FaFire />} sx={{ mr: 1 }} />
+                <Chip label={`Done: ${done}`} icon={<FaCheckCircle />} sx={{ mr: 1 }} />
                 <Chip label={`Cancelled: ${cancelled}`} icon={<FaTimesCircle />} />
               </Box>
 

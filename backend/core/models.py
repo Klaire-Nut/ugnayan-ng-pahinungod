@@ -206,6 +206,8 @@ class VolunteerScheduleSelection(models.Model):
         related_name="volunteers",  # keep .volunteers to count slots taken
         on_delete=models.CASCADE
     )
+    
+    hours_rendered = models.FloatField(default=0) #pre-schedule hours
 
     class Meta:
         # optional, avoid duplicate selection for same vol_event and schedule

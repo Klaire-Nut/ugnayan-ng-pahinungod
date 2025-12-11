@@ -28,6 +28,70 @@ class EventScheduleSerializer(serializers.ModelSerializer):
 
     def get_slots_remaining(self, obj):
         return max(obj.max_slots - obj.volunteers.count(), 0)
+    
+# --- ADMIN: volunteer inside schedule (read-only for admin UI) ---
+class ScheduleVolunteerSerializer(serializers.Serializer):
+    ves_id = serializers.IntegerField()
+    volunteer_id = serializers.IntegerField()
+    name = serializers.CharField()
+    email = serializers.CharField(allow_null=True)
+    hours_rendered = serializers.FloatField()
+
+# --- ADMIN: schedule with volunteers ---
+class AdminScheduleWithVolunteersSerializer(serializers.ModelSerializer):
+    volunteers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EventSchedule
+        fields = [
+            "id",
+            "date",
+            "start_time",
+            "end_time",
+            "max_slots",
+            "volunteers",
+        ]
+
+    def get_volunteers(self, schedule):
+        # schedule.volunteers is related_name from VolunteerScheduleSelection
+        selections = schedule.volunteers.select_related("volunteer_event__volunteer").all()
+        result = []
+        for sel in selections:
+            vol = sel.volunteer_event.volunteer
+            email = vol.accounts.first().email if vol.accounts.exists() else None
+            result.append({
+                "ves_id": sel.id,
+                "volunteer_id": vol.volunteer_id,
+                "name": f"{vol.last_name}, {vol.first_name}",
+                "email": email,
+                "hours_rendered": sel.hours_rendered,
+            })
+        return result
+
+# --- ADMIN: Event detail with schedules & volunteers ---
+class AdminEventDetailWithSchedulesSerializer(serializers.ModelSerializer):
+    schedules = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = [
+            "event_id",
+            "event_name",
+            "description",
+            "location",
+            "schedules",
+        ]
+
+    def get_schedules(self, event):
+        schedules = event.schedules.order_by("date")
+        result = []
+        for idx, sch in enumerate(schedules):
+            sch_data = AdminScheduleWithVolunteersSerializer(sch).data
+            sch_data.update({
+                "day": f"Day {idx + 1}"
+            })
+            result.append(sch_data)
+        return result
 
 # ---------------------------------------------------
 # EVENT SERIALIZER (VOLUNTEER VIEW)
