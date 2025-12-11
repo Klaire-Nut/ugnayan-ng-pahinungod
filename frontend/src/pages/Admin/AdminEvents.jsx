@@ -82,34 +82,35 @@ export default function AdminEvents() {
   // ----------------------------------------------------------
   const handleCreateEvent = async (form) => {
     try {
-      const res = await apiClient(API, "POST", form);
+      // apiClient returns already-parsed JSON
+      const event = await apiClient(API, "POST", form);
 
-      if (!res.ok) throw new Error("Failed to create event");
-
-      const event = await res.json();
       const eventId = event.event_id;
 
+      // Create schedules
       for (const s of form.schedules) {
         await apiClient(`${API}${eventId}/schedule/`, "POST", s);
       }
 
-
       showNotif("success", "Event created successfully!");
       setOpenModal(false);
       loadEvents();
+    
     } catch (err) {
-      showNotif("error", err.message);
+      console.error("CREATE EVENT ERROR:", err);
+      showNotif("error", err.error || err.detail || "Failed to create event");
     }
   };
 
   const handleUpdateEvent = async (event_id, form) => {
     try {
-      const res = await apiClient(`${API}${event_id}/`, "PUT", form);
+      // Update event basic fields
+      await apiClient(`${API}${event_id}/`, "PUT", form);
 
-      if (!res.ok) throw new Error("Failed to update event");
-
+      // Delete old schedules
       await apiClient(`${API}${event_id}/schedule/`, "DELETE");
 
+      // Add new schedules
       for (const s of form.schedules) {
         await apiClient(`${API}${event_id}/schedule/`, "POST", s);
       }
@@ -118,8 +119,10 @@ export default function AdminEvents() {
       setOpenModal(false);
       window.dispatchEvent(new Event("eventUpdated"));
       loadEvents();
+
     } catch (err) {
-      showNotif("error", err.message);
+      console.error("UPDATE EVENT ERROR:", err);
+      showNotif("error", err.error || err.detail || "Failed to update event");
     }
   };
 

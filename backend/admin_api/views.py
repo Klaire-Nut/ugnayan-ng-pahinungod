@@ -21,6 +21,8 @@ from .serializers import (
     AdminProfileSerializer,
 )
 
+from events.serializers import EventVolunteersSerializer
+
 # ========================================================================
 # ADMIN DASHBOARD
 # ========================================================================
@@ -175,7 +177,6 @@ class AdminEventListCreateView(APIView):
             location=data.get("location"),
             date_start=schedules[0]["date"],   # earliest date
             date_end=schedules[-1]["date"],    # latest date
-            created_by=request.user,
         )
 
         # Create schedules
@@ -350,23 +351,32 @@ class AdminEventVolunteersView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request, event_id):
-        volunteers = VolunteerEvent.objects.filter(event_id=event_id)
+        queryset = VolunteerEvent.objects.filter(event_id=event_id).select_related(
+            "volunteer"
+        ).prefetch_related("schedule_selections__schedule")
 
-        data = []
+        serializer = EventVolunteersSerializer(queryset, many=True)
+        return Response(serializer.data)
 
-        for v in volunteers:
-            # Get the FIRST linked VolunteerAccount (if any)
-            account = v.volunteer.accounts.first()
-            email = account.email if account else None
+# ========================================================================
+# ADMIN VOLUNTEER UPDATE (e.g., hours rendered) 
+# ========================================================================
 
-            data.append({
-                "volunteer_info": {
-                    "name": f"{v.volunteer.first_name} {v.volunteer.last_name}",
-                    "email": email,                    # FIXED
-                    "mobile": None,                    
-                },
-                "hours_rendered": v.hours_rendered,
-                "status": v.status,
-            })
+class AdminVolunteerUpdateView(APIView):
+    permission_classes = [IsAuthenticated]  # add admin check as needed
 
-        return Response(data)
+    def patch(self, request, event_id, volunteer_event_id):
+        ve = get_object_or_404(VolunteerEvent, id=volunteer_event_id, event_id=event_id)
+        hours = request.data.get("hours_rendered")
+        if hours is None:
+            return Response({"error": "hours_rendered is required"}, status=400)
+        try:
+            hours = int(hours)
+            if hours < 0:
+                raise ValueError()
+        except Exception:
+            return Response({"error": "hours_rendered must be a non-negative integer"}, status=400)
+
+        ve.hours_rendered = hours
+        ve.save()
+        return Response({"message": "Hours updated", "hours_rendered": ve.hours_rendered})

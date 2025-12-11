@@ -14,8 +14,6 @@ const VolunteeringHistoryTable = ({ data }) => {
             <tr>
               <th>Event</th>
               <th>Date</th>
-              <th>Time In</th>
-              <th>Time Out</th>
               <th>Time Allotted</th>
             </tr>
           </thead>
@@ -25,8 +23,6 @@ const VolunteeringHistoryTable = ({ data }) => {
               <tr key={index}>
                 <td>{item.event}</td>
                 <td>{item.date}</td>
-                <td>{item.timeIn}</td>
-                <td>{item.timeOut}</td>
                 <td>{item.timeAllotted}</td>
               </tr>
             ))}

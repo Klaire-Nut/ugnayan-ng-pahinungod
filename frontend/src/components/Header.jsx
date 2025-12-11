@@ -93,10 +93,6 @@ function Header({ variant = "default" }) {
               <Button text="About Us" variant="text" />
             </Link>
 
-            <Link to="/events" style={{ textDecoration: "none" }}>
-              <Button text="Events" variant="text" />
-            </Link>
-
             <Link to="/register" style={{ textDecoration: "none" }}>
               <Button text="Register" variant="text" />
             </Link>

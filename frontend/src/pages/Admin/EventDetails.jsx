@@ -33,6 +33,20 @@ import Alert from "@mui/material/Alert";
 import { apiClient } from "../../services/apiClient";
 import EventCreateModal from "./EventCreateModal";
 
+function formatAffiliation(type) {
+  if (!type) return "N/A";
+
+  const map = {
+    student: "Student",
+    alumni: "Alumni",
+    staff: "UP Staff",
+    faculty: "Faculty",
+    retiree: "Retiree",
+  };
+
+  return map[type] || "Unknown";
+}
+
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,6 +57,10 @@ export default function EventDetails() {
   const [editOpen, setEditOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
+
+  const [editHoursOpen, setEditHoursOpen] = useState(false);
+  const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+  const [newHours, setNewHours] = useState("");
 
   const formatName = (v) => {
     const info = v.volunteer_info || {};
@@ -82,6 +100,12 @@ export default function EventDetails() {
     });
   };
 
+  const openEditHoursDialog = (row) => {
+    setSelectedVolunteer(row);
+    setNewHours(row.hours);
+    setEditHoursOpen(true);
+  };
+
   /** -------------------------------
    * LOAD EVENT DETAILS
    * ------------------------------- */
@@ -99,29 +123,13 @@ export default function EventDetails() {
   };
 
   const formatSchedules = (v) => {
-    const arr =
-      v.schedules ||
-      v.selected_schedules ||
-      v.selected_slots ||
-      v.chosen_schedules ||
-      [];
+    if (!v.schedules || !Array.isArray(v.schedules)) return "-";
 
-    if (Array.isArray(arr) && arr.length) {
-      return arr
-        .map((s) => {
-          if (!s) return "";
-          if (typeof s === "string") return s;
-          if (s.date && (s.start_time || s.end_time)) {
-            return `${s.date} (${s.start_time}–${s.end_time})`;
-          }
-          return JSON.stringify(s);
-        })
-        .filter(Boolean)
-        .join(" — ");
-    }
-
-    return "-";
+    return v.schedules
+      .map((s) => s.day || "-")
+      .join(", ");
   };
+
 
   /** -------------------------------
    * LOAD EVENT VOLUNTEERS
@@ -168,7 +176,6 @@ export default function EventDetails() {
   };
 
   const status = computeStatus();
-
   /** -------------------------------
    * CANCEL / UNDO CANCEL / DELETE
    * ------------------------------- */
@@ -215,30 +222,31 @@ export default function EventDetails() {
     }
   };
 
-  const updateVolunteerHours = async (rowId, newHours) => {
-    const v = volunteers.find(x => x.id === rowId || x.volunteer_event_id === rowId);
+  const saveHours = async () => {
+    if (!selectedVolunteer) return;
 
-    const identifier = v?.id || v?.volunteer_event_id || rowId;
-
-    setVolunteers(prev =>
-      prev.map(x =>
-        x.id === identifier || x.volunteer_event_id === identifier
-          ? { ...x, hours_rendered: newHours }
-          : x
-      )
-    );
+    const identifier = selectedVolunteer.id;
 
     try {
       await apiClient(
         `http://localhost:8000/api/admin/events/${id}/volunteers/${identifier}/`,
         "PATCH",
-        { hours_rendered: newHours }
+        { hours_rendered: Number(newHours) }
       );
-      setSnack({ open: true, severity: "success", message: "Hours saved." });
+
+      // Update UI
+      setVolunteers(prev =>
+        prev.map(v =>
+          v.id === identifier ? { ...v, hours_rendered: Number(newHours) } : v
+        )
+      );
+
+      setSnack({ open: true, severity: "success", message: "Hours updated successfully" });
+      setEditHoursOpen(false);
+
     } catch (err) {
       console.error(err);
-      setSnack({ open: true, severity: "error", message: "Failed to save hours." });
-      loadVolunteers();
+      setSnack({ open: true, severity: "error", message: "Save failed" });
     }
   };
 
@@ -406,13 +414,13 @@ export default function EventDetails() {
         <Paper sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid #ddd" }}>
           <DataGrid
             rows={volunteers.map((v, index) => {
-              const rowId = v.id ?? v.volunteer_event_id ?? index;
+              const rowId = v.id;
 
               return {
                 id: rowId,
                 volunteerId: rowId,
                 name: formatName(v),
-                affiliation: formatAffiliation(v),
+                affiliation: formatAffiliation(v.volunteer_info?.affiliation_type),
                 email: v.volunteer_info?.email ?? "-",
                 schedules: formatSchedules(v),
                 hours: v.hours_rendered ?? 0,
@@ -428,9 +436,22 @@ export default function EventDetails() {
                 field: "hours",
                 headerName: "Hours",
                 width: 120,
-                editable: true,
                 type: "number",
               },
+              {
+                field: "actions",
+                headerName: "Actions",
+                width: 140,
+                renderCell: (params) => (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => openEditHoursDialog(params.row)}
+                  >
+                    Edit Hours
+                  </Button>
+                ),
+              }
             ]}
             hideFooter
             sx={{
@@ -438,14 +459,6 @@ export default function EventDetails() {
                 background: "#f3f3f3",
                 fontWeight: 700,
               },
-            }}
-
-            onCellEditCommit={(params) => {
-              if (params.field === "hours") {
-                const value = Number(params.value);
-                if (isNaN(value) || value < 0) return;
-                updateVolunteerHours(params.id, value);
-              }
             }}
           />
         </Paper>
@@ -518,6 +531,38 @@ export default function EventDetails() {
               Cancel Event
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={editHoursOpen} onClose={() => setEditHoursOpen(false)}>
+        <DialogTitle>Edit Rendered Hours</DialogTitle>
+
+        <DialogContent sx={{ minWidth: "300px" }}>
+          <Typography sx={{ mb: 1 }}>
+            Volunteer: <strong>{selectedVolunteer?.name}</strong>
+          </Typography>
+
+          <Typography sx={{ mb: 1 }}>
+            Current Hours: <strong>{selectedVolunteer?.hours}</strong>
+          </Typography>
+
+          <input
+            type="number"
+            value={newHours}
+            onChange={(e) => setNewHours(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px",
+              fontSize: "1rem",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setEditHoursOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={saveHours}>Save</Button>
         </DialogActions>
       </Dialog>
 

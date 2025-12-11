@@ -193,8 +193,23 @@ class VolunteerEvent(models.Model):
         return f"{self.volunteer} - {self.event}"
     
 class VolunteerScheduleSelection(models.Model):
-    volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE)
-    schedule = models.ForeignKey(EventSchedule, related_name="volunteers", on_delete=models.CASCADE)
+    """
+    Links a VolunteerEvent (the user joining the event) to the chosen EventSchedule.
+    """
+    volunteer_event = models.ForeignKey(
+        'VolunteerEvent',
+        on_delete=models.CASCADE,
+        related_name='schedule_selections'
+    )
+    schedule = models.ForeignKey(
+        EventSchedule,
+        related_name="volunteers",  # keep .volunteers to count slots taken
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        # optional, avoid duplicate selection for same vol_event and schedule
+        unique_together = ('volunteer_event', 'schedule')
 
     def __str__(self):
-        return f"{self.volunteer} -> {self.schedule}"
+        return f"{self.volunteer_event} -> {self.schedule}"

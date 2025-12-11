@@ -86,7 +86,7 @@ export default function VolunteerEventDetails() {
       );
       const data = await res.json();
       setEvent(data);
-      setJoined(data.volunteer_status?.is_joined === true);
+      setJoined(data.has_joined === true);
     }
 
     load();
@@ -120,8 +120,6 @@ export default function VolunteerEventDetails() {
             label={
               event.is_cancelled
                 ? "CANCELLED"
-                : joined
-                ? "JOINED"
                 : event.is_full
                 ? "FULL"
                 : status
@@ -129,8 +127,6 @@ export default function VolunteerEventDetails() {
             color={
               event.is_cancelled
                 ? "error"
-                : joined
-                ? "success"
                 : event.is_full
                 ? "warning"
                 : statusColors[status]
@@ -234,7 +230,7 @@ export default function VolunteerEventDetails() {
             fullWidth
             sx={{ py: 1.2, fontWeight: 700 }}
           >
-            {joined ? "VOLUNTEERED ✓" : event.is_full ? "EVENT FULL" : "VOLUNTEER FOR THIS EVENT"}
+            {joined ? "ALREADY REGISTERED AS VOLUNTEER ✓" : event.is_full ? "EVENT FULL" : "VOLUNTEER FOR THIS EVENT"}
           </Button>
 
           <EventJoinModal
@@ -242,29 +238,39 @@ export default function VolunteerEventDetails() {
             onClose={() => setJoinOpen(false)}
             schedules={schedules}
             onConfirm={async (selected) => {
-              const res = await fetch(
-                "http://localhost:8000/api/volunteer/events/join/",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Token ${token}`,
-                  },
-                  body: JSON.stringify({
-                    event: event.event_id,
-                    schedules: selected,
-                    availability_orientation: false,
-                  }),
-                }
-              );
+              try {
+                const res = await fetch(
+                  "http://localhost:8000/api/volunteer/events/join/",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Token ${token}`,
+                    },
+                    body: JSON.stringify({
+                      event: event.event_id,
+                      schedules: selected,
+                      availability_orientation: false,
+                    }),
+                  }
+                );
 
-              if (res.ok) {
-                alert("Successfully volunteered!");
-                setJoined(true);
-                setJoinOpen(false);
-              } else {
-                const err = await res.json();
-                alert(err.error || "Failed to volunteer.");
+                const data = await res.json().catch(() => ({ error: "Invalid JSON response" }));
+
+                if (res.ok) {
+                  alert("Successfully volunteered!");
+                  setJoined(true);
+                  setJoinOpen(false);
+                } else {
+                  // show entire response for debugging
+                  console.error("Join event failed:", res.status, data);
+                  // show a user-friendly message but include server message if present
+                  const msg = data.error || data.non_field_errors || data.detail || JSON.stringify(data);
+                  alert(msg || "Failed to volunteer.");
+                }
+              } catch (err) {
+                console.error("Network or unexpected error while joining:", err);
+                alert("Network error while attempting to join event.");
               }
             }}
           />

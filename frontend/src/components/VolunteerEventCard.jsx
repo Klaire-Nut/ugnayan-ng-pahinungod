@@ -66,7 +66,7 @@ function formatDatePretty(dateStr) {
 ---------------------------------------- */
 export default function VolunteerEventCard({ event, isJoined, onOpen }) {
   const token = localStorage.getItem("volunteerToken");
-  const [joined, setJoined] = useState(isJoined);
+  const [joined, setJoined] = useState(event.has_joined || isJoined);
   const [joinOpen, setJoinOpen] = useState(false);
 
   const schedules = (event.schedules || []).map((s) => ({
@@ -209,14 +209,14 @@ export default function VolunteerEventCard({ event, isJoined, onOpen }) {
               variant="contained"
               color={joined ? "success" : "primary"}
               fullWidth
-              disabled={joined || event.is_full}
+              disabled={event.has_joined || joined || event.is_full}
               sx={{ mt: 2, fontWeight: 600 }}
               onClick={(e) => {
                 e.stopPropagation();
                 setJoinOpen(true);
               }}
             >
-              {joined ? "VOLUNTEERED ✓" : event.is_full ? "FULL" : "VOLUNTEER"}
+              {event.has_joined || joined ? "VOLUNTEERED ✓" : event.is_full ? "FULL" : "VOLUNTEER"}
             </Button>
           )}
         </CardContent>

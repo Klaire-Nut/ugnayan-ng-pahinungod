@@ -110,17 +110,19 @@ export default function EventCreateModal({
   // FORM SUBMIT
   // -------------------------------------------------------
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage("");
+  e.preventDefault();
+  setErrorMessage("");
 
+  try {
     if (mode === "create") {
-        onCreate(form);
-        onClose();
-      } else {
-      onUpdate(eventData.event_id, form);
-      onClose();
+      await onCreate(form);
+    } else {
+      await onUpdate(eventData.event_id, form);
     }
-  };
+  } catch (err) {
+    setErrorMessage(err.error || err.detail || "Something went wrong");
+  }
+};
 
   // -------------------------------------------------------
   // RENDER

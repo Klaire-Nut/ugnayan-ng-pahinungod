@@ -12,7 +12,8 @@ from .views import (
     AdminEventScheduleView,
     AdminEventVolunteersView,
     AdminEventCancelView,
-    AdminEventUndoCancelView
+    AdminEventUndoCancelView,
+    AdminVolunteerUpdateView
 )
 
 urlpatterns = [
@@ -33,4 +34,5 @@ urlpatterns = [
     path("events/<int:event_id>/volunteers/", AdminEventVolunteersView.as_view()),
     path("events/<int:event_id>/cancel/", AdminEventCancelView.as_view()),
     path("events/<int:event_id>/uncancel/", AdminEventUndoCancelView.as_view()),
+    path("events/<int:event_id>/volunteers/<int:volunteer_event_id>/", AdminVolunteerUpdateView.as_view()),
 ]

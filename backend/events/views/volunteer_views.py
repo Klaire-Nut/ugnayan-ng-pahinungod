@@ -33,7 +33,7 @@ class VolunteerEventListView(APIView):
     def get(self, request):
         try:
             events = (Event.objects.filter(schedules__date__gte=date.today()).distinct().prefetch_related("schedules"))
-            serializer = EventListSerializer(events, many=True)
+            serializer = EventListSerializer(events, many=True, context={"request": request})
             return Response(serializer.data)
         except Exception:
             print("VolunteerEventListView.get error:", traceback.format_exc())
@@ -46,11 +46,26 @@ class VolunteerJoinEventView(APIView):
 
     def post(self, request):
         try:
-            serializer = JoinEventSerializer(data=request.data, context={"request": request})
+            volunteer = get_logged_in_volunteer(request)
+            if not volunteer:
+                return Response({"error": "Volunteer not found for current user"}, status=403)
+
+            serializer = JoinEventSerializer(
+                data=request.data,
+                context={"request": request, "volunteer": volunteer}
+            )
+
             if serializer.is_valid():
-                serializer.save()
-                return Response({"message": "Successfully joined the event."}, status=status.HTTP_201_CREATED)
+                ve = serializer.save()
+                return Response({
+                    "message": "Successfully joined the event.",
+                    "volunteer_event_id": ve.id
+                }, status=status.HTTP_201_CREATED)
+
+            # helpful: print serializer errors to server log so you can see why it 400s
+            print("JoinEventSerializer errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except Exception:
             print("VolunteerJoinEventView.post error:", traceback.format_exc())
             return Response({"error": "Server error"}, status=500)
@@ -116,7 +131,7 @@ class VolunteerEventDetailView(APIView):
 
         try:
             event = get_object_or_404(Event, event_id=event_id)
-            serializer = EventDetailSerializer(event)
+            serializer = EventDetailSerializer(event, context={"request": request})
             data = serializer.data
 
             # schedules and correct slot counts
@@ -125,7 +140,7 @@ class VolunteerEventDetailView(APIView):
             for s in schedules:
                 slots_taken = VolunteerScheduleSelection.objects.filter(schedule=s).count()
                 schedule_list.append({
-                    "schedule_id": s.id,
+                    "id": s.id,
                     "date": s.date,
                     "start_time": getattr(s, "start_time", None),
                     "end_time": getattr(s, "end_time", None),
@@ -137,10 +152,13 @@ class VolunteerEventDetailView(APIView):
 
             ve = VolunteerEvent.objects.filter(event=event, volunteer=volunteer).first()
             data["is_joined"] = ve is not None
+            data["has_joined"] = ve is not None
             data["status"] = ve.status if ve else None
 
             if ve:
-                selected = VolunteerScheduleSelection.objects.filter(volunteer=volunteer, schedule__event=event).values_list("schedule_id", flat=True)
+                selected = VolunteerScheduleSelection.objects.filter(
+                    volunteer_event=ve
+                ).values_list("schedule_id", flat=True)
                 data["selected_schedules"] = list(selected)
 
             return Response(data)

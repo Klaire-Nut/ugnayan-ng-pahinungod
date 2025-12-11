@@ -12,3 +12,13 @@
   from { opacity: 0 }
   to { opacity: 1 }
 }
+
+.total-hours-box {
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 1rem;
+  float: right;
+  margin-bottom: 15px;
+}

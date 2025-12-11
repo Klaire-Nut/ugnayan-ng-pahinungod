@@ -216,8 +216,6 @@ class VolunteerHistoryView(APIView):
                 "event_id": ve.event.event_id,
                 "event_name": ve.event.event_name,
                 "date": ve.event.date_start,
-                "time_in": ve.event.date_start,
-                "time_out": ve.event.date_end,
                 "hours_rendered": ve.hours_rendered,
                 "status": ve.status,
             } for ve in queryset]
@@ -357,5 +355,5 @@ class VolunteerEventListView(APIView):
     def get(self, request):
         # we don't need to attach volunteer to request user object here; frontend only needs events
         events = Event.objects.filter(is_cancelled=False).order_by("date_start")
-        serializer = EventListSerializer(events, many=True)
+        serializer = EventListSerializer(events, many=True, context={"request": request})
         return Response(serializer.data)

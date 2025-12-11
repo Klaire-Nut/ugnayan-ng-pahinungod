@@ -38,8 +38,8 @@ export default function Dashboard_V() {
     .sort((a, b) => b.event_id - a.event_id)
     .slice(0, 3);
 
-  const checkJoined = (eventId) =>
-    joinedEvents.some((j) => Number(j.event) === Number(eventId));
+  const checkJoined = (eventId, eventObj) =>
+    eventObj.has_joined === true;
 
   return (
     <div className="admin-dashboard-wrapper fade-in" style={{ maxWidth: "1250px", margin: "0 auto" }}>
@@ -72,7 +72,7 @@ export default function Dashboard_V() {
               <VolunteerEventCard
                 key={ev.event_id}
                 event={normalizeEvent(ev)}
-                isJoined={checkJoined(ev.event_id)}
+                isJoined={checkJoined(ev.event_id, ev)}
                 onOpen={() => navigate(`/volunteer/events/${ev.event_id}`)}
               />
             ))

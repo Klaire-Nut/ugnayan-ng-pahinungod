@@ -168,3 +168,20 @@ export const volunteerAPI = {
     }
   },
 };
+
+
+volunteerAPI.joinEvent = async (eventId, scheduleIds) => {
+  try {
+    const response = await api.post("/volunteer/events/join/", {
+      event: eventId,
+      schedules: scheduleIds,
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data || "Failed to join event",
+    };
+  }
+};
