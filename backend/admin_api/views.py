@@ -443,3 +443,33 @@ class AdminUpdateVolunteerScheduleHoursView(APIView):
             return Response({"message": "Hours updated", "ves_id": sel.id, "hours_rendered": sel.hours_rendered})
         except (ValueError, TypeError):
             return Response({"error": "Invalid hours_rendered value"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminVolunteerHistoryView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request, volunteer_id):
+        # Fetch all volunteer events
+        sessions = (
+            VolunteerScheduleSelection.objects
+            .filter(volunteer_event__volunteer_id=volunteer_id)
+            .select_related(
+                "schedule", 
+                "volunteer_event__event"
+            )
+            .order_by("-schedule__date", "-schedule__start_time")
+        )
+
+        history = []
+        for sel in sessions:
+            event = sel.volunteer_event.event
+            schedule = sel.schedule
+            history.append({
+                "event_name": event.event_name,
+                "date": schedule.date,
+                "start_time": schedule.start_time,
+                "end_time": schedule.end_time,
+                "hours_rendered": sel.hours_rendered,
+            })
+
+        return Response(history, status=200)

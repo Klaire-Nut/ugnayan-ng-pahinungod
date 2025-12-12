@@ -10,6 +10,11 @@ export function adminGetEvent(id) {
   return apiClient(BASE + `events/${id}/detail/`, "GET", null);
 }
 
+// GET all volunteers (admin list)
+export function adminGetVolunteers() {
+  return apiClient(BASE + "volunteers/", "GET", null);
+}
+
 // CREATE event
 export function adminCreateEvent(body) {
   return apiClient(BASE + "events/", "POST", body);
@@ -38,4 +43,16 @@ export function adminDeleteSchedules(eventId) {
 // EVENT STATS
 export function adminEventStats(eventId) {
   return apiClient(BASE + `events/${eventId}/stats/`, "GET", null);
+}
+
+export function adminGetVolunteer(id) {
+  return apiClient(`http://localhost:8000/api/admin/volunteers/${id}/`, "GET");
+}
+
+export function adminGetVolunteerHistory(id) {
+  return apiClient(`http://localhost:8000/api/admin/volunteers/${id}/history/`, "GET");
+}
+
+export function adminUpdateVolunteer(id, body) {
+  return apiClient(`http://localhost:8000/api/admin/volunteers/${id}/`, "PUT", body);
 }

@@ -1,19 +1,124 @@
-.admin-vol-profile {
-  padding: 20px;
+.admin-vol-profile-page {
+  width: 100%;
+  padding: 2rem;
+  background: #f9f9f9;
 }
 
-.header-flex {
+/* Layout for admin profile grid */
+.admin-vol-profile-page .profile-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 2rem;
+}
+
+/* Left side (photo + ID) */
+.admin-vol-profile-page .profile-left {
+  text-align: center;
+}
+
+.admin-vol-profile-page .profile-photo,
+.admin-vol-profile-page .MuiAvatar-root {
+  border-radius: 50%;
+  border: 4px solid #7b1d1d;
+}
+
+.admin-vol-profile-page .volunteer-id {
+  margin-top: 1rem;
+  font-weight: 700;
+  color: #7b1d1d;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 2px solid #7b1d1d;
+  display: inline-block;
+}
+
+/* History table spacing */
+.admin-vol-profile-page .vh-wrapper {
+  margin-top: 2rem;
+}
+
+.admin-vol-profile-page .vh-table-container {
+  width: 100%;
+}
+
+/* MAIN WRAPPER */
+.vol-profile-wrapper {
+  display: flex;
+  width: 100%;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.vol-profile-content {
+  flex: 1;
+  padding: 2rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* HEADER */
+.profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 2rem;
 }
 
-.admin-vol-photo {
-  width: 100%;
-  border-radius: 10px;
+.profile-header h1 {
+  font-size: 2rem;
+  color: #6e1b1b;
+  font-weight: 800;
 }
 
-.info-box {
-  padding: 8px 0;
-  font-size: 15px;
+/* PROFILE CARD */
+.profile-card {
+  background: white;
+  border-radius: 14px;
+  padding: 2rem 3rem;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 2.2rem;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  border: 1px solid #e5e5e5;
+}
+
+/* LEFT COLUMN */
+.profile-card-left {
+  text-align: center;
+}
+
+.profile-photo {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #7b1d1d;
+}
+
+.volunteer-id-box {
+  margin-top: 1rem;
+  font-weight: bold;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid #7b1d1d;
+  background: #fff4f4;
+  color: #7b1d1d;
+}
+
+/* RIGHT COLUMN */
+.profile-card-right {
+  padding-top: 0.5rem;
+}
+
+/* MODERN MODAL */
+.edit-modal-content.modern {
+  border-radius: 14px;
+  padding: 2.5rem;
+  max-width: 900px;
+}
+
+.edit-modal-content.modern h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 1.2rem;
 }
