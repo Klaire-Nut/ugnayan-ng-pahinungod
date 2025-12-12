@@ -47,6 +47,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailBackend',            # custom email backend
+    'django.contrib.auth.backends.ModelBackend', # fallback
+]
+
 SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "BLACKLIST_AFTER_ROTATION": True,

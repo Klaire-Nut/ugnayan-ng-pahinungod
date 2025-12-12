@@ -17,29 +17,21 @@ export default function VolunteerProfile() {
       try {
         const response = await volunteerAPI.getProfile();
         if (!response.success) throw new Error(response.error || "Failed to load profile");
-
         setUserData(response.data);
         setTempData(response.data);
         setError("");
       } catch (err) {
         console.error("Profile fetch error:", err);
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          setError("Session expired. Redirecting to login...");
-          setTimeout(() => (window.location.href = "/login"), 2000);
-        } else {
-          setError(err.message);
-        }
+        setError(err.message || "Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
-
     loadProfile();
   }, []);
 
-  // SIMPLE version — because ProfileForm already returns correct nested objects
   const handleChange = (key, value) => {
-    setTempData((prev) => ({
+    setTempData(prev => ({
       ...prev,
       [key]: value
     }));
@@ -52,7 +44,6 @@ export default function VolunteerProfile() {
         alert(response.error || "Failed to update profile.");
         return;
       }
-
       setUserData(tempData);
       setIsEditOpen(false);
       alert("Profile updated successfully!");
@@ -83,7 +74,7 @@ export default function VolunteerProfile() {
               alt="Profile"
               className="profile-photo"
             />
-            <div className="volunteer-id">ID: {userData.volunteer_id}</div>
+            <div className="volunteer-id">{userData.volunteer?.volunteer_identifier}</div>
           </div>
 
           <div className="profile-right">
@@ -110,12 +101,10 @@ export default function VolunteerProfile() {
               </div>
 
               <div className="modal-buttons">
-                <button className="cancel-btn" onClick={() => setIsEditOpen(false)}>
+                <button className="cancel-btn" onClick={() => setTempData(userData) || setIsEditOpen(false)}>
                   Cancel
                 </button>
-                <button className="save-btn" onClick={handleSave}>
-                  Save
-                </button>
+                <button className="save-btn" onClick={handleSave}>Save</button>
               </div>
             </div>
           </div>

@@ -1,5 +1,4 @@
 // src/pages/Register/Step4.jsx
-
 import React, { useState, useCallback } from "react";
 import {
   Box,
@@ -20,23 +19,22 @@ export default function Step4({
   setFormData,
   onBack,
   onSubmit,
-  onOpenLogin,  
+  onOpenLogin,
 }) {
   const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
   const [password, setPassword] = useState(formData.password || "");
-  const [confirmPassword, setConfirmPassword] = useState(formData.confirmPassword || "");
+  const [confirmPassword, setConfirmPassword] = useState(
+    formData.confirmPassword || ""
+  );
 
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [successDialog, setSuccessDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Input handlers
-  const handleChange = useCallback(
-    (setter) => (e) => setter(e.target.value),
-    []
-  );
+  const handleChange = useCallback((setter) => (e) => setter(e.target.value), []);
 
   // Validation
   const validate = useCallback(() => {
@@ -46,8 +44,7 @@ export default function Step4({
     else if (password.length < 8)
       newErrors.password = "Password must be at least 8 characters.";
 
-    if (!confirmPassword)
-      newErrors.confirmPassword = "Please confirm your password.";
+    if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password.";
 
     if (password && confirmPassword && password !== confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
@@ -64,17 +61,34 @@ export default function Step4({
     setConfirmDialog(true);
   };
 
+  // ------------------------------
   // SUBMIT REGISTRATION
+  // ------------------------------
   const handleConfirmSubmit = async () => {
     setConfirmDialog(false);
     setLoading(true);
 
     const emptyIfNull = (val) => val || "";
 
+    const normalizeAffiliation = (aff) => {
+      switch (aff) {
+        case "STUDENT": return "student";
+        case "FACULTY": return "faculty";
+        case "ALUMNI": return "alumni";
+        case "UP STAFF": return "staff";
+        case "RETIREE": return "retiree";
+        default: return "";
+      }
+    };
+
     // ------------------------------
-    // Build payload for backend
+    // Build payload for backend (updated field names)
     // ------------------------------
     const payload = {
+      account: {
+        email: emptyIfNull(formData.email),
+        password: emptyIfNull(password),
+      },
       volunteer: {
         first_name: emptyIfNull(formData.firstName),
         middle_name: emptyIfNull(formData.middleName),
@@ -83,12 +97,8 @@ export default function Step4({
         sex: emptyIfNull(formData.sex),
         birthdate: formData.birthdate
           ? new Date(formData.birthdate).toISOString().split("T")[0]
-          : "",
-        affiliation_type: (formData.affiliation || "").toLowerCase(),
-      },
-      account: {
-        email: emptyIfNull(formData.email),
-        password: emptyIfNull(password),
+          : null,
+        affiliation_type: normalizeAffiliation(formData.affiliation),
       },
       contact: {
         mobile_number: emptyIfNull(formData.mobileNumber),
@@ -110,51 +120,55 @@ export default function Step4({
         contact_number: emptyIfNull(formData.emerContact),
         address: emptyIfNull(formData.emerAddress),
       },
+      affiliation_data: {}, // will fill below
+      program_interests: Array.isArray(formData.program_interests)
+        ? formData.program_interests
+        : [],
     };
 
-    // Affiliation Profile Conditions
-    const aff = (formData.affiliation || "").toLowerCase();
+    // ------------------------------
+    // Affiliation profiles (unified field names)
+    // ------------------------------
+    switch (formData.affiliation) {
+      case "STUDENT":
+        payload.affiliation_data = {
+          degree_program: formData.degreeProgram,
+          year_level: formData.yearLevel,
+          college: formData.college,
+        };
+        break;
 
-    if (aff === "student") {
-      payload.student_profile = {
-        degree_program: emptyIfNull(formData.degreeProgram),
-        year_level: emptyIfNull(formData.yearLevel),
-        college: emptyIfNull(formData.college),
-        department: emptyIfNull(formData.department),
-      };
-    }
+      case "ALUMNI":
+        payload.affiliation_data = {
+          constituent_unit: formData.constituentUnit,
+          degree_program: formData.alumniDegree,
+          year_graduated: formData.yearGrad,
+        };
+        break;
 
-    if (aff === "alumni") {
-      payload.alumni_profile = {
-        constituent_unit: emptyIfNull(formData.constituentUnit),
-        degree_program: emptyIfNull(formData.degreeProgram),
-        year_graduated: emptyIfNull(formData.yearGraduated),
-      };
-    }
+      case "UP STAFF":
+        payload.affiliation_data = {
+          office_department: formData.staffOffice,
+          designation: formData.staffPosition,
+        };
+        break;
 
-    if (aff === "staff") {
-      payload.staff_profile = {
-        office_department: emptyIfNull(formData.officeDepartment),
-        designation: emptyIfNull(formData.designation),
-      };
-    }
+      case "FACULTY":
+        payload.affiliation_data = {
+          department: formData.facultyDept,
+        };
+        break;
 
-    if (aff === "faculty") {
-      payload.faculty_profile = {
-        college: emptyIfNull(formData.facultyCollege),
-        department: emptyIfNull(formData.facultyDepartment),
-      };
-    }
-
-    if (aff === "retiree") {
-      payload.retiree_profile = {
-        designation_while_in_up: emptyIfNull(formData.oldDesignation),
-        office_college_department: emptyIfNull(formData.oldCollegeDept),
-      };
+      case "RETIREE":
+        payload.affiliation_data = {
+          designation: formData.retireDesignation,
+          office: formData.retireOffice,
+        };
+        break;
     }
 
     // ------------------------------
-    // Submit to backend
+    // Submit
     // ------------------------------
     try {
       console.log("Submitting payload:", payload);
@@ -177,7 +191,7 @@ export default function Step4({
   // After success → close dialog and open login modal
   const handleSuccessClose = () => {
     setSuccessDialog(false);
-    onOpenLogin("Volunteer"); // FIXED — NOW WORKS
+    onOpenLogin("Volunteer");
   };
 
   return (

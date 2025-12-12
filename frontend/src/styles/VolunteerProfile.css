@@ -10,7 +10,6 @@
 .vol-profile-main {
   flex: 1;
   padding: 2rem 3rem;
-  margin-left: 230px;
 }
 
 /* TITLE */
@@ -70,6 +69,7 @@
   margin-bottom: 0.75rem;
   border-bottom: 2px solid #6e1b1b;
   padding-bottom: 0.5rem;
+  padding-top: 2rem;
 }
 
 /* GRID FOR LABEL + VALUE (like modal) */

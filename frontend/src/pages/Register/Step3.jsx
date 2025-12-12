@@ -12,14 +12,7 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-
-
 
 // ----------------- Reusable Components -----------------
 const FormSelect = memo(({ label, value, onChange, options = [], error }) => (
@@ -57,8 +50,9 @@ FormTextField.displayName = "FormTextField";
 export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
   const [errors, setErrors] = useState({});
 
+  // NOTE: we store program selections in `program_interests` field on formData
   const safeFormData = {
-    volunteerPrograms: [],
+    program_interests: [], // ✅ matches backend expected key
     affirmativeActionSubjects: [],
     volunteerStatus: "",
     tagapagUgnay: "",
@@ -73,6 +67,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, [setFormData]);
 
+  // toggles a value in an array field on formData (used for checkboxes)
   const handleCheckboxChange = useCallback((field, value) => {
     setFormData((prev) => {
       const currentValues = prev[field] || [];
@@ -87,8 +82,8 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
   const validate = useCallback(() => {
     const newErrors = {};
 
-    if (!safeFormData.volunteerPrograms || safeFormData.volunteerPrograms.length === 0)
-      newErrors.volunteerPrograms = "Please select at least one program.";
+    if (!safeFormData.program_interests || safeFormData.program_interests.length === 0)
+      newErrors.program_interests = "Please select at least one program.";
 
     if (!safeFormData.volunteerStatus)
       newErrors.volunteerStatus = "This field is required.";
@@ -118,7 +113,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
     }
   };
 
-  // ----------------- Render -----------------
+  // ----------------- Options -----------------
   const volunteerProgramOptions = [
     "AFFIRMATIVE ACTION PROGRAM",
     "TEACHER DEVELOPMENT PROGRAM",
@@ -141,6 +136,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
   const isFirstTimeVolunteer = safeFormData.volunteerStatus === "First time to apply as volunteer (no engagements yet)";
 
+  // ----------------- Render -----------------
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>PROGRAMS YOU WISH TO PARTICIPATE IN</Typography>
@@ -154,15 +150,16 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
               key={program}
               control={
                 <Checkbox
-                  checked={safeFormData.volunteerPrograms.includes(program)}
-                  onChange={() => handleCheckboxChange("volunteerPrograms", program)}
+                  // IMPORTANT: read selection from formData.program_interests
+                  checked={(safeFormData.program_interests || []).includes(program)}
+                  onChange={() => handleCheckboxChange("program_interests", program)}
                 />
               }
               label={program}
             />
           ))}
         </FormGroup>
-        {errors.volunteerPrograms && <Typography color="error">{errors.volunteerPrograms}</Typography>}
+        {errors.program_interests && <Typography color="error">{errors.program_interests}</Typography>}
       </Box>
 
       {/* Affirmative Action Subjects */}
@@ -176,7 +173,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
               key={subject}
               control={
                 <Checkbox
-                  checked={safeFormData.affirmativeActionSubjects.includes(subject)}
+                  checked={(safeFormData.affirmativeActionSubjects || []).includes(subject)}
                   onChange={() => handleCheckboxChange("affirmativeActionSubjects", subject)}
                 />
               }
@@ -188,7 +185,7 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
 
       {/* Volunteer Status */}
       <Box sx={{ mb: 2 }}>
-        <Typography sx={{ mb: 1, fontWeight: 500 }}>Kindly choose the status of your volunteer application *</Typography>
+        <Typography sx={{ mb: 1, fontWeight: 500}}>Kindly choose the status of your volunteer application *</Typography>
         <FormSelect
           label="Volunteer Status"
           value={safeFormData.volunteerStatus}
@@ -257,13 +254,13 @@ export default function Step3({ formData = {}, setFormData, onBack, onNext }) {
       {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
         <Button variant="outlined" onClick={onBack}>Back</Button>
-        <Button
-          variant="contained"
-          onClick={onNext}
-          sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
-        >
-          Next
-        </Button>
+          <Button
+            variant="contained"
+            onClick={handleNextClick}  // <-- validated navigation
+            sx={{ backgroundColor: "#FF7F00", "&:hover": { backgroundColor: "#e66e00" } }}
+          >
+            Next
+          </Button>
       </Box>
     </Box>
   );

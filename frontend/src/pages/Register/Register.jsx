@@ -17,7 +17,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ⭐ REQUIRED FOR AUTO-LOGIN POPUP AFTER REGISTRATION
+  //  REQUIRED FOR AUTO-LOGIN POPUP AFTER REGISTRATION
   const [showLogin, setShowLogin] = useState(false);
   const [loginRole, setLoginRole] = useState("");
 
@@ -52,6 +52,9 @@ export default function Register() {
     }
   };
 
+  // --------------------------
+  // IMPORTANT: add program_interests default to formData
+  // --------------------------
   const [formData, setFormData] = useState({
     // Step 1 – Basic
     email: "",
@@ -90,6 +93,12 @@ export default function Register() {
     emerAddress: "",
 
     occupation: "",
+
+    // ---------------------------
+    // Step 3 — program_interests MUST be present so selections persist
+    // ---------------------------
+    program_interests: [],
+
     // … other step form fields …
   });
 
@@ -181,7 +190,6 @@ export default function Register() {
                 onSubmit={onSubmit}
                 onBack={() => setStep(3)}
 
-                // ⭐⭐⭐ THIS FIXES THE ERROR ⭐⭐⭐
                 onOpenLogin={handleOpenLogin}
               />
             )}

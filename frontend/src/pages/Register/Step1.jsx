@@ -58,8 +58,8 @@ export default function Step1({ formData = {}, setFormData, onNext }) {
   const safeFormData = {
     email: "",
     dataConsent: false,
-    lastName: "",
     firstName: "",
+    lastName: "",
     middleName: "",
     nickname: "",
     age: "",
@@ -91,8 +91,8 @@ export default function Step1({ formData = {}, setFormData, onNext }) {
 
     if (!safeFormData.email) newErrors.email = "Required.";
     if (!safeFormData.dataConsent) newErrors.dataConsent = "You must consent to continue.";
-    if (!safeFormData.lastName) newErrors.lastName = "Required.";
     if (!safeFormData.firstName) newErrors.firstName = "Required.";
+    if (!safeFormData.lastName) newErrors.lastName = "Required.";
     if (!safeFormData.middleName) newErrors.middleName = "Required.";
     if (!safeFormData.nickname) newErrors.nickname = "Required.";
     if (!safeFormData.age) newErrors.age = "Required.";

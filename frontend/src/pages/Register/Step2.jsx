@@ -108,6 +108,10 @@ const validate = useCallback(() => {
 
       case "FACULTY":
           if (!safeFormData.facultyDept) newErrors.facultyDept = "Required.";
+          if (!safeFormData.emerName) newErrors.emerName = "Required.";
+          if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
+          if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
+          if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
           break;
 
       case "ALUMNI":
@@ -116,15 +120,28 @@ const validate = useCallback(() => {
           if (!safeFormData.yearGrad) newErrors.yearGrad = "Required.";
           if (!safeFormData.firstGradCollege) newErrors.firstGradCollege = "Required.";
           if (!safeFormData.firstGradUP) newErrors.firstGradUP = "Required.";
+          if (!safeFormData.emerName) newErrors.emerName = "Required.";
+          if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
+          if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
+          if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
         break;
 
       case "RETIREE":
           if (!safeFormData.retireDesignation) newErrors.retireDesignation = "Required.";
           if (!safeFormData.retireOffice) newErrors.retireOffice = "Required.";
+          if (!safeFormData.emerName) newErrors.emerName = "Required.";
+          if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
+          if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
+          if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
         break;
+
       case "UP STAFF":
           if (!safeFormData.staffOffice) newErrors.staffOffice = "Required.";
           if (!safeFormData.staffPosition) newErrors.staffPosition = "Required.";
+          if (!safeFormData.emerName) newErrors.emerName = "Required.";
+          if (!safeFormData.emerRelation) newErrors.emerRelation = "Required.";
+          if (!safeFormData.emerContact) newErrors.emerContact = "Required.";
+          if (!safeFormData.emerAddress) newErrors.emerAddress = "Required.";
         break;
         
       default:
@@ -251,42 +268,6 @@ const validate = useCallback(() => {
             options={["YES", "NO"]}
             error={errors.firstUP}
           />
-
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-              Person to Contact in Case of Emergency
-            </Typography>
-            <FormTextField
-              label="Name *"
-              field="emerName"
-              value={safeFormData.emerName}
-              onChange={(e) => handleChange("emerName", e.target.value)}
-              error={errors.emerName}
-            />
-            <FormTextField
-              label="Relationship *"
-              field="emerRelation"
-              value={safeFormData.emerRelation}
-              onChange={(e) => handleChange("emerRelation", e.target.value)}
-              error={errors.emerRelation}
-            />
-            <FormTextField
-              label="Contact Number *"
-              field="emerContact"
-              value={safeFormData.emerContact}
-              onChange={(e) => handleChange("emerContact", e.target.value)}
-              error={errors.emerContact}
-            />
-            <FormTextField
-              label="Address *"
-              field="emerAddress"
-              value={safeFormData.emerAddress}
-              onChange={(e) => handleChange("emerAddress", e.target.value)}
-              error={errors.emerAddress}
-              multiline
-              rows={2}
-            />
-          </Box>
         </Box>
       )}
 
@@ -412,6 +393,40 @@ const validate = useCallback(() => {
           />
         </Box>
       )}
+
+      <Typography variant="h6" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+        Person to Contact in Case of Emergency *
+      </Typography>
+
+      <FormTextField
+        label="Name *"
+        value={safeFormData.emerName}
+        onChange={(e) => handleChange("emerName", e.target.value)}
+        error={errors.emerName}
+      />
+
+      <FormTextField
+        label="Relationship *"
+        value={safeFormData.emerRelation}
+        onChange={(e) => handleChange("emerRelation", e.target.value)}
+        error={errors.emerRelation}
+      />
+
+      <FormTextField
+        label="Contact Number *"
+        value={safeFormData.emerContact}
+        onChange={(e) => handleChange("emerContact", e.target.value)}
+        error={errors.emerContact}
+      />
+
+      <FormTextField
+        label="Address *"
+        value={safeFormData.emerAddress}
+        onChange={(e) => handleChange("emerAddress", e.target.value)}
+        error={errors.emerAddress}
+        multiline
+        rows={2}
+      />
 
       {/* Navigation */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>

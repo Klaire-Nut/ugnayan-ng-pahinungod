@@ -20,6 +20,12 @@ class Volunteer(models.Model):
         ('faculty', 'Faculty'),
         ('retiree', 'Retiree'),
     ]
+    
+    SEX_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('Other', 'Other'),
+    ]
 
     volunteer_id = models.AutoField(primary_key=True)
     volunteer_identifier = models.CharField(
@@ -32,7 +38,7 @@ class Volunteer(models.Model):
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
     nickname = models.CharField(max_length=50, blank=True, null=True)
-    sex = models.CharField(max_length=10)
+    sex = models.CharField(max_length=20, choices=SEX_CHOICES)
     birthdate = models.DateField()
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     date_joined = models.DateField(auto_now_add=True)
@@ -41,9 +47,10 @@ class Volunteer(models.Model):
     affiliation_type = models.CharField(
         max_length=20,
         choices=AFFILIATION_CHOICES,
-        null=True,   
+        null=True,
         blank=True
     )
+    
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
     
@@ -64,22 +71,21 @@ class Volunteer(models.Model):
 class VolunteerContact(models.Model):
     contact_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='contacts')
-    mobile_number = models.CharField(max_length=15)
+    mobile_number = models.CharField(max_length=20)
     facebook_link = models.URLField(blank=True, null=True)
 
 
 class VolunteerAddress(models.Model):
     address_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='addresses')
-    street_address = models.CharField(max_length=255)
-    province = models.CharField(max_length=100)
-    region = models.CharField(max_length=100)
+    street_address = models.CharField(max_length=255, blank=True, null=True)
+    province = models.CharField(max_length=100, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
 
 
 class VolunteerBackground(models.Model):
     background_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='backgrounds')
-    occupation = models.CharField(max_length=100, blank=True, null=True)
     org_affiliation = models.CharField(max_length=255, blank=True, null=True)
     hobbies_interests = models.TextField(blank=True, null=True)
 
@@ -89,8 +95,8 @@ class EmergencyContact(models.Model):
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='emergency_contacts')
     name = models.CharField(max_length=255)
     relationship = models.CharField(max_length=100)
-    contact_number = models.CharField(max_length=15)
-    address = models.CharField(max_length=255)
+    contact_number = models.CharField(max_length=20)
+    address = models.CharField(max_length=255, blank=True, null=True)
 
 
 # Volunteer Login
@@ -105,9 +111,11 @@ class VolunteerAccount(models.Model):
 
 # Program Interests
 class ProgramInterest(models.Model):
-    program_interest_id = models.AutoField(primary_key=True)
     volunteer = models.ForeignKey(Volunteer, on_delete=models.CASCADE, related_name='program_interests')
-    program_name = models.CharField(max_length=255)
+    program_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.program_name
 
 
 # Models Per Affiliation
@@ -116,7 +124,6 @@ class StudentProfile(models.Model):
     degree_program = models.CharField(max_length=100)
     year_level = models.CharField(max_length=20)
     college = models.CharField(max_length=100)
-    department = models.CharField(max_length=100)
 
 class AlumniProfile(models.Model):
     volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name='alumni_profile')
@@ -215,3 +222,21 @@ class VolunteerScheduleSelection(models.Model):
 
     def __str__(self):
         return f"{self.volunteer_event} -> {self.schedule}"
+    
+# Volunteer Meta for Step 3 / additional preferences
+class VolunteerMeta(models.Model):
+    volunteer = models.OneToOneField(Volunteer, on_delete=models.CASCADE, related_name="meta")
+
+    volunteer_status = models.CharField(max_length=255, null=True, blank=True)
+    tagapag_ugnay = models.CharField(max_length=10, null=True, blank=True)  # YES/NO
+    other_organization = models.CharField(max_length=10, null=True, blank=True)  # YES/NO
+    organization_name = models.CharField(max_length=255, null=True, blank=True)
+
+    affirmative_action_subjects = models.JSONField(default=list)  # array
+    how_did_you_hear = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Meta for {self.volunteer}"

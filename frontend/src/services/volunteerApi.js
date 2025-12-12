@@ -54,9 +54,10 @@ export const volunteerAPI = {
   // -----------------------------------------------
   register: async (data) => {
     try {
-      const response = await api.post("/volunteers/register/", data);
+      const response = await api.post("/volunteers/register/", data); // CHANGED: ensure trailing slash
       return { success: true, data: response.data };
     } catch (error) {
+      console.error("❌ REGISTER ERROR:", error.response?.data); // CHANGED: added console log
       return {
         success: false,
         error: error.response?.data?.error || "Registration failed",
@@ -72,7 +73,16 @@ export const volunteerAPI = {
     try {
       console.log("🔐 Attempting volunteer login:", email);
 
-      const response = await api.post("/volunteers/login/", { email, password });
+      // Ensure you are hitting the correct backend URL
+      // If 'api' has a baseURL of http://127.0.0.1:8000/api, then this is fine
+      const response = await api.post("/volunteers/login/", {
+        email,
+        password,
+      }, {
+        headers: {
+          "Content-Type": "application/json", // Explicitly set
+        },
+      });
 
       console.log("✅ LOGIN SUCCESS:", response.data);
 
@@ -82,10 +92,15 @@ export const volunteerAPI = {
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("❌ LOGIN ERROR:", error.response?.data);
+      console.error("❌ LOGIN ERROR:", error.response?.data || error.message);
+
+      // Return the exact error from backend if available
       return {
         success: false,
-        error: error.response?.data?.error || "Login failed",
+        error:
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Login failed",
       };
     }
   },
@@ -108,9 +123,10 @@ export const volunteerAPI = {
   // -----------------------------------------------
   getProfile: async () => {
     try {
-      const response = await api.get("/volunteers/profile/");
+      const response = await api.get("/volunteers/profile/"); // CHANGED: ensure trailing slash
       return { success: true, data: response.data };
     } catch (error) {
+      console.error("❌ GET PROFILE ERROR:", error.response?.data); // CHANGED: added console log
       return {
         success: false,
         error: error.response?.data?.error || "Failed to load profile",
@@ -121,17 +137,32 @@ export const volunteerAPI = {
   // -----------------------------------------------
   // UPDATE PROFILE
   // -----------------------------------------------
-  updateProfile: async (data) => {
-    try {
-      const response = await api.patch("/volunteers/profile/", data);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || "Failed to update profile",
-      };
-    }
-  },
+updateProfile: async (data) => {
+  try {
+    const payload = {
+      volunteer: data.volunteer || {},
+      contact: data.contact || {},
+      address: data.address || {},
+      background: data.background || {},
+      emergency_contact: data.emergency_contact || {},
+      affiliation_data: Array.isArray(data.affiliation_data) ? data.affiliation_data : [data.affiliation_data || {}],
+      program_interests: Array.isArray(data.program_interests) ? data.program_interests : [],
+      profile_picture: data.profile_picture || ""
+    };
+
+    console.log("➡️ Updating profile with payload:", payload);
+
+    const response = await api.patch("/volunteers/profile/", payload); // PATCH updates partial
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("❌ UPDATE PROFILE ERROR:", error.response?.data || error);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to update profile",
+    };
+  }
+},
 
   // -----------------------------------------------
   // EVENT HISTORY
