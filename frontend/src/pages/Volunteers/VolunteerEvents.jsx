@@ -6,6 +6,23 @@ import { FaSearch } from "react-icons/fa";
 import "../../styles/Dashboard.css"; 
 import "../../styles/AdminEvents.css"; // ensures search bar styling
 
+function getEventStatus(event) {
+  const schedules = event.schedules || [];
+  if (event.is_cancelled) return "CANCELLED";
+  if (!schedules.length) return "UPCOMING";
+
+  const now = new Date();
+  const first = schedules[0];
+  const last = schedules[schedules.length - 1];
+
+  const start = new Date(`${first.date}T${first.start_time}`);
+  const end = new Date(`${last.date}T${last.end_time}`);
+
+  if (now < start) return "UPCOMING";
+  if (now >= start && now <= end) return "HAPPENING";
+  return "DONE";
+}
+
 export default function VolunteerEvents() {
   const navigate = useNavigate();
   const { events, joinedEvents } = useOutletContext();
@@ -22,14 +39,19 @@ export default function VolunteerEvents() {
 
   // INITIAL LOAD
   useEffect(() => {
-    setFiltered(sortedEvents);
+    const visible = sortedEvents.filter(
+      (e) => getEventStatus(e) !== "DONE"
+    );
+    setFiltered(visible);
   }, [events]);
 
   // SEARCH FILTER
   useEffect(() => {
     const q = search.toLowerCase();
-    const result = sortedEvents.filter((e) =>
-      e.event_name.toLowerCase().includes(q)
+    const result = sortedEvents.filter(
+      (e) =>
+        getEventStatus(e) !== "DONE" &&
+        e.event_name.toLowerCase().includes(q)
     );
     setFiltered(result);
   }, [search, events]);

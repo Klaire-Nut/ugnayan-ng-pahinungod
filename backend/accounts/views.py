@@ -2,6 +2,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate, logout
 from django.contrib.auth import get_user_model
 

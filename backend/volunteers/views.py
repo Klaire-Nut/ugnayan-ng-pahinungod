@@ -76,19 +76,20 @@ def volunteer_login(request):
     except VolunteerAccount.DoesNotExist:
         return JsonResponse({"error": "Invalid email or password"}, status=400)
 
+    print("🔥 USING VOLUNTEERS LOGIN")
+    print("PASSWORD HASH:", account.password)
+
     if not check_password(password, account.password):
         return JsonResponse({"error": "Invalid email or password"}, status=400)
 
     volunteer = account.volunteer
-
-    # Ensure Django auth user exists (used for TokenAuthentication)
+    
     user, created = User.objects.get_or_create(email=email)
-    if created or not user.password:
-        user.password = make_password(password)
 
-    # mark role flags on user if you use them
-    if hasattr(user, "is_volunteer"):
-        user.is_volunteer = True
+    if created:
+        user.set_password(password)
+        
+    user.is_volunteer = True
     user.save()
 
     # login to create session compatibility (not required for token auth but harmless)
@@ -96,7 +97,8 @@ def volunteer_login(request):
     login(request, user)
 
     # create/get token
-    token, _ = Token.objects.get_or_create(user=user)
+    Token.objects.filter(user=user).delete()
+    token = Token.objects.create(user=user)
 
     return JsonResponse({
         "success": True,
@@ -333,8 +335,18 @@ class ChangePasswordView(APIView):
         if new != confirm:
             return Response({"error": "Passwords do not match"}, status=400)
 
+        # Update VolunteerAccount password
         account.password = make_password(new)
         account.save()
+
+        # Update Django User password PROPERLY
+        user = request.user
+        user.set_password(new)
+        user.save()
+
+        # Force token refresh (VERY IMPORTANT)
+        Token.objects.filter(user=user).delete()
+        Token.objects.create(user=user)
 
         return Response({"message": "Password updated successfully"})
 
@@ -502,3 +514,4 @@ class VolunteerEventListView(APIView):
         events = Event.objects.filter(is_cancelled=False).order_by("date_start")
         serializer = EventListSerializer(events, many=True, context={"request": request})
         return Response(serializer.data)
+

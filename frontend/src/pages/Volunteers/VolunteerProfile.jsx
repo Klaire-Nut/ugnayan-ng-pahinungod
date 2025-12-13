@@ -16,7 +16,9 @@ export default function VolunteerProfile() {
       setLoading(true);
       try {
         const response = await volunteerAPI.getProfile();
-        if (!response.success) throw new Error(response.error || "Failed to load profile");
+        if (!response.success) {
+          throw new Error(response.error || "Failed to load profile");
+        }
         setUserData(response.data);
         setTempData(response.data);
         setError("");
@@ -27,13 +29,14 @@ export default function VolunteerProfile() {
         setLoading(false);
       }
     };
+
     loadProfile();
   }, []);
 
-  const handleChange = (key, value) => {
-    setTempData(prev => ({
+  const handleChange = (field, value) => {
+    setTempData((prev) => ({
       ...prev,
-      [key]: value
+      [field]: value,
     }));
   };
 
@@ -68,15 +71,20 @@ export default function VolunteerProfile() {
         </div>
 
         <div className="profile-grid">
+          {/* LEFT SECTION */}
           <div className="profile-left">
             <img
               src={userData.profile_picture || "/default-profile.png"}
               alt="Profile"
               className="profile-photo"
             />
-            <div className="volunteer-id">{userData.volunteer?.volunteer_identifier}</div>
+
+            <div className="volunteer-id">
+              {userData.volunteer?.volunteer_identifier}
+            </div>
           </div>
 
+          {/* RIGHT SECTION */}
           <div className="profile-right">
             <ProfileForm
               data={userData}
@@ -89,7 +97,9 @@ export default function VolunteerProfile() {
         {isEditOpen && (
           <div className="edit-modal">
             <div className="edit-modal-content">
-              <button className="close-btn" onClick={() => setIsEditOpen(false)}>&times;</button>
+              <button className="close-btn" onClick={() => setIsEditOpen(false)}>
+                &times;
+              </button>
               <h2>Edit Profile</h2>
 
               <div className="modal-scroll">
@@ -101,10 +111,19 @@ export default function VolunteerProfile() {
               </div>
 
               <div className="modal-buttons">
-                <button className="cancel-btn" onClick={() => setTempData(userData) || setIsEditOpen(false)}>
+                <button
+                  className="cancel-btn"
+                  onClick={() => {
+                    setTempData(userData);
+                    setIsEditOpen(false);
+                  }}
+                >
                   Cancel
                 </button>
-                <button className="save-btn" onClick={handleSave}>Save</button>
+
+                <button className="save-btn" onClick={handleSave}>
+                  Save
+                </button>
               </div>
             </div>
           </div>

@@ -9,12 +9,12 @@ from core.models import (
     Volunteer, VolunteerContact, VolunteerAddress, VolunteerBackground,
     EmergencyContact, VolunteerAccount, ProgramInterest,
     StudentProfile, AlumniProfile, StaffProfile, FacultyProfile, RetireeProfile,
-    Event, VolunteerEvent, VolunteerMeta,
+    VolunteerMeta,
 )
 
-# -----------------------------
-# Basic Nested Serializers
-# -----------------------------
+# -------------------------------------------------------
+# BASIC NESTED SERIALIZERS
+# -------------------------------------------------------
 class VolunteerAccountSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8, required=True)
 
@@ -23,7 +23,6 @@ class VolunteerAccountSerializer(serializers.ModelSerializer):
         fields = ["email", "password"]
 
     def validate_email(self, value):
-        # Prevent duplicates
         if self.instance is None and VolunteerAccount.objects.filter(email=value).exists():
             raise serializers.ValidationError("A volunteer with this email already exists.")
         return value
@@ -46,7 +45,6 @@ class VolunteerAddressSerializer(serializers.ModelSerializer):
 
 
 class VolunteerBackgroundSerializer(serializers.ModelSerializer):
-    # IMPORTANT: core.VolunteerBackground has NO 'occupation'
     class Meta:
         model = VolunteerBackground
         fields = ["org_affiliation", "hobbies_interests"]
@@ -57,9 +55,10 @@ class EmergencyContactSerializer(serializers.ModelSerializer):
         model = EmergencyContact
         fields = ["name", "relationship", "contact_number", "address"]
 
-# -----------------------------
-# Affiliation Profile Serializers
-# -----------------------------
+
+# -------------------------------------------------------
+# AFFILIATION PROFILE SERIALIZERS
+# -------------------------------------------------------
 class StudentProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentProfile
@@ -102,9 +101,9 @@ class VolunteerMetaSerializer(serializers.ModelSerializer):
             "how_did_you_hear",
         ]
 
-# -----------------------------
-# Volunteer Registration
-# -----------------------------
+# -------------------------------------------------------
+# VOLUNTEER REGISTRATION
+# -------------------------------------------------------
 class VolunteerRegistrationSerializer(serializers.Serializer):
     # Main fields
     first_name = serializers.CharField()
@@ -122,36 +121,39 @@ class VolunteerRegistrationSerializer(serializers.Serializer):
     background = VolunteerBackgroundSerializer()
     emergency_contact = EmergencyContactSerializer()
 
-    # Optional affiliation profile (only one will be created)
-    student_profile = StudentProfileSerializer(required=False)
-    alumni_profile = AlumniProfileSerializer(required=False)
-    staff_profile = StaffProfileSerializer(required=False)
-    faculty_profile = FacultyProfileSerializer(required=False)
-    retiree_profile = RetireeProfileSerializer(required=False)
+    # Step 2
+    affiliation_data = serializers.DictField(required=False)
 
+    # Step 3
     program_interests = serializers.ListField(child=serializers.CharField(), required=False)
     meta = VolunteerMetaSerializer(required=False)
 
     def create(self, validated_data):
+
+        # Pop nested data
         account_data = validated_data.pop("account")
         contact_data = validated_data.pop("contact")
         address_data = validated_data.pop("address")
         background_data = validated_data.pop("background")
         emergency_data = validated_data.pop("emergency_contact")
 
-        student_data = validated_data.pop("student_profile", None)
-        alumni_data = validated_data.pop("alumni_profile", None)
-        staff_data = validated_data.pop("staff_profile", None)
-        faculty_data = validated_data.pop("faculty_profile", None)
-        retiree_data = validated_data.pop("retiree_profile", None)
-
         program_interests = validated_data.pop("program_interests", [])
         meta_data = validated_data.pop("meta", None)
 
+        # Step 2 raw affiliation fields
+        aff_raw = validated_data.pop("affiliation_data", {})
+        aff_type = validated_data["affiliation_type"].strip().lower()
+
+        # Normalize UP STAFF naming
+        if aff_type in ["up staff", "upstaff"]:
+            aff_type = "staff"
+
+        # Add volunteer ID
         validated_data["volunteer_identifier"] = generate_volunteer_identifier()
 
         with transaction.atomic():
-            # Create main volunteer
+
+            # Create main volunteer row
             volunteer = Volunteer.objects.create(**validated_data)
 
             # Related tables
@@ -163,138 +165,192 @@ class VolunteerRegistrationSerializer(serializers.Serializer):
 
             VolunteerContact.objects.create(volunteer=volunteer, **contact_data)
             VolunteerAddress.objects.create(volunteer=volunteer, **address_data)
-
-            # Sanitize background input
-            VolunteerBackground.objects.create(
-                volunteer=volunteer,
-                org_affiliation=background_data.get("org_affiliation"),
-                hobbies_interests=background_data.get("hobbies_interests"),
-            )
-
+            VolunteerBackground.objects.create(volunteer=volunteer, **background_data)
             EmergencyContact.objects.create(volunteer=volunteer, **emergency_data)
 
-            # Affiliation type → create ONE profile
-            type_lower = validated_data["affiliation_type"].lower()
+            # Create affiliation-specific profile
+            if isinstance(aff_raw, dict):
+                if aff_type == "student":
+                    StudentProfile.objects.create(
+                        volunteer=volunteer,
+                        degree_program=aff_raw.get("degree_program", ""),
+                        year_level=aff_raw.get("year_level", ""),
+                        college=aff_raw.get("college", "")
+                    )
 
-            if type_lower == "student" and student_data:
-                StudentProfile.objects.create(volunteer=volunteer, **student_data)
-            elif type_lower == "alumni" and alumni_data:
-                AlumniProfile.objects.create(volunteer=volunteer, **alumni_data)
-            elif type_lower == "staff" and staff_data:
-                StaffProfile.objects.create(volunteer=volunteer, **staff_data)
-            elif type_lower == "faculty" and faculty_data:
-                FacultyProfile.objects.create(volunteer=volunteer, **faculty_data)
-            elif type_lower == "retiree" and retiree_data:
-                RetireeProfile.objects.create(volunteer=volunteer, **retiree_data)
+                elif aff_type == "alumni":
+                    AlumniProfile.objects.create(
+                        volunteer=volunteer,
+                        constituent_unit=aff_raw.get("constituent_unit", ""),
+                        degree_program=aff_raw.get("degree_program", ""),
+                        year_graduated=aff_raw.get("year_graduated", "")
+                    )
 
-            # Program interests
+                elif aff_type == "staff":
+                    StaffProfile.objects.create(
+                        volunteer=volunteer,
+                        office_department=aff_raw.get("office_department", ""),
+                        designation=aff_raw.get("designation", "")
+                    )
+
+                elif aff_type == "faculty":
+                    FacultyProfile.objects.create(
+                        volunteer=volunteer,
+                        college=aff_raw.get("college", ""),
+                        department=aff_raw.get("department", "")
+                    )
+
+                elif aff_type == "retiree":
+                    RetireeProfile.objects.create(
+                        volunteer=volunteer,
+                        designation_while_in_up=aff_raw.get("designation", ""),
+                        office_college_department=aff_raw.get("office", "")
+                    )
+
+            # Save program interests
             for p in program_interests:
                 ProgramInterest.objects.create(volunteer=volunteer, program_name=p)
 
-            # Meta
+            # Save meta fields
             if meta_data:
                 VolunteerMeta.objects.create(volunteer=volunteer, **meta_data)
 
         return volunteer
 
-# -----------------------------
-# Volunteer Main Serializer (GET)
-# -----------------------------
+# -------------------------------------------------------
+# VOLUNTEER GET PROFILE SERIALIZER
+# -------------------------------------------------------
 class VolunteerSerializer(serializers.ModelSerializer):
-    accounts = VolunteerAccountSerializer(many=True, read_only=True)
-    contacts = VolunteerContactSerializer(many=True, read_only=True)
-    addresses = VolunteerAddressSerializer(many=True, read_only=True)
-    backgrounds = VolunteerBackgroundSerializer(many=True, read_only=True)
-    emergency_contacts = EmergencyContactSerializer(many=True, read_only=True)
+
+    volunteer = serializers.SerializerMethodField()
+    contact = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    background = serializers.SerializerMethodField()
+    emergency_contact = serializers.SerializerMethodField()
     program_interests = serializers.SerializerMethodField()
-    meta = VolunteerMetaSerializer(read_only=True)
-
-    student_profile = StudentProfileSerializer(read_only=True)
-    alumni_profile = AlumniProfileSerializer(read_only=True)
-    staff_profile = StaffProfileSerializer(read_only=True)
-    faculty_profile = FacultyProfileSerializer(read_only=True)
-    retiree_profile = RetireeProfileSerializer(read_only=True)
-
     affiliation_data = serializers.SerializerMethodField()
+    meta = serializers.SerializerMethodField()
 
     class Meta:
         model = Volunteer
         fields = [
             "volunteer_id",
             "volunteer_identifier",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "nickname",
-            "sex",
-            "birthdate",
-            "affiliation_type",
-            "accounts",
-            "contacts",
-            "addresses",
-            "backgrounds",
-            "emergency_contacts",
+            "volunteer",
+            "contact",
+            "address",
+            "background",
+            "emergency_contact",
             "program_interests",
-            "meta",
-            "student_profile",
-            "alumni_profile",
-            "staff_profile",
-            "faculty_profile",
-            "retiree_profile",
             "affiliation_data",
+            "meta",
         ]
+
+    # ---------------------------
+    def get_volunteer(self, obj):
+        return {
+            "first_name": obj.first_name,
+            "middle_name": obj.middle_name,
+            "last_name": obj.last_name,
+            "nickname": obj.nickname,
+            "sex": obj.sex,
+            "birthdate": obj.birthdate,
+            "email": obj.accounts.first().email if obj.accounts.exists() else None,
+            "affiliation_type": obj.affiliation_type,
+            "volunteer_identifier": obj.volunteer_identifier,
+        }
+
+    def get_contact(self, obj):
+        c = obj.contacts.first()
+        return {
+            "mobile_number": c.mobile_number,
+            "facebook_link": c.facebook_link,
+        } if c else {}
+
+    def get_address(self, obj):
+        a = obj.addresses.first()
+        return {
+            "street_address": a.street_address,
+            "province": a.province,
+            "region": a.region,
+        } if a else {}
+
+    def get_background(self, obj):
+        b = obj.backgrounds.first()
+        return {
+            "org_affiliation": b.org_affiliation,
+            "hobbies_interests": b.hobbies_interests,
+        } if b else {}
+
+    def get_emergency_contact(self, obj):
+        e = obj.emergency_contacts.first()
+        return {
+            "name": e.name,
+            "relationship": e.relationship,
+            "contact_number": e.contact_number,
+            "address": e.address,
+        } if e else {}
 
     def get_program_interests(self, obj):
         return [p.program_name for p in obj.program_interests.all()]
 
     def get_affiliation_data(self, obj):
-        output = []
+        result = []
 
-        # STUDENT
-        if hasattr(obj, "student_profile"):
-            sp = obj.student_profile
-            output.append({
-                "type": "STUDENT",
-                "degree_program": sp.degree_program,
-                "year_level": sp.year_level,
-                "college": sp.college,
+        student = getattr(obj, "student_profile", None)
+        if student:
+            result.append({
+                "type": "student",
+                "degree_program": student.degree_program,
+                "year_level": student.year_level,
+                "college": student.college,
             })
 
-        # ALUMNI
-        if hasattr(obj, "alumni_profile"):
-            ap = obj.alumni_profile
-            output.append({
-                "type": "ALUMNI",
-                "constituent_unit": ap.constituent_unit,
-                "degree_program": ap.degree_program,
-                "year_graduated": ap.year_graduated,
+        alumni = getattr(obj, "alumni_profile", None)
+        if alumni:
+            result.append({
+                "type": "alumni",
+                "constituent_unit": alumni.constituent_unit,
+                "degree_program": alumni.degree_program,
+                "year_graduated": alumni.year_graduated,
             })
 
-        # STAFF
-        if hasattr(obj, "staff_profile"):
-            st = obj.staff_profile
-            output.append({
-                "type": "UP STAFF",
-                "office_department": st.office_department,
-                "designation": st.designation,
+        staff = getattr(obj, "staff_profile", None)
+        if staff:
+            result.append({
+                "type": "staff",
+                "office_department": staff.office_department,
+                "designation": staff.designation,
             })
 
-        # FACULTY
-        if hasattr(obj, "faculty_profile"):
-            fp = obj.faculty_profile
-            output.append({
-                "type": "FACULTY",
-                "college": fp.college,
-                "department": fp.department,
+        faculty = getattr(obj, "faculty_profile", None)
+        if faculty:
+            result.append({
+                "type": "faculty",
+                "college": faculty.college,
+                "department": faculty.department,
             })
 
-        # RETIREE
-        if hasattr(obj, "retiree_profile"):
-            rp = obj.retiree_profile
-            output.append({
-                "type": "RETIREE",
-                "designation_while_in_up": rp.designation_while_in_up,
-                "office_college_department": rp.office_college_department,
+        retiree = getattr(obj, "retiree_profile", None)
+        if retiree:
+            result.append({
+                "type": "retiree",
+                "designation_while_in_up": retiree.designation_while_in_up,
+                "office_college_department": retiree.office_college_department,
             })
 
-        return output
+        return result
+
+    def get_meta(self, obj):
+        m = getattr(obj, "meta", None)
+        if not m:
+            return {}
+
+        return {
+            "volunteer_status": m.volunteer_status,
+            "tagapag_ugnay": m.tagapag_ugnay,
+            "other_organization": m.other_organization,
+            "organization_name": m.organization_name,
+            "affirmative_action_subjects": m.affirmative_action_subjects,
+            "how_did_you_hear": m.how_did_you_hear,
+        }

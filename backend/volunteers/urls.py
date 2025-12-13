@@ -15,9 +15,6 @@ urlpatterns = [
     # Auth
     path('login/', volunteer_login, name='volunteer-login'),
     path('logout/', volunteer_logout, name='volunteer-logout'),
-    
-    # DRF token login
-    path('api/auth/login/', obtain_auth_token, name='api_token_auth'),
 
     # Registration
     path('register/', RegisterVolunteer.as_view(), name='volunteer-register'),

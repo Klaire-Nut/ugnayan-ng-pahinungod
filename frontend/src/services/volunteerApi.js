@@ -15,20 +15,20 @@ const api = axios.create({
 // ------------------------------------------------------
 // Automatically attach token
 // ------------------------------------------------------
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("volunteerToken");
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("volunteerToken");
 
-    if (token) {
-      config.headers.Authorization = `Token ${token}`;
-    }
+  const noAuthEndpoints = [
+    "/volunteers/login/",
+    "/volunteers/register/",
+  ];
 
-    console.log("➡️ REQUEST:", config.method.toUpperCase(), config.url);
-    console.log("🔐 TOKEN:", token ? "Attached" : "None");
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  if (token && !noAuthEndpoints.includes(config.url)) {
+    config.headers.Authorization = `Token ${token}`;
+  }
+
+  return config;
+});
 
 // ------------------------------------------------------
 // Log responses
@@ -189,6 +189,9 @@ updateProfile: async (data) => {
         new_password: newPassword,
         confirm_password: confirmPassword,
       });
+
+      // 🔥 FORCE LOGOUT
+      localStorage.removeItem("volunteerToken");
 
       return { success: true, data: response.data };
     } catch (error) {

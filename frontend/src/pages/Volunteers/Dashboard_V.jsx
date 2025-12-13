@@ -12,6 +12,23 @@ import {
 
 import { FaHistory, FaHandsHelping } from "react-icons/fa";
 
+function getEventStatus(event) {
+  const schedules = event.schedules || [];
+  if (event.is_cancelled) return "CANCELLED";
+  if (!schedules.length) return "UPCOMING";
+
+  const now = new Date();
+  const first = schedules[0];
+  const last = schedules[schedules.length - 1];
+
+  const start = new Date(`${first.date}T${first.start_time}`);
+  const end = new Date(`${last.date}T${last.end_time}`);
+
+  if (now < start) return "UPCOMING";
+  if (now >= start && now <= end) return "HAPPENING";
+  return "DONE";
+}
+
 export default function Dashboard_V() {
   const navigate = useNavigate();
   const { events = [], joinedEvents = [] } = useOutletContext();
@@ -35,6 +52,8 @@ export default function Dashboard_V() {
      GET 3 MOST RECENT EVENTS
   ----------------------------------------------------- */
   const recentEvents = [...events]
+    .map(normalizeEvent)
+    .filter((e) => getEventStatus(e) !== "DONE")
     .sort((a, b) => b.event_id - a.event_id)
     .slice(0, 3);
 
